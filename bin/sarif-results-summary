@@ -16,7 +16,7 @@ for runi in S.indices(sarif_struct, 'runs'):
     num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
     language = S.get(sarif_struct, 'runs', runi, 'properties',
                      'semmle.sourceLanguage')
-    S.msg("Found %d results for %s \n\n" %  (num_results, language))
+    S.msg("Found %d results for %s\n" %  (num_results, language))
     if num_results == 0: continue
 
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
@@ -24,7 +24,7 @@ for runi in S.indices(sarif_struct, 'runs'):
         artifact = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
                          'physicalLocation', 'artifactLocation')
         region = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
-                         'physicalLocation', 'region')
-        filepath = "%s:%d:%d" % (artifact['uri'], region['startLine'],
-                                 region.get('startColumn', -1)) 
-        S.msg("%s: %s\n" % (filepath, message))
+                       'physicalLocation', 'region')
+        l1, c1, l2, c2 = S.lineinfo(region)
+        filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+        S.msg("%s: %s\n\n" % (filepath, message))
