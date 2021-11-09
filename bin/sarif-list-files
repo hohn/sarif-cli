@@ -36,7 +36,7 @@ for runi in S.indices(sarif_struct, 'runs'):
     # Locations for @kind path-problem
     # e.g. sarif_struct['runs'][0]['results'][22]['codeFlows'][0]['threadFlows'][0]['locations'][1]['location']
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
-        if 'codeFlows' in S.get(sarif_struct, 'runs', runi, 'results', resi).keys():
+        if 'codeFlows' in S.get(sarif_struct, 'runs', runi, 'results', resi):
             locations = S.get(sarif_struct, 'runs', runi, 'results', resi, 'codeFlows', 0,
                               'threadFlows', 0, 'locations')
             for loci in range(0, len(locations)):
