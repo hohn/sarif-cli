@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+import json
+import sarif_cli as S
+import sys
+
+# TODO command-line: sarif-digest [<file>]
+# 
+# reduce size by listing only first/last elements
+fpath = sys.argv[1]
+with open(fpath, 'r') as fp:
+    sarif_struct = json.load(fp)
+
+def _show_dict(elem, context):
+    return {key : _compact(val, key) for key, val in elem.items()}
+
+def _show_list(elem, context):
+    if len(elem) > 2:
+        # first and last
+        return ["------------%d items, showing first and last ----------" % len(elem),
+                _compact(elem[0], 0), 
+                _compact(elem[-1], -1)]
+    if len(elem) > 0:
+        return [_compact(elem[i], i) for i in range(0, len(elem))]
+    else:
+        return elem
+
+def _compact(elem, context):
+    t = type(elem)
+    if t == dict:
+        return _show_dict(elem, context)
+    elif t == list:
+        return _show_list(elem, context)
+    else:
+        return elem
+
+json.dump(_compact(sarif_struct, "starting"), sys.stdout, indent=2)
+
+

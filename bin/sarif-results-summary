@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import argparse
+import json
+import sarif_cli as S
+import sys
+import collections
+
+parser = argparse.ArgumentParser(description='summary of results')
+parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+
+args = parser.parse_args()
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
+num_results = len(S.get(sarif_struct, 'runs', 0, 'results'))
+S.msg("Found %d results\n\n" %  num_results)
+if num_results == 0:
+    S.exit(0)
+
+for resi in range(0, len(S.get(sarif_struct, 'runs', 0, 'results'))):
+    message = S.get(sarif_struct, 'runs', 0, 'results', resi, 'message', 'text')
+    artifact = S.get(sarif_struct, 'runs', 0, 'results', resi, 'locations', 0,
+                     'physicalLocation', 'artifactLocation')
+    region = S.get(sarif_struct, 'runs', 0, 'results', resi, 'locations', 0,
+                     'physicalLocation', 'region')
+    filepath = "%s:%d:%d" % (artifact['uri'], region['startLine'],
+                             region.get('startColumn', -1)) 
+    S.msg("%s: %s\n" % (filepath, message))
+
+
+
+

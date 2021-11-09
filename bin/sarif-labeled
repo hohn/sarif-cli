@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+import argparse
+import json
+import sarif_cli as S
+import sys
+import collections
+
+# TODO
+# require python 3.7+ for ordered dictionaries?
+
+parser = argparse.ArgumentParser(description='Output a sarif file with labeled paths preceeding arrays and objects')
+parser.add_argument('file', metavar='file', type=str, help='input file, - for stdin')
+
+args = parser.parse_args()
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
+def _label_dict(elem, path):
+    d = collections.OrderedDict()
+    for key, val in elem.items():
+        subpath = path + "['%s']" % key
+        if type(val) in [dict, list]:
+            d[subpath] = "----path----"
+        d[key] = _label(val, subpath)
+    return d
+
+def _label_list(elem, path):
+    if len(elem) > 0:
+        l = []
+        for i in range(0, len(elem)):
+            subpath = path + "[%d]" % i
+            if i % 4 == 0:
+                l.append("---- %s ----" % subpath)
+            l.append(_label(elem[i], subpath))
+        return l
+    else:
+        return elem
+
+def _label(elem, path):
+    t = type(elem)
+    if t == dict:
+        return _label_dict(elem, path)
+    elif t == list:
+        return _label_list(elem, path)
+    else:
+        return elem
+
+json.dump(_label(sarif_struct, "sarif_struct"), sys.stdout, indent=2)
+
+

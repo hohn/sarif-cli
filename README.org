@@ -1,0 +1,55 @@
+* Collection of cli tools for SARIF processing 
+  This is a work in progress; the plan is as follows:
+
+  Each of these tools present a high-level command-line interface to extract a
+  specific subset of information from a SARIF file.  The format of each tool's
+  /output/ is versioned and, as much as possible, independent of the input.
+
+  It is the intent of these tools to
+  - hide the internals of sarif when /used/
+  - provide examples of extracting information from sarif files while writing your
+    own or extending the tools
+
+* Setup for development
+  Set up the virtual environment and install the packages:
+  # pip freeze > requirements.txt
+  #+BEGIN_SRC sh
+    python3 -m venv .venv
+    . .venv/bin/activate
+    python3 -m pip install -r requirements.txt
+    # Or separately:
+    pip install --upgrade pip
+    pip install ipython pyyaml
+  #+END_SRC
+
+  "Install" for local development:
+  #+BEGIN_SRC sh
+  pip install -e .
+  #+END_SRC
+
+* Sample Data
+  The query results in =data/= are taken from lgtm.com, which ran the
+  : ql/$LANG/ql/src/codeql-suites/$LANG-lgtm.qls
+  queries.
+
+  The linux kernel has both single-location results (="kind": "problem"=) and path
+  results (="kind": "path-problem"=).  It also has results for multiple source
+  languages.
+
+  The subset of files referenced by the sarif results is in =data/linux-small/=
+  and is taken from 
+  #+begin_src javascript
+    "versionControlProvenance": [
+        {
+            "repositoryUri": "https://github.com/torvalds/linux.git",
+            "revisionId": "d9abdee5fd5abffd0e763e52fbfa3116de167822"
+        }
+    ]
+  #+end_src
+
+* Commands
+
+
+
+#+OPTIONS: ^:{}
+
