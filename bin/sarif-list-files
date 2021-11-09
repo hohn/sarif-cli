@@ -14,32 +14,36 @@ args = parser.parse_args()
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
     sarif_struct = json.load(fp)
 
-# Make sure there are some results
-num_results = len(S.get(sarif_struct, 'runs', 0, 'results'))
-if num_results == 0:
-    S.exit(0)
-
-# Collect the file names
+# File name collection
 uris = set()
 
-# Locations for @kind problem
-# e.g.,
-# sarif_struct['runs'][0]['results'][5]['locations'][0]['physicalLocation']['artifactLocation']
-for resi in range(0, len(S.get(sarif_struct, 'runs', 0, 'results'))):
-    uri = S.get(sarif_struct, 'runs', 0, 'results', resi, 'locations', 0,
-                'physicalLocation', 'artifactLocation', 'uri')
-    uris.add(uri)
-    
-# Locations for @kind path-problem
-# e.g. sarif_struct['runs'][0]['results'][22]['codeFlows'][0]['threadFlows'][0]['locations'][1]['location']
-for resi in range(0, len(S.get(sarif_struct, 'runs', 0, 'results'))):
-    if 'codeFlows' in S.get(sarif_struct, 'runs', 0, 'results', resi).keys():
-        locations = S.get(sarif_struct, 'runs', 0, 'results', resi, 'codeFlows', 0,
-                          'threadFlows', 0, 'locations')
-        for loci in range(0, len(locations)):
-            uri = S.get(locations, loci, 'location', 'physicalLocation',
-                        'artifactLocation', 'uri')
-            uris.add(uri)
+# Traverse all runs
+for runi in S.indices(sarif_struct, 'runs'):
+    # Make sure there are some results
+    num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
+    if num_results == 0: continue
+
+    # Collect the file names
+
+    # Locations for @kind problem
+    # e.g.,
+    # sarif_struct['runs'][0]['results'][5]['locations'][0]['physicalLocation']['artifactLocation']
+    for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
+        uri = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
+                    'physicalLocation', 'artifactLocation', 'uri')
+        uris.add(uri)
+
+    # Locations for @kind path-problem
+    # e.g. sarif_struct['runs'][0]['results'][22]['codeFlows'][0]['threadFlows'][0]['locations'][1]['location']
+    for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
+        if 'codeFlows' in S.get(sarif_struct, 'runs', runi, 'results', resi).keys():
+            locations = S.get(sarif_struct, 'runs', runi, 'results', resi, 'codeFlows', 0,
+                              'threadFlows', 0, 'locations')
+            for loci in range(0, len(locations)):
+                uri = S.get(locations, loci, 'location', 'physicalLocation',
+                            'artifactLocation', 'uri')
+                uris.add(uri)
+# Dump the file names
 uris = list(uris)
 uris.sort()
 for u in uris:
