@@ -1,8 +1,17 @@
 import sys
+import os
 
 MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
+
+def load_lines(root, path, line_from, line_to):
+    """Load the line range [line_from, line_to], including both, 
+    from the file at root/path.  Lines are counted from 1.  Newlines are dropped."""
+    fname = os.path.join(root, path)
+    with open(fname, 'r') as file:
+        lines = file.readlines()
+        return [line.strip() for line in lines[line_from-1 : line_to-1+1]]
 
 def lineinfo(region):
     """ Return sensible values for start/end line/columns for the possibly empty
@@ -33,4 +42,9 @@ def get(sarif_struct, *path):
 def msg(message):
     """ Print message to stdout """
     sys.stdout.write(message)
-    
+
+def dbg(message):
+    """ Print message to stderr """
+    sys.stdout.flush()
+    sys.stderr.write(message)
+    sys.stderr.flush()

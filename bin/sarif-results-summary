@@ -7,6 +7,8 @@ import collections
 
 parser = argparse.ArgumentParser(description='summary of results')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+parser.add_argument('-s', '--list-source', metavar='srcroot', type=str,
+                    help='list source snippets using srcroot as sarif SRCROOT')
 
 args = parser.parse_args()
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
@@ -28,3 +30,9 @@ for runi in S.indices(sarif_struct, 'runs'):
         l1, c1, l2, c2 = S.lineinfo(region)
         filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
         S.msg("%s: %s\n\n" % (filepath, message))
+        if args.list_source:
+            lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+            for line in lines:
+                S.msg("%s" % (line))
+                S.msg("\n")
+        S.msg("\n")
