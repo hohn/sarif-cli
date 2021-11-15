@@ -7,11 +7,16 @@ if sys.version_info < MIN_PYTHON:
 
 def load_lines(root, path, line_from, line_to):
     """Load the line range [line_from, line_to], including both, 
-    from the file at root/path.  Lines are counted from 1.  Newlines are dropped."""
+    from the file at root/path.  
+    Lines are counted from 1.  
+    Use 1 space for each tab.  This seems to be the codeql handling for beginning of line.
+    Newlines are dropped.
+    """
     fname = os.path.join(root, path)
     with open(fname, 'r') as file:
         lines = file.readlines()
-        return [line.rstrip("\n\r") for line in lines[line_from-1 : line_to-1+1]]
+        return [line.rstrip("\n\r").replace("\t", " ")
+                for line in lines[line_from-1 : line_to-1+1]]
 
 def lineinfo(region):
     """ Return sensible values for start/end line/columns for the possibly empty
