@@ -2,6 +2,7 @@
 import argparse
 import json
 import sarif_cli as S
+import re
 import sys
 import collections
 
@@ -20,7 +21,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                      'semmle.sourceLanguage')
     S.msg("Found %d results for %s\n" %  (num_results, language))
     if num_results == 0: continue
-
+    # 
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
         message = S.get(sarif_struct, 'runs', runi, 'results', resi, 'message', 'text')
         artifact = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
@@ -32,7 +33,16 @@ for runi in S.indices(sarif_struct, 'runs'):
         S.msg("%s: %s\n\n" % (filepath, message))
         if args.list_source:
             lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-            for line in lines:
+            for line, line_num in zip(lines, range(l1, l2+1)):
+                # Display the line
                 S.msg("%s" % (line))
                 S.msg("\n")
+                # Print the underline
+                underline = S.underline_for_result(l1, c1, l2, c2, line, line_num)
+                S.msg(underline)
+                # Next result
+                S.msg("\n")
         S.msg("\n")
+
+
+

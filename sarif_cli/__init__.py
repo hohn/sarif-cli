@@ -1,9 +1,48 @@
 import sys
 import os
+import re
 
 MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
+
+def underline_for_result(first_line, first_column, last_line, last_column, line, line_num):
+    """Provide the underline for a result line.
+
+    first_line, first_column, last_line, last_column : 
+        the region from S.lineinfo(region)
+    line: 
+        the line of source
+    line_num:  
+        the index of line, must satisfy first_line <= line_num <= last_line
+    """
+    # Underline the affected region
+    # col_* use the [start, end) indexing
+    #   From the first non-whitespace char
+    match = re.search("([^\s])+", line)
+    if match:
+        col_from = match.span()[0]
+    else:
+        col_from = 0
+    #   To the last non-whitespace char
+    match = re.search("(\s)+$", line)
+    if match:
+        col_to = match.span()[0]
+    else:
+        col_to = len(line)
+    #   Use 1-indexing
+    col_from += 1 ; col_to += 1
+    #   Adjust first line
+    if line_num == first_line:
+        col_from = max(col_from, first_column)
+    #   Adjust last line
+    if line_num == last_line:
+        col_to = min(col_to, last_column)
+    #   Use 0-indexing
+    col_from -= 1 ; col_to -= 1
+    # Return the underline
+    return " " * col_from + "^" * (col_to - col_from)
+    
 
 def load_lines(root, path, line_from, line_to):
     """Load the line range [line_from, line_to], including both, 
