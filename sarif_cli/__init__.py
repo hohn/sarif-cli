@@ -11,7 +11,7 @@ def load_lines(root, path, line_from, line_to):
     fname = os.path.join(root, path)
     with open(fname, 'r') as file:
         lines = file.readlines()
-        return [line.strip() for line in lines[line_from-1 : line_to-1+1]]
+        return [line.rstrip("\n\r") for line in lines[line_from-1 : line_to-1+1]]
 
 def lineinfo(region):
     """ Return sensible values for start/end line/columns for the possibly empty
