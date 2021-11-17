@@ -17,6 +17,7 @@ with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
 # File name collection
 uris = set()
 
+# TODO: list files from the relatedLocations property
 # Traverse all runs
 for runi in S.indices(sarif_struct, 'runs'):
     # Make sure there are some results
