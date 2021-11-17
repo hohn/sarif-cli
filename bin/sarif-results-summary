@@ -37,14 +37,7 @@ for runi in S.indices(sarif_struct, 'runs'):
         if args.list_source:
             lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
             for line, line_num in zip(lines, range(l1, l2+1)):
-                # Display the line
-                S.msg("%s" % (line))
-                S.msg("\n")
-                # Print the underline
-                underline = S.underline_for_result(l1, c1, l2, c2, line, line_num)
-                S.msg(underline)
-                # Next result
-                S.msg("\n")
+                S.display_underlined(l1, c1, l2, c2, line, line_num)
         if args.related_locations:
             # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
             relatedLocations = results.get('relatedLocations', None)
@@ -60,12 +53,5 @@ for runi in S.indices(sarif_struct, 'runs'):
                     if args.list_source:
                         lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
                         for line, line_num in zip(lines, range(l1, l2+1)):
-                            # Display the line
-                            S.msg("%s" % (line))
-                            S.msg("\n")
-                            # Print the underline
-                            underline = S.underline_for_result(l1, c1, l2, c2, line, line_num)
-                            S.msg(underline)
-                            # Next result
-                            S.msg("\n")
+                            S.display_underlined(l1, c1, l2, c2, line, line_num)
         S.msg("\n")

@@ -6,6 +6,22 @@ MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
 
+def display_underlined(l1, c1, l2, c2, line, line_num):
+    """ Display the given line followed by a second line with underscores at the locations.
+    
+    l1, c1, l2, c2: the line/column range
+    line: the line of text
+    line_num: the line number for the text, used with the line/column range
+    """
+    # Display the line
+    msg("%s" % (line))
+    msg("\n")
+    # Print the underline
+    underline = underline_for_result(l1, c1, l2, c2, line, line_num)
+    msg(underline)
+    # Next result
+    msg("\n")
+
 def underline_for_result(first_line, first_column, last_line, last_column, line, line_num):
     """Provide the underline for a result line.
 
