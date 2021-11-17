@@ -52,6 +52,9 @@ def load_lines(root, path, line_from, line_to):
     Newlines are dropped.
     """
     fname = os.path.join(root, path)
+    if not os.path.exists(fname):
+        dbg("Missing file: %s" % fname)
+        return []
     with open(fname, 'r') as file:
         lines = file.readlines()
         return [line.rstrip("\n\r").replace("\t", " ")
