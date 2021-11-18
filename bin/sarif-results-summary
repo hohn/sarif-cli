@@ -39,10 +39,8 @@ for runi in S.indices(sarif_struct, 'runs'):
             relatedLocations = result.get('relatedLocations', None)
             if type(relatedLocations) == list:
                 # Linking is explicit in output, so no need to get id(s) from message string.
-                for relo_i in S.indices(relatedLocations):
-                    message = S.get(relatedLocations, relo_i, 'message', 'text')
-                    artifact = S.get(relatedLocations, relo_i, 'physicalLocation', 'artifactLocation')
-                    region = S.get(relatedLocations, relo_i, 'physicalLocation', 'region')
+                for relo in relatedLocations:
+                    message, artifact, region = S.get_relatedlocation_message_info(relo)
                     l1, c1, l2, c2 = S.lineinfo(region)
                     filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
                     S.msg("info: %s: %s\n\n" % (filepath, message))

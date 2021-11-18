@@ -6,6 +6,17 @@ MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
 
+def get_relatedlocation_message_info(related_location):
+    """ Given a relatedLocation, extract message information.
+
+    The relatedLocation typically starts from 
+    get(sarif_struct, 'runs', [int], 'results', [int], 'relatedLocations', [int])
+    """
+    message = get(related_location, 'message', 'text')
+    artifact = get(related_location, 'physicalLocation', 'artifactLocation')
+    region = get(related_location, 'physicalLocation', 'region')
+    return message, artifact, region
+
 def get_location_message_info(result):
     """ Given one of the results, extract message information.
 
