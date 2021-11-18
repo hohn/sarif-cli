@@ -26,9 +26,7 @@ for runi in S.indices(sarif_struct, 'runs'):
     # 
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
         result = S.get(sarif_struct, 'runs', runi, 'results', resi)
-        message = S.get(result, 'message', 'text')
-        artifact = S.get(result, 'locations', 0, 'physicalLocation', 'artifactLocation')
-        region = S.get(result,  'locations', 0, 'physicalLocation', 'region')
+        message, artifact, region = S.get_location_message_info(result)
         l1, c1, l2, c2 = S.lineinfo(region)
         filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
         S.msg("%s: %s\n\n" % (filepath, message))

@@ -6,6 +6,16 @@ MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
 
+def get_location_message_info(result):
+    """ Given one of the results, extract message information.
+
+    The `result` typically starts from get(sarif_struct, 'runs', run_index, 'results', res_index)
+    """
+    message = get(result, 'message', 'text')
+    artifact = get(result, 'locations', 0, 'physicalLocation', 'artifactLocation')
+    region = get(result,  'locations', 0, 'physicalLocation', 'region')
+    return (message, artifact, region)
+
 def display_underlined(l1, c1, l2, c2, line, line_num):
     """ Display the given line followed by a second line with underscores at the locations.
     
@@ -26,7 +36,7 @@ def underline_for_result(first_line, first_column, last_line, last_column, line,
     """Provide the underline for a result line.
 
     first_line, first_column, last_line, last_column : 
-        the region from S.lineinfo(region)
+        the region from lineinfo(region)
     line: 
         the line of source
     line_num:  
@@ -109,5 +119,5 @@ def msg(message):
 def dbg(message):
     """ Print message to stderr """
     sys.stdout.flush()
-    sys.stderr.write(message)
+    sys.stderr.write("warning: %s" % message)
     sys.stderr.flush()
