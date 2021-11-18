@@ -25,12 +25,10 @@ for runi in S.indices(sarif_struct, 'runs'):
     if num_results == 0: continue
     # 
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
-        results = S.get(sarif_struct, 'runs', runi, 'results', resi)
-        message = S.get(sarif_struct, 'runs', runi, 'results', resi, 'message', 'text')
-        artifact = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
-                         'physicalLocation', 'artifactLocation')
-        region = S.get(sarif_struct, 'runs', runi, 'results', resi, 'locations', 0,
-                       'physicalLocation', 'region')
+        result = S.get(sarif_struct, 'runs', runi, 'results', resi)
+        message = S.get(result, 'message', 'text')
+        artifact = S.get(result, 'locations', 0, 'physicalLocation', 'artifactLocation')
+        region = S.get(result,  'locations', 0, 'physicalLocation', 'region')
         l1, c1, l2, c2 = S.lineinfo(region)
         filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
         S.msg("%s: %s\n\n" % (filepath, message))
@@ -40,7 +38,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                 S.display_underlined(l1, c1, l2, c2, line, line_num)
         if args.related_locations:
             # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
-            relatedLocations = results.get('relatedLocations', None)
+            relatedLocations = result.get('relatedLocations', None)
             if type(relatedLocations) == list:
                 # Linking is explicit in output, so no need to get id(s) from message string.
                 for relo_i in S.indices(relatedLocations):
