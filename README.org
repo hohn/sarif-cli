@@ -1,5 +1,5 @@
 * Collection of cli tools for SARIF processing 
-  This is a work in progress; the plan is as follows:
+  *THIS IS A WORK IN PROGRESS*
 
   Each of these tools present a high-level command-line interface to extract a
   specific subset of information from a SARIF file.  The format of each tool's
@@ -7,10 +7,17 @@
 
   It is the intent of these tools to
   - hide the internals of sarif when /used/
-  - provide examples of extracting information from sarif files while writing your
-    own or extending the tools
+  - provide examples of extracting information from SARIF files /while writing
+    your own/ or extending the tools
 
 * Setup for development
+  This repository uses =git lfs= for some larger files; installation steps are at
+  [[https://git-lfs.github.com][git-lfs]]; on a mac with homebrew, install it via
+  #+BEGIN_SRC sh
+    brew install git-lfs
+    git lfs install
+  #+END_SRC
+
   Set up the virtual environment and install the packages:
   # pip freeze > requirements.txt
   #+BEGIN_SRC sh
@@ -47,7 +54,8 @@
     ]
   #+end_src
 
-* Commands
+# * Commands
+
 
 
 
