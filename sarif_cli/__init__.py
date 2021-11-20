@@ -11,6 +11,11 @@ def get_relatedlocation_message_info(related_location):
 
     The relatedLocation typically starts from 
     get(sarif_struct, 'runs', [int], 'results', [int], 'relatedLocations', [int])
+
+    For a threadFlow, extract message information for a location contained in it.
+
+    The location typically starts from 
+    get(sarif_struct, 'runs', _i, 'results', _i, 'codeFlows', _i, 'threadFlows', _i, 'locations', _i) 
     """
     message = get(related_location, 'message', 'text')
     artifact = get(related_location, 'physicalLocation', 'artifactLocation')

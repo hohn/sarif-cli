@@ -19,33 +19,46 @@ with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
 
 for runi in S.indices(sarif_struct, 'runs'):
     num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
-    language = S.get(sarif_struct, 'runs', runi, 'properties',
-                     'semmle.sourceLanguage')
-    S.msg("Found %d results for %s\n" %  (num_results, language))
     if num_results == 0: continue
     # 
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
         result = S.get(sarif_struct, 'runs', runi, 'results', resi)
-        message, artifact, region = S.get_location_message_info(result)
-        l1, c1, l2, c2 = S.lineinfo(region)
-        filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
-        S.msg("%s: %s\n\n" % (filepath, message))
-        if args.list_source:
-            lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-            for line, line_num in zip(lines, range(l1, l2+1)):
-                S.display_underlined(l1, c1, l2, c2, line, line_num)
-        if args.related_locations:
-            # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
-            relatedLocations = result.get('relatedLocations', None)
-            if type(relatedLocations) == list:
-                # Linking is explicit in output, so no need to get id(s) from message string.
-                for relo in relatedLocations:
-                    message, artifact, region = S.get_relatedlocation_message_info(relo)
-                    l1, c1, l2, c2 = S.lineinfo(region)
-                    filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
-                    S.msg("info: %s: %s\n\n" % (filepath, message))
-                    if args.list_source:
-                        lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-                        for line, line_num in zip(lines, range(l1, l2+1)):
-                            S.display_underlined(l1, c1, l2, c2, line, line_num)
+        if 'locations' in result:
+            # Non-path problems
+            message, artifact, region = S.get_location_message_info(result)
+            l1, c1, l2, c2 = S.lineinfo(region)
+            filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+            S.msg("RESULT: %s: %s\n\n" % (filepath, message))
+            if args.list_source:
+                lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                for line, line_num in zip(lines, range(l1, l2+1)):
+                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+            if args.related_locations:
+                # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
+                relatedLocations = result.get('relatedLocations', None)
+                if type(relatedLocations) == list:
+                    # Linking is explicit in output, so no need to get id(s) from message string.
+                    for relo in relatedLocations:
+                        message, artifact, region = S.get_relatedlocation_message_info(relo)
+                        l1, c1, l2, c2 = S.lineinfo(region)
+                        filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+                        S.msg("REFERENCE: %s: %s\n\n" % (filepath, message))
+                        if args.list_source:
+                            lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                            for line, line_num in zip(lines, range(l1, l2+1)):
+                                S.display_underlined(l1, c1, l2, c2, line, line_num)
+        if 'codeFlows' in result:
+            # Path problems
+            for codeFlow in S.get(result, 'codeFlows'):
+                for threadFlow in S.get(codeFlow, 'threadFlows'):
+                    for loci in S.indices(threadFlow, 'locations'):
+                        location = S.get(threadFlow, 'locations', loci, 'location')
+                        message, artifact, region = S.get_relatedlocation_message_info(location)
+                        l1, c1, l2, c2 = S.lineinfo(region)
+                        filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+                        S.msg("FLOW STEP %d: %s: %s\n\n" % (loci, filepath, message))
+                        if args.list_source:
+                            lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                            for line, line_num in zip(lines, range(l1, l2+1)):
+                                S.display_underlined(l1, c1, l2, c2, line, line_num)
         S.msg("\n")
