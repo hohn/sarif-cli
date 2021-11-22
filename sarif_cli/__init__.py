@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+import codecs
 
 MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
@@ -97,7 +98,7 @@ def load_lines(root, path, line_from, line_to):
     if not os.path.exists(fname):
         dbg("Missing file: %s" % fname)
         return []
-    with open(fname, 'r') as file:
+    with codecs.open(fname, 'r', encoding="latin-1") as file:
         lines = file.readlines()
         return [line.rstrip("\n\r").replace("\t", " ")
                 for line in lines[line_from-1 : line_to-1+1]]
