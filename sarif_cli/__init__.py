@@ -2,10 +2,20 @@ import sys
 import os
 import re
 import codecs
+import csv
 
 MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
+
+def get_csv_writer():
+    """ Set up and return the default csv writer on stdout.
+    """
+    return csv.writer(sys.stdout, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+
+def write_csv(writer, *columns):
+    """ Print via `writer`, with some additional processing """
+    writer.writerow(columns)
 
 def get_relatedlocation_message_info(related_location):
     """ Given a relatedLocation, extract message information.

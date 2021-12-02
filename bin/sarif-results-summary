@@ -12,10 +12,16 @@ parser.add_argument('-s', '--list-source', metavar='srcroot', type=str,
                     help='list source snippets using srcroot as sarif SRCROOT')
 parser.add_argument('-r', '--related-locations', action="store_true",
                     help='list related locations like "hides [parameter](1)"')
+# TODO mutually exclusive options
+parser.add_argument('-c', '--csv', action="store_true",
+                    help='output csv instead of human-readable summary')
 
 args = parser.parse_args()
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
     sarif_struct = json.load(fp)
+
+if args.csv:
+    cw = S.get_csv_writer()
 
 for runi in S.indices(sarif_struct, 'runs'):
     num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
@@ -25,14 +31,21 @@ for runi in S.indices(sarif_struct, 'runs'):
         result = S.get(sarif_struct, 'runs', runi, 'results', resi)
         if 'locations' in result:
             # Non-path problems
+            # TODO: just pull out the uri, not the artifact
             message, artifact, region = S.get_location_message_info(result)
             l1, c1, l2, c2 = S.lineinfo(region)
             filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
-            S.msg("RESULT: %s: %s\n\n" % (filepath, message))
+            if args.csv:
+                S.write_csv(cw, "result", artifact['uri'], l1, c1, l2, c2, message)
+            else:
+                S.msg("RESULT: %s: %s\n\n" % (filepath, message))
             if args.list_source:
                 lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-                for line, line_num in zip(lines, range(l1, l2+1)):
-                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+                if args.csv:
+                    pass
+                else:
+                    for line, line_num in zip(lines, range(l1, l2+1)):
+                        S.display_underlined(l1, c1, l2, c2, line, line_num)
             if args.related_locations:
                 # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
                 relatedLocations = result.get('relatedLocations', None)
@@ -42,11 +55,17 @@ for runi in S.indices(sarif_struct, 'runs'):
                         message, artifact, region = S.get_relatedlocation_message_info(relo)
                         l1, c1, l2, c2 = S.lineinfo(region)
                         filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
-                        S.msg("REFERENCE: %s: %s\n\n" % (filepath, message))
+                        if args.csv:
+                            S.write_csv(cw, "result", artifact['uri'], l1, c1, l2, c2, message)
+                        else:
+                            S.msg("REFERENCE: %s: %s\n\n" % (filepath, message))
                         if args.list_source:
                             lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-                            for line, line_num in zip(lines, range(l1, l2+1)):
-                                S.display_underlined(l1, c1, l2, c2, line, line_num)
+                            if args.csv:
+                                pass
+                            else:
+                                for line, line_num in zip(lines, range(l1, l2+1)):
+                                    S.display_underlined(l1, c1, l2, c2, line, line_num)
         if 'codeFlows' in result:
             # Path problems
             for codeFlow in S.get(result, 'codeFlows'):
@@ -56,9 +75,18 @@ for runi in S.indices(sarif_struct, 'runs'):
                         message, artifact, region = S.get_relatedlocation_message_info(location)
                         l1, c1, l2, c2 = S.lineinfo(region)
                         filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
-                        S.msg("FLOW STEP %d: %s: %s\n\n" % (loci, filepath, message))
+                        if args.csv:
+                            S.write_csv(cw, "flow_step", loci, artifact['uri'], l1, c1, l2, c2, message)
+                        else:
+                            S.msg("FLOW STEP %d: %s: %s\n\n" % (loci, filepath, message))
                         if args.list_source:
                             lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
-                            for line, line_num in zip(lines, range(l1, l2+1)):
-                                S.display_underlined(l1, c1, l2, c2, line, line_num)
-        S.msg("\n")
+                            if args.csv:
+                                pass
+                            else:
+                                for line, line_num in zip(lines, range(l1, l2+1)):
+                                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+        if args.csv:
+            pass
+        else:
+            S.msg("\n")
