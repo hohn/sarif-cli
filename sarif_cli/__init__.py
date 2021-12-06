@@ -18,6 +18,12 @@ class NoFile:
     whole file is to be used.
     """
 
+def is_sarif_struct(struct):
+    """A quick check to verify that `struct` is in fact a SARIF tree.
+    """
+    return type(struct) == dict and "$schema" in struct and \
+        "sarif" in struct["$schema"] and "version" in struct
+
 def get_csv_writer():
     """ Set up and return the default csv writer on stdout.
     """

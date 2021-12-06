@@ -23,6 +23,14 @@ with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
 if args.csv:
     cw = S.get_csv_writer()
 
+if not S.is_sarif_struct(sarif_struct):
+    if args.csv:
+        S.write_csv(cw, "ERROR", "invalid json contents %s", args.file)
+    else:
+        S.msg("ERROR: invalid json contents in %s\n" % (args.file))
+    S.dbg("invalid json contents in %s\n" % (args.file))
+    sys.exit(0)                 # No failure, just a warning
+
 for runi in S.indices(sarif_struct, 'runs'):
     num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
     if num_results == 0: continue
