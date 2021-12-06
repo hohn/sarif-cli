@@ -33,13 +33,17 @@ for runi in S.indices(sarif_struct, 'runs'):
             # Non-path problems
             # TODO: just pull out the uri, not the artifact
             message, artifact, region = S.get_location_message_info(result)
-            l1, c1, l2, c2 = S.lineinfo(region)
+            if region == S.WholeFile:
+                l1, c1, l2, c2 = -1, -1, -1, -1
+            else:
+                l1, c1, l2, c2 = S.lineinfo(region)
             filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
             if args.csv:
                 S.write_csv(cw, "result", artifact['uri'], l1, c1, l2, c2, message)
             else:
                 S.msg("RESULT: %s: %s\n\n" % (filepath, message))
-            if args.list_source:
+
+            if region != S.WholeFile and args.list_source:
                 lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
                 if args.csv:
                     pass

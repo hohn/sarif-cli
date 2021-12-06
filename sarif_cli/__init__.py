@@ -33,14 +33,22 @@ def get_relatedlocation_message_info(related_location):
     region = get(related_location, 'physicalLocation', 'region')
     return message, artifact, region
 
+class WholeFile:
+    pass
+
 def get_location_message_info(result):
     """ Given one of the results, extract message information.
 
     The `result` typically starts from get(sarif_struct, 'runs', run_index, 'results', res_index)
+
+    Returns: (message, artifact, region)
+        For an empty 'region' key, returns (message, artifact, sarif_cli.WholeFile)
+
     """
     message = get(result, 'message', 'text')
     artifact = get(result, 'locations', 0, 'physicalLocation', 'artifactLocation')
-    region = get(result,  'locations', 0, 'physicalLocation', 'region')
+    # If there is no 'region' key, use the whole file
+    region = get(result,  'locations', 0, 'physicalLocation').get('region', WholeFile)
     return (message, artifact, region)
 
 def display_underlined(l1, c1, l2, c2, line, line_num):
