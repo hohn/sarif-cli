@@ -14,8 +14,7 @@ class WholeFile:
     """
 
 class NoFile:
-    """ Special case handling: use this class for non-existent regions where the
-    whole file is to be used.
+    """ Special case handling: use this class when no file is available.
     """
 
 def is_sarif_struct(struct):
