@@ -8,6 +8,16 @@ MIN_PYTHON = (3, 7)
 if sys.version_info < MIN_PYTHON:
     sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON)
 
+class WholeFile:
+    """ Special case handling: use this class for non-existent regions where the
+    whole file is to be used.
+    """
+
+class NoFile:
+    """ Special case handling: use this class for non-existent regions where the
+    whole file is to be used.
+    """
+
 def get_csv_writer():
     """ Set up and return the default csv writer on stdout.
     """
@@ -23,18 +33,21 @@ def get_relatedlocation_message_info(related_location):
     The relatedLocation typically starts from 
     get(sarif_struct, 'runs', [int], 'results', [int], 'relatedLocations', [int])
 
-    For a threadFlow, extract message information for a location contained in it.
+    When used for a threadFlow, extract message information for a location contained in it.
 
-    The location typically starts from 
+    In this case, the location typically starts from 
     get(sarif_struct, 'runs', _i, 'results', _i, 'codeFlows', _i, 'threadFlows', _i, 'locations', _i) 
+
+    Returns:  (message, artifact, region) by default
+        For an empty 'physicalLocation' key, returns (message, sarif_cli.NoFile, sarif_cli.NoFile)
     """
     message = get(related_location, 'message', 'text')
-    artifact = get(related_location, 'physicalLocation', 'artifactLocation')
-    region = get(related_location, 'physicalLocation', 'region')
+    if 'physicalLocation' in related_location: 
+        artifact = get(related_location, 'physicalLocation', 'artifactLocation')
+        region = get(related_location, 'physicalLocation', 'region')
+    else:
+        artifact, region = NoFile, NoFile
     return message, artifact, region
-
-class WholeFile:
-    pass
 
 def get_location_message_info(result):
     """ Given one of the results, extract message information.
