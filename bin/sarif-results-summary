@@ -71,6 +71,10 @@ for runi in S.indices(sarif_struct, 'runs'):
                             else:
                                 S.msg("REFERENCE: %s: %s\n\n" % ("<NoFile>", message))
                         else:
+                            if region == S.WholeFile:
+                                l1, c1, l2, c2 = -1, -1, -1, -1
+                            else:
+                                l1, c1, l2, c2 = S.lineinfo(region)
                             l1, c1, l2, c2 = S.lineinfo(region)
                             filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
                             if args.csv:
@@ -97,7 +101,10 @@ for runi in S.indices(sarif_struct, 'runs'):
                             else:
                                 S.msg("FLOW STEP %d: %s: %s\n\n" % (loci, "<NoFile>", message))
                         else:
-                            l1, c1, l2, c2 = S.lineinfo(region)
+                            if region == S.WholeFile:
+                                l1, c1, l2, c2 = -1, -1, -1, -1
+                            else:
+                                l1, c1, l2, c2 = S.lineinfo(region)
                             filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
                             if args.csv:
                                 S.write_csv(cw, "flow_step", loci, artifact['uri'], l1, c1, l2, c2, message)

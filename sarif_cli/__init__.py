@@ -45,11 +45,13 @@ def get_relatedlocation_message_info(related_location):
 
     Returns:  (message, artifact, region) by default
         For an empty 'physicalLocation' key, returns (message, sarif_cli.NoFile, sarif_cli.NoFile)
+        For an empty 'region' key, returns (message, artifact, sarif_cli.WholeFile)
     """
     message = get(related_location, 'message', 'text')
     if 'physicalLocation' in related_location: 
-        artifact = get(related_location, 'physicalLocation', 'artifactLocation')
-        region = get(related_location, 'physicalLocation', 'region')
+        ploc = get(related_location, 'physicalLocation')
+        artifact = ploc.get('artifactLocation')
+        region = ploc.get('region', WholeFile)
     else:
         artifact, region = NoFile, NoFile
     return message, artifact, region
