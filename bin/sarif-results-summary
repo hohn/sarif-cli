@@ -75,7 +75,6 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 l1, c1, l2, c2 = -1, -1, -1, -1
                             else:
                                 l1, c1, l2, c2 = S.lineinfo(region)
-                            l1, c1, l2, c2 = S.lineinfo(region)
                             filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
                             if args.csv:
                                 S.write_csv(cw, "result", artifact['uri'], l1, c1, l2, c2, message)
