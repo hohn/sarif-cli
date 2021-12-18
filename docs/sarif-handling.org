@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+* Output of multi-value results
+** Multiple message values, no flow path
+   Results of the query https://lgtm.com/query/rule:1790078/lang:javascript/ are
+   reported via the =select=
+   #+BEGIN_SRC text
+     select first, "Character '" + first + 
+     "' is repeated $@ in the same character class.", repeat, "here"
+   #+END_SRC
+   and the json/yaml file has entries
+   #+BEGIN_SRC text
+     message:
+       text: |-
+         Character ''' is repeated [here](1) in the same character class.
+         Character ''' is repeated [here](2) in the same character class.
+         Character ''' is repeated [here](3) in the same character class.
+   #+END_SRC
+
+   Their display in lgtm is [[https://lgtm.com/projects/g/treeio/treeio/snapshot/6b914d98b0a86ae9996945bd501e133d0f73ec6e/files/static/js/tinymce/jscripts/tiny_mce/plugins/paste/editor_plugin_src.js#x7820a043f81b48cd:1][here]].
+   
+   Multiple values of =first= produce distinct multiple results, multiple values of
+   =repeat= produce multiple =relatedLocations= within one =results= array entry.
+
+   #+BEGIN_SRC text
+     relatedLocations:
+       - id: 1
+         physicalLocation:
+           artifactLocation:
+             uri: static/js/tinymce/jscripts/tiny_mce/plugins/paste/editor_plugin_src.js
+             uriBaseId: '%SRCROOT%'
+             index: 41
+           region:
+             startLine: 722
+             startColumn: 74
+             endColumn: 75
+         message:
+           text: here
+       - id: 2
+         ...
+       - id: 3
+         ...
+   #+END_SRC
+
+   This is consistent with the use of =first= as an anchor for alerts and for path
+   problems.
+
+   However, things get more complicated when there are flow paths.  Thus, the
+   approach of section [[*Multiple message values and flow paths][Multiple message values and flow paths]] should also be used
+   here for consistency.
+
+   See also
+   - Full results:  [[../data/treeio/results.yaml]]
+   - Trimmed test set:  [[../data/treeio/test_set_1.yaml]]
+
+** Multiple message values and flow paths
+   The query =com.lgtm/javascript-queries:js/unsafe-jquery-plugin=
+   (full version [[https://github.com/github/codeql/blob/codeql-cli/v2.7.3/javascript/ql/src/Security/CWE-079/UnsafeJQueryPlugin.ql][CWE-079/UnsafeJQueryPlugin.ql]], lgtm.com results [[https://lgtm.com/projects/g/treeio/treeio?mode=list&id=js%2Funsafe-jquery-plugin][here]])
+   has =select=
+   #+begin_src javascript
+     select sink.getNode(), source, sink, "Potential XSS vulnerability in the $@.", plugin,
+       "'$.fn." + plugin.getPluginName() + "' plugin"
+   #+end_src
+
+   Results are
+   #+BEGIN_SRC text
+     message:
+       text: |-
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](1).
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](2).
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](3).
+   #+END_SRC
+   with 3 =relatedLocations= and 6 =threadFlows=.
+
+   The the original query's first column is a sink (=sink.getNode()=), so the
+   =threadFlows= should terminate there -- and they do.
+   #+BEGIN_SRC text
+     locations:
+       - physicalLocation:
+           artifactLocation:
+             uri: static/js/jquery-ui-1.10.3/ui/jquery.ui.datepicker.js
+             uriBaseId: '%SRCROOT%'
+             index: 61
+           region:
+             startLine: 1027
+             startColumn: 6
+             endColumn: 14
+   #+END_SRC
+
+   In the above query, the =source= is connected to the =plugin= (possibly
+   restricting the result set), 
+   and for this particular result, the first two =threadFlows=' first locations are
+   contained in the first =relatedLocation='s line range.
+   Similarly, =threadFlows= 2 & 3 are contained in the second =relatedLocation=.
+
+   This need not be visible from the output by itself, but we can 
+   assume the results are a straight nested product:
+   $$  1\ result 
+   \times 3\ {relatedLocations\over result}
+   \times 2\ {threadFlows \over location}
+   $$
+
+   This way, we can group a =relatedLocation= with one or more =threadFlows= and
+   thus separate one of these clusters into separate results for cleaner
+   exporting / viewing.
+
+   Instead of
+   #+BEGIN_SRC yaml
+     - message
+       - text: |-
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](1).
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](2).
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](3).
+     - relatedLocations
+       - id 1
+       - id 2
+       - id 3
+     - codeFlows
+       - threadFlows
+       - threadFlows
+       - threadFlows
+       - threadFlows
+       - threadFlows
+       - threadFlows
+   #+END_SRC
+     
+   this becomes a triple, with the first one:
+   
+   #+BEGIN_SRC yaml
+     - message
+       - text: |-
+         Potential XSS vulnerability in the ['$.fn.datepicker' plugin](1).
+     - relatedLocations
+       - id 1
+     - codeFlows
+       - threadFlows
+       - threadFlows
+   #+END_SRC
+
+   As a note, the standard's [[https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/sarif-v2.1.0-os.html#_Toc34317744][3.37 threadFlow object]] entry does not connect the
+   two, and a query may or may not connect them.  Even if the there is a logical
+   connection, there need not be a physical (location) connection, so a
+   =threadFlow='s region may or may not overlap with a =relatedLocation='s.
+
+
+# 
+#+OPTIONS: ^:{}
+
