@@ -141,6 +141,16 @@
    connection, there need not be a physical (location) connection, so a
    =threadFlow='s region may or may not overlap with a =relatedLocation='s.
 
+   Using
+   #+BEGIN_SRC sh
+     sarif-results-summary \
+         -s data/treeio/treeio \
+         -r data/treeio/results.sarif | \
+         sed -n "/modal-form.html:89:35:93:14/,/RESULT/p" |less
+   #+END_SRC
+   we see a query result with  3 =relatedLocations= and 3 =threadFlows= with very
+   obvious connections between them.  More importantly, the ordering is
+   consistent. 
 
 # 
 #+OPTIONS: ^:{}
