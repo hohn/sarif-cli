@@ -174,5 +174,5 @@ def msg(message):
 def dbg(message):
     """ Print message to stderr """
     sys.stdout.flush()
-    sys.stderr.write("warning: %s" % message)
+    sys.stderr.write("warning: %s\n" % message)
     sys.stderr.flush()
