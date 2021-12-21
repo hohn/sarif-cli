@@ -61,7 +61,8 @@
        "'$.fn." + plugin.getPluginName() + "' plugin"
    #+end_src
 
-   Results are
+   The full results are found in [[file:../data/treeio/results.yaml::Potential XSS vulnerability in the \['$.fn.datepicker' plugin\](1).][results.yaml]], with a testing subset in [[file:../data/treeio/test_set_1.yaml::Potential XSS vulnerability in the \['$.fn.datepicker'
+ plugin\](1).][test_set_1.yaml]]; the results for this query are 
    #+BEGIN_SRC text
      message:
        text: |-
@@ -71,7 +72,7 @@
    #+END_SRC
    with 3 =relatedLocations= and 6 =threadFlows=.
 
-   The the original query's first column is a sink (=sink.getNode()=), so the
+   The original query's first column is a sink (=sink.getNode()=), so the
    =threadFlows= should terminate there -- and they do.
    #+BEGIN_SRC text
      locations:
@@ -151,6 +152,78 @@
    we see a query result with  3 =relatedLocations= and 3 =threadFlows= with very
    obvious connections between them.  More importantly, the ordering is
    consistent. 
+
+** Multiple message values and source/sink pairs
+   As a special case of [[*Multiple message values and flow paths][Multiple message values and flow paths]], we can report only
+   the (source, sink) pairs and drop the flow paths.  This is useful in result
+   reports spanning many repositories and multiple tools.
+
+   Considering
+   #+BEGIN_SRC text
+     Potential XSS vulnerability in the ['$.fn.datepicker' plugin](1).
+   #+END_SRC
+   found in [[file:../data/treeio/test_set_1.yaml::Potential XSS vulnerability in the \['$.fn.datepicker'    plugin\](1).][test_set_1.yaml]], stripping the =threadFlows= paths, and looking at the
+   first two =threadFlows= gives the following simplified structure.
+   Note that without the flow paths, the first two results are now identical
+   =(source, sink)= pairs; the same holds for 2,3 and 4,5.
+
+   #+BEGIN_SRC yaml
+     - ruleId: com.lgtm/javascript-queries:js/unsafe-jquery-plugin
+       codeFlows:
+         - threadFlows:
+             - locations:
+                 - location:
+                     physicalLocation:
+                       artifactLocation:
+                         uri: static/js/jquery-ui-1.10.3/ui/jquery-ui.js
+                         uriBaseId: '%SRCROOT%'
+                         index: 72
+                       region:
+                         startLine: 9598
+                         startColumn: 28
+                         endColumn: 35
+                     message:
+                       text: options
+                 - location:
+                     physicalLocation:
+                       artifactLocation:
+                         uri: static/js/jquery-ui-1.10.3/ui/jquery.ui.datepicker.js
+                         uriBaseId: '%SRCROOT%'
+                         index: 61
+                       region:
+                         startLine: 1027
+                         startColumn: 6
+                         endColumn: 14
+                     message:
+                       text: altField
+         - threadFlows:
+             - locations:
+                 - location:
+                     physicalLocation:
+                       artifactLocation:
+                         uri: static/js/jquery-ui-1.10.3/ui/jquery-ui.js
+                         uriBaseId: '%SRCROOT%'
+                         index: 72
+                       region:
+                         startLine: 9598
+                         startColumn: 28
+                         endColumn: 35
+                     message:
+                       text: options
+                 - location:
+                     physicalLocation:
+                       artifactLocation:
+                         uri: static/js/jquery-ui-1.10.3/ui/jquery.ui.datepicker.js
+                         uriBaseId: '%SRCROOT%'
+                         index: 61
+                       region:
+                         startLine: 1027
+                         startColumn: 6
+                         endColumn: 14
+                     message:
+                       text: altField
+
+   #+END_SRC
 
 # 
 #+OPTIONS: ^:{}

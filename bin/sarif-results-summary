@@ -12,6 +12,8 @@ parser.add_argument('-s', '--list-source', metavar='srcroot', type=str,
                     help='list source snippets using srcroot as sarif SRCROOT')
 parser.add_argument('-r', '--related-locations', action="store_true",
                     help='list related locations like "hides [parameter](1)"')
+parser.add_argument('-e', '--endpoints-only', action="store_true",
+                    help='only list source and sink, dropping the path.  Identical, successive source/sink pairs are combined')
 # TODO mutually exclusive options
 parser.add_argument('-c', '--csv', action="store_true",
                     help='output csv instead of human-readable summary')
@@ -59,7 +61,6 @@ for runi in S.indices(sarif_struct, 'runs'):
                     for line, line_num in zip(lines, range(l1, l2+1)):
                         S.display_underlined(l1, c1, l2, c2, line, line_num)
             if args.related_locations:
-                # Full path: S.get(sarif_struct, 'runs', runi, 'results', resi, 'relatedLocations')
                 relatedLocations = result.get('relatedLocations', None)
                 if type(relatedLocations) == list:
                     # Linking is explicit in output, so no need to get id(s) from message string.
@@ -89,15 +90,37 @@ for runi in S.indices(sarif_struct, 'runs'):
                                         S.display_underlined(l1, c1, l2, c2, line, line_num)
         if 'codeFlows' in result:
             # Path problems
+            last_codeFlow = None
             for codefi in S.indices(result, 'codeFlows'):
                 codeFlow = S.get(result, 'codeFlows', codefi)
                 if args.csv:
                     S.write_csv(cw, "path", codefi)
                 else:
                     S.msg("PATH %d\n" % codefi)
+                    
                 for threadi in S.indices(codeFlow, 'threadFlows'):
                     threadFlow = S.get(codeFlow, 'threadFlows', threadi)
-                    for loci in S.indices(threadFlow, 'locations'):
+
+                    if args.endpoints_only:
+                        # 
+                        # Pick the range to list only the endpoints (source/sink) of a threadFlow.
+                        # 
+                        t1 = S.indices(threadFlow, 'locations')
+                        location_range = [t1[0], t1[-1]]
+                        # 
+                        # If the previous path had the same (source,sink) pair,
+                        # we don't need to repeat it.
+                        # 
+                        if (last_codeFlow and
+                            ( S.get(last_codeFlow, 'threadFlows', threadi, 'locations', 0) ==
+                              S.get(codeFlow, 'threadFlows', threadi, 'locations', 0)) and
+                            ( S.get(last_codeFlow, 'threadFlows', threadi, 'locations', -1) ==
+                              S.get(codeFlow, 'threadFlows', threadi, 'locations', -1))):
+                            continue
+                    else:
+                        location_range = S.indices(threadFlow, 'locations')
+
+                    for loci in location_range:
                         location = S.get(threadFlow, 'locations', loci, 'location')
                         message, artifact, region = S.get_relatedlocation_message_info(location)
                         if artifact == S.NoFile:
@@ -122,6 +145,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 else:
                                     for line, line_num in zip(lines, range(l1, l2+1)):
                                         S.display_underlined(l1, c1, l2, c2, line, line_num)
+                last_codeFlow = codeFlow
         if args.csv:
             pass
         else:

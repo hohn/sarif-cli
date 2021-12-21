@@ -3,12 +3,23 @@
 
   Each of these tools present a high-level command-line interface to extract a
   specific subset of information from a SARIF file.  The format of each tool's
-  /output/ is versioned and, as much as possible, independent of the input.
+  /output/ will be versioned and, as much as possible, independent of the input.
 
-  It is the intent of these tools to
-  - hide the internals of sarif when /used/
-  - provide examples of extracting information from SARIF files /while writing
-    your own/ or extending the tools
+  For human use and to fit with existing tools, the default output format is
+  line-oriented and resembles compiler error formatting.
+
+  The goal of this tool set is to support working with sarif files 
+  - at the shell / file level, 
+  - across multiple versions of the same sarif result set, 
+  - and across many repositories.
+
+  The implementation language is Python, but that is a detail.  The scripts should
+  work well when used with other shell tools, especially =diff= and =git=.
+
+  # It is the intent of these tools to
+  # - hide the internals of sarif when /used/,
+  # - provide examples of extracting information from SARIF files /while writing
+  #   your own/ or extending the tools.
 
 * Setup for development
   This repository uses =git lfs= for some larger files; installation steps are at
