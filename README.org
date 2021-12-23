@@ -52,59 +52,140 @@
   Following are short summaries of each.
 
 ** =sarif-results-summary=
-   Display the SARIF results in human-readable plain text form. Taking the warning around
+   Display the SARIF results in human-readable plain text form.
+
+   Starting with the =data/wxWidgets= sample and the warning around
    #+BEGIN_SRC text
      src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30:
    #+END_SRC
-   as example, there are two options using only the SARIF file, and one more when
-   source code is available.
+   there are several options using only the SARIF file, and one more when
+   source code is available.  
 
-   1. Display only main result.  Using
-      #+BEGIN_SRC sh
-        sarif-results-summary data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif 2>&1 |\
-            grep LexMySQL.cxx
-      #+END_SRC
-      only displays
-      #+BEGIN_SRC text
-        RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
+   The following show the command and the output, limited to the intended result
+   via =sed=:
+
+   1. Display only main result, using no options.
+      #+BEGIN_SRC shell :results output code :exports both
+        .venv/bin/sarif-results-summary \
+            data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif 2>&1 |\
+            sed -n "/LexMySQL.cxx:153:24:153:30/,/RESULT/p" | sed '$d' 
       #+END_SRC
 
-   2. Display the related information.  Using
-      #+BEGIN_SRC sh
-        sarif-results-summary \
+      #+RESULTS:
+      #+begin_src shell
+      RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
+
+      #+end_src
+
+   2. Display the related information. 
+      #+BEGIN_SRC shell :results output code :exports both
+        .venv/bin/sarif-results-summary \
             -r data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif 2>&1 |\
-            grep -A 2 LexMySQL.cxx
-      #+END_SRC
-      displays
-      #+BEGIN_SRC text
-        RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
-
-        REFERENCE: src/stc/scintilla/lexers/LexMySQL.cxx:108:68:108:74: parameter of the same name
+            sed -n "/LexMySQL.cxx:153:24:153:30/,/RESULT/p" | sed '$d' 
       #+END_SRC
 
-   3. Either display can be supplemented by source code snippets if the source is
-      available.  Using
-      #+BEGIN_SRC sh
-        sarif-results-summary \
+      #+RESULTS:
+      #+begin_src shell
+      RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
+      REFERENCE: src/stc/scintilla/lexers/LexMySQL.cxx:108:68:108:74: parameter of the same name
+
+      #+end_src
+
+   3. Include source code snippets (when the source is available):
+      #+BEGIN_SRC shell :results output code :exports both
+        .venv/bin/sarif-results-summary \
             -s data/wxWidgets-small \
             -r data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif 2>&1 |\
-            grep -A 4 LexMySQL.cxx
+            sed -n "/LexMySQL.cxx:153:24:153:30/,/RESULT/p" | sed '$d' 
       #+END_SRC
-      displays the source code with underlines
-      #+BEGIN_SRC text
-        RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
 
-                  Sci_Position length = sc.LengthCurrent() + 1;
-                               ^^^^^^
-        REFERENCE: src/stc/scintilla/lexers/LexMySQL.cxx:108:68:108:74: parameter of the same name
+      #+RESULTS:
+      #+begin_src shell
+      RESULT: src/stc/scintilla/lexers/LexMySQL.cxx:153:24:153:30: Local variable 'length' hides a [parameter of the same name](1).
+                Sci_Position length = sc.LengthCurrent() + 1;
+                             ^^^^^^
+      REFERENCE: src/stc/scintilla/lexers/LexMySQL.cxx:108:68:108:74: parameter of the same name
+      static void ColouriseMySQLDoc(Sci_PositionU startPos, Sci_Position length, int initStyle, WordList *keywordlists[],
+                                                                         ^^^^^^
 
-        static void ColouriseMySQLDoc(Sci_PositionU startPos, Sci_Position length, int initStyle, WordList *keywordlists[],
-                                                                           ^^^^^^
+      #+end_src
+
+   To illustrate the flow steps options, switch to the =data/treeio= sample:
+   1. Result with flow steps and relatedLocations
+      #+BEGIN_SRC shell :results output code :exports both
+        read -r file srcroot <<< "data/treeio/results.sarif data/treeio/treeio"
+        start="treeio.core.middleware.chat.py:395:29:395:33"
+        .venv/bin/sarif-results-summary -r $file | sed -n "/$start/,/RESULT/p" | sed '$d' 
       #+END_SRC
+
+      #+RESULTS:
+      #+begin_src shell
+      RESULT: treeio/core/middleware/chat.py:395:29:395:33: [Error information](1) may be exposed to an external user
+      REFERENCE: treeio/core/middleware/chat.py:394:50:394:64: Error information
+      PATH 0
+      FLOW STEP 0: treeio/core/middleware/chat.py:394:50:394:64: ControlFlowNode for Attribute()
+      FLOW STEP 1: treeio/core/middleware/chat.py:394:38:394:66: ControlFlowNode for Dict
+      FLOW STEP 2: treeio/core/middleware/chat.py:394:13:394:67: ControlFlowNode for Dict
+      FLOW STEP 3: treeio/core/middleware/chat.py:395:29:395:33: ControlFlowNode for data
+      PATH 1
+      FLOW STEP 0: treeio/core/middleware/chat.py:394:50:394:64: ControlFlowNode for Attribute()
+      FLOW STEP 1: treeio/core/middleware/chat.py:394:46:394:65: ControlFlowNode for str()
+      FLOW STEP 2: treeio/core/middleware/chat.py:394:38:394:66: ControlFlowNode for Dict
+      FLOW STEP 3: treeio/core/middleware/chat.py:394:13:394:67: ControlFlowNode for Dict
+      FLOW STEP 4: treeio/core/middleware/chat.py:395:29:395:33: ControlFlowNode for data
+
+      #+end_src
+
+   2. Result with flow steps, relatedLocations, and source
+      #+BEGIN_SRC shell :results output code :exports both
+        read -r file srcroot <<< "data/treeio/results.sarif data/treeio/treeio"
+        start="treeio.core.middleware.chat.py:395:29:395:33"
+        .venv/bin/sarif-results-summary -r -s $srcroot $file | \
+            sed -n "/$start/,/RESULT/p" | sed '$d' 
+      #+END_SRC
+
+      #+RESULTS:
+      #+begin_src shell
+      RESULT: treeio/core/middleware/chat.py:395:29:395:33: [Error information](1) may be exposed to an external user
+              return HttpResponse(data, content_type='application/json', status=200)
+                                  ^^^^
+      REFERENCE: treeio/core/middleware/chat.py:394:50:394:64: Error information
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                                       ^^^^^^^^^^^^^^
+      PATH 0
+      FLOW STEP 0: treeio/core/middleware/chat.py:394:50:394:64: ControlFlowNode for Attribute()
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                                       ^^^^^^^^^^^^^^
+      FLOW STEP 1: treeio/core/middleware/chat.py:394:38:394:66: ControlFlowNode for Dict
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      FLOW STEP 2: treeio/core/middleware/chat.py:394:13:394:67: ControlFlowNode for Dict
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      FLOW STEP 3: treeio/core/middleware/chat.py:395:29:395:33: ControlFlowNode for data
+              return HttpResponse(data, content_type='application/json', status=200)
+                                  ^^^^
+      PATH 1
+      FLOW STEP 0: treeio/core/middleware/chat.py:394:50:394:64: ControlFlowNode for Attribute()
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                                       ^^^^^^^^^^^^^^
+      FLOW STEP 1: treeio/core/middleware/chat.py:394:46:394:65: ControlFlowNode for str()
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                                   ^^^^^^^^^^^^^^^^^^^
+      FLOW STEP 2: treeio/core/middleware/chat.py:394:38:394:66: ControlFlowNode for Dict
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      FLOW STEP 3: treeio/core/middleware/chat.py:394:13:394:67: ControlFlowNode for Dict
+                  {"cmd": "Error", "data": {"msg": str(sys.exc_info())}})
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      FLOW STEP 4: treeio/core/middleware/chat.py:395:29:395:33: ControlFlowNode for data
+              return HttpResponse(data, content_type='application/json', status=200)
+                                  ^^^^
+      #+end_src
 
 ** =sarif-digest=
    Get an idea of the SARIF file structure by showing only first / last entries in arrays.
-   #+BEGIN_SRC sh
+   #+BEGIN_SRC shell
      sarif-digest  data/torvalds_linux__2021-10-21_10_07_00__export.sarif |less
    #+END_SRC
 
@@ -112,7 +193,7 @@
    Display the SARIF file with explicit paths inserted before json objects and
    selected array entries.  Handy when reverse-engineering the format by searching
    for results.
-   #+BEGIN_SRC sh
+   #+BEGIN_SRC shell
      sarif-labeled  data/torvalds_linux__2021-10-21_10_07_00__export.sarif |less
    #+END_SRC
    For example, the
@@ -130,7 +211,7 @@
    Display the list of files referenced by a SARIF file.  This is the tools used to
    get file names that ultimately went into =data/linux-small/= and
    =data/wxWidgets-small/=.
-   #+BEGIN_SRC sh
+   #+BEGIN_SRC shell
      sarif-list-files data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif
    #+END_SRC
 
