@@ -1,3 +1,5 @@
+""" Sarif tree traversal
+""" 
 import sys
 import os
 import re
