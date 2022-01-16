@@ -8,17 +8,6 @@ import sarif_cli.traverse as S
 import sys
 from pprint import pprint
 
-parser = argparse.ArgumentParser(description='summary of results')
-parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
-parser.add_argument('-u', '--unique-array-signatures', action="store_true",
-                    help='only report unique array entry signatures')
-parser.add_argument('-t', '--typedef-signatures', action="store_true",
-                    help='Give every object signature a type and report by types')
-
-args = parser.parse_args()
-with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
-    sarif_struct = json.load(fp)
-
 @dataclass
 class Context:
     sig_to_typedef: dict        # signature to typedef name map
@@ -93,8 +82,27 @@ context = Context(
     },
     0 )
 
+#
+# Start processing
+# 
+parser = argparse.ArgumentParser(description='summary of results')
+parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+parser.add_argument('-u', '--unique-array-signatures', action="store_true",
+                    help='Only report unique array entry signatures')
+parser.add_argument('-t', '--typedef-signatures', action="store_true",
+                    help='Give every object signature a type and report by types')
+parser.add_argument('-d', '--dot-output', action="store_true",
+                    help='Output type table as dot graph.  Implies -t')
+args = parser.parse_args()
+if args.dot_output:
+    args.typedef_signatures = True
+
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
 if args.typedef_signatures:
     _traverse(sarif_struct, context)
-    pprint([(val, key) for key,val in context.sig_to_typedef.items()], sys.stdout, indent=2)
+    struct_graph = [(val, key) for key,val in context.sig_to_typedef.items()]
+    pprint(struct_graph, sys.stdout, indent=2)
 else:
     pprint(_traverse(sarif_struct, context), sys.stdout, indent=2)
