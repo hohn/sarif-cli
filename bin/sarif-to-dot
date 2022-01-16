@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+""" Print the type signature of a sarif file, at various levels of verbosity.
+"""
+import argparse
+import json
+import sarif_cli.traverse as S
+import sys
+from pprint import pprint
+
+parser = argparse.ArgumentParser(description='summary of results')
+parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+
+args = parser.parse_args()
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
+def _show_dict(elem, context):
+    """
+    "nd_%d" [
+    label = "{ports}"
+    shape = "record"
+    ];    
+    """
+    # collect signatures
+    sig = {}
+    for key, val in elem.items():
+        sig[key] = _compact(val, key)
+    # form signature and return
+    keys = list(elem.keys())
+    keys.sort()
+    # struct(key: sig, ...)
+    # return "struct(" + ",".join(["%s: %s" % (key, sig[key]) for key in keys]) + ")"
+    return ["struct(", [(key, sig[key]) for key in keys], ")"]
+
+def _show_list(elem, context):
+    # collect all signatures
+    sig = []
+    for el in elem:
+        sig.append(_compact(el, None))
+    # Remove duplicate signatures
+    pass
+    # Form array(sig, ...) and return
+    # return "array(" + ",".join(sig) + ")"
+    return ["array(", sig, ")"]
+
+def _compact(elem, context):
+    t = type(elem)
+    if t == dict:
+        return _show_dict(elem, context)
+    elif t == list:
+        return _show_list(elem, context)
+    elif t == str:
+        return ["string()"]
+    elif t == int:
+        return ["int()"]
+    elif t == bool:
+        return ["bool()"]
+    else:
+        return ["unknown(%s)" % elem]
+
+pprint(_compact(sarif_struct, "starting"), sys.stdout, indent=2)
