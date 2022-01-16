@@ -2,6 +2,7 @@
 """ Print the type signature of a sarif file, at various levels of verbosity.
 """
 import argparse
+from dataclasses import dataclass
 import json
 import sarif_cli.traverse as S
 import sys
@@ -9,53 +10,85 @@ from pprint import pprint
 
 parser = argparse.ArgumentParser(description='summary of results')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+parser.add_argument('-u', '--unique-array-signatures', action="store_true",
+                    help='only report unique array entry signatures')
+parser.add_argument('-t', '--typedef-signatures', action="store_true",
+                    help='Give every object signature a type and report by types')
 
 args = parser.parse_args()
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
     sarif_struct = json.load(fp)
 
-def _show_dict(elem, context):
+@dataclass
+class Context:
+    sig_to_typedef: dict        # signature to typedef name map
+    sig_count: int              # simple struct counter for Struct%03d names
+
+def _traverse_dict(elem, context):
+    """ Assemble and return the signature for a dictionary.
     """
-    "nd_%d" [
-    label = "{ports}"
-    shape = "record"
-    ];    
-    """
-    # collect signatures
+    # Collect signatures
     sig = {}
     for key, val in elem.items():
-        sig[key] = _compact(val, key)
-    # form signature and return
+        sig[key] = _traverse(val, context)
+    # Sort signature
     keys = list(elem.keys())
     keys.sort()
-    # struct(key: sig, ...)
-    # return "struct(" + ",".join(["%s: %s" % (key, sig[key]) for key in keys]) + ")"
-    return ["struct(", [(key, sig[key]) for key in keys], ")"]
+    # Form and return (struct (key sig) ...)
+    signature = ("struct", ) + tuple([(key, sig[key]) for key in keys])
+    if args.typedef_signatures:
+        # Give every unique struct a name and use a reference to it as value.
+        if signature not in context.sig_to_typedef:
+            context.sig_to_typedef[signature] = "Struct%03d" % context.sig_count
+            context.sig_count += 1
+        signature = context.sig_to_typedef[signature]
+    return signature
 
-def _show_list(elem, context):
-    # collect all signatures
-    sig = []
-    for el in elem:
-        sig.append(_compact(el, None))
-    # Remove duplicate signatures
-    pass
-    # Form array(sig, ...) and return
-    # return "array(" + ",".join(sig) + ")"
-    return ["array(", sig, ")"]
+def _traverse_list(elem, context):
+    """ Assemble and return the signature for a Python list.
+    """
+    if args.unique_array_signatures:
+        # Collect all unique signatures
+        sig = set()
+        for el in elem:
+            sig.add(_traverse(el, context))
+        sig = list(sig)
+        sig.sort()
+    else:
+        # Collect all signatures
+        sig = []
+        for el in elem:
+            sig.append(_traverse(el, context))
+        # Form array([sig, ...])
+    return ("array", ) + tuple(sig)
 
-def _compact(elem, context):
+def _traverse(elem, context):
+    """ Traverse the list/dict/value structure.
+    """
     t = type(elem)
     if t == dict:
-        return _show_dict(elem, context)
+        return _traverse_dict(elem, context)
     elif t == list:
-        return _show_list(elem, context)
+        return _traverse_list(elem, context)
     elif t == str:
-        return ["string()"]
+        return ("string")
     elif t == int:
-        return ["int()"]
+        return ("int")
     elif t == bool:
-        return ["bool()"]
+        return ("bool")
     else:
-        return ["unknown(%s)" % elem]
+        return ("unknown", elem)
 
-pprint(_compact(sarif_struct, "starting"), sys.stdout, indent=2)
+context = Context(
+    {
+        "string" : "String",
+        "int" : "Int",
+        "bool" : "Bool"
+    },
+    0 )
+
+if args.typedef_signatures:
+    _traverse(sarif_struct, context)
+    pprint([(val, key) for key,val in context.sig_to_typedef.items()], sys.stdout, indent=2)
+else:
+    pprint(_traverse(sarif_struct, context), sys.stdout, indent=2)
