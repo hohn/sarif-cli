@@ -74,6 +74,82 @@ def _traverse(elem, context):
     else:
         return ("unknown", elem)
 
+def write_header(fp):
+    fp.write("""digraph sarif_types {
+    node [shape=box,fontname="Charter"];
+    graph [rankdir = "LR"];
+    edge [];
+    """)
+    # Alternative font choices:
+    #     node [shape=box,fontname="Avenir"];
+    #     node [shape=box,fontname="Enriqueta Regular"];
+
+
+def write_footer(fp):
+    fp.write("}")
+    
+# 
+# These are internal node format samples, as (typedef, sig) tuples:
+# 
+# ('String', 'string'),
+# ('Int', 'int'),
+# ('Bool', 'bool'),
+# ('Struct000', ('struct', ('text', 'String'))),
+# ('Struct001', ('struct', ('enabled', 'Bool'), ('level', 'String'))),
+# ( 'Struct002',
+#   ( 'struct',
+#     ('kind', 'String'),
+#     ('precision', 'String'),
+#     ('severity', 'String'),
+#     ('tags', ('array', 'String')))),
+# 
+def write_node(fp, typedef, sig):
+    """ Write nodes in dot format.
+    """
+    if sig in ["string", "int", "bool"]:
+        label = sig
+    elif sig[0] == "struct":
+        label = "\l|".join([ "<%s>%s" % (field[0],field[0]) for field in sig[1:]])
+    else:
+        raise Error("unknown signature: " + str(sig))
+    node = """ "{name}" [
+    label = "{head}\l|{body}\l"
+    shape = "record"
+    ];
+    """.format(name=typedef, head=typedef, body=label)
+    fp.write(node)
+
+# See format samples above write_node
+def write_edges(fp, typedef, sig):
+    """ Write edges in dot format.
+    """
+    if sig in ["string", "int", "bool"]:
+        pass
+    elif sig[0] == "struct":
+        for field in sig[1:]:
+            field_name, field_type = field
+            if type(field_type) == tuple and field_type[0] == 'array':
+                label = "array"
+                # Arrays may be heterogeneous, so we are linking to multiple types.
+                for mapped_to in field_type[1:]:
+                    dest = str(field_type)
+                    edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
+                    """.format(src_node = typedef, src_port = field_name, dest = mapped_to,
+                               label = label)
+                    fp.write(edge)
+            else:
+                label = "s"
+                dest = str(field_type)
+                edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
+                """.format(src_node=typedef, src_port=field_name, dest=field_type,
+                           label=label)
+                fp.write(edge)
+    else:
+        raise Error("unknown signature: " + str(sig))
+    
+#
+# Start processing 
+#
 context = Context(
     {
         "string" : "String",
@@ -82,9 +158,6 @@ context = Context(
     },
     0 )
 
-#
-# Start processing
-# 
 parser = argparse.ArgumentParser(description='summary of results')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
 parser.add_argument('-u', '--unique-array-signatures', action="store_true",
@@ -92,17 +165,28 @@ parser.add_argument('-u', '--unique-array-signatures', action="store_true",
 parser.add_argument('-t', '--typedef-signatures', action="store_true",
                     help='Give every object signature a type and report by types')
 parser.add_argument('-d', '--dot-output', action="store_true",
-                    help='Output type table as dot graph.  Implies -t')
+                    help='Output type table as dot graph.  Implies -t -u')
 args = parser.parse_args()
 if args.dot_output:
+    args.unique_array_signatures = True
     args.typedef_signatures = True
 
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
     sarif_struct = json.load(fp)
 
-if args.typedef_signatures:
+if args.dot_output:
     _traverse(sarif_struct, context)
-    struct_graph = [(val, key) for key,val in context.sig_to_typedef.items()]
+    struct_graph = [(typedef, sig) for sig, typedef in context.sig_to_typedef.items()]
+    write_header(sys.stdout)
+    for typedef, sig in struct_graph:
+        write_node(sys.stdout, typedef, sig)
+    for typedef, sig in struct_graph:
+        write_edges(sys.stdout, typedef, sig)
+    write_footer(sys.stdout)
+
+elif args.typedef_signatures:
+    _traverse(sarif_struct, context)
+    struct_graph = [(typedef, sig) for sig,typedef in context.sig_to_typedef.items()]
     pprint(struct_graph, sys.stdout, indent=2)
 else:
     pprint(_traverse(sarif_struct, context), sys.stdout, indent=2)
