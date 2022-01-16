@@ -71,10 +71,16 @@ def _traverse(elem, context):
     elif t == list:
         return _traverse_list(elem, context)
     elif t == str:
+        if args.typedef_signatures:
+            return context.sig_to_typedef["string"]
         return ("string")
     elif t == int:
+        if args.typedef_signatures:
+            return context.sig_to_typedef["int"]
         return ("int")
     elif t == bool:
+        if args.typedef_signatures:
+            return context.sig_to_typedef["bool"]
         return ("bool")
     else:
         return ("unknown", elem)
