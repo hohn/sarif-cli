@@ -43,13 +43,20 @@ def _traverse_list(elem, context):
             sig.add(_traverse(el, context))
         sig = list(sig)
         sig.sort()
+        signature = ("array", ) + tuple([(i, s) for (i, s) in enumerate(sig)])
     else:
         # Collect all signatures
         sig = []
         for el in elem:
             sig.append(_traverse(el, context))
-        # Form array([sig, ...])
-    return ("array", ) + tuple(sig)
+        signature = ("array", ) + tuple([(i, s) for (i, s) in enumerate(sig)])
+    if args.typedef_signatures:
+        # Give every unique array a name and use a reference to it as value.
+        if signature not in context.sig_to_typedef:
+            context.sig_to_typedef[signature] = "Array%03d" % context.sig_count
+            context.sig_count += 1
+        signature = context.sig_to_typedef[signature]
+    return signature
 
 def _traverse(elem, context):
     """ Traverse the list/dict/value structure.
@@ -108,10 +115,12 @@ def write_node(fp, typedef, sig):
     """
     if sig in ["string", "int", "bool"]:
         label = sig
+    elif sig[0] == "array":
+        label = "\l|".join([ "<%s>%s" % (field[0],field[0]) for field in sig[1:]])
     elif sig[0] == "struct":
         label = "\l|".join([ "<%s>%s" % (field[0],field[0]) for field in sig[1:]])
     else:
-        raise Error("unknown signature: " + str(sig))
+        raise Exception("unknown signature: " + str(sig))
     node = """ "{name}" [
     label = "{head}\l|{body}\l"
     shape = "record"
@@ -125,27 +134,28 @@ def write_edges(fp, typedef, sig):
     """
     if sig in ["string", "int", "bool"]:
         pass
-    elif sig[0] == "struct":
+    elif sig[0] in ("struct", "array"):
+        # Sample struct:
+        # ( struct
+        #      (semmle.formatSpecifier string)
+        #      (semmle.sourceLanguage string))
+        # 
+        # Sample array:
+        # ( array
+        #   ( 0
+        #     ( struct
+        #       (repositoryUri string)
+        #       (revisionId string))))
         for field in sig[1:]:
             field_name, field_type = field
-            if type(field_type) == tuple and field_type[0] == 'array':
-                label = "array"
-                # Arrays may be heterogeneous, so we are linking to multiple types.
-                for mapped_to in field_type[1:]:
-                    dest = str(field_type)
-                    edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
-                    """.format(src_node = typedef, src_port = field_name, dest = mapped_to,
-                               label = label)
-                    fp.write(edge)
-            else:
-                label = "s"
-                dest = str(field_type)
-                edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
-                """.format(src_node=typedef, src_port=field_name, dest=field_type,
-                           label=label)
-                fp.write(edge)
+            label = ""
+            dest = str(field_type)
+            edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
+            """.format(src_node=typedef, src_port=field_name, dest=field_type,
+                       label=label)
+            fp.write(edge)
     else:
-        raise Error("unknown signature: " + str(sig))
+        raise Exception("unknown signature: " + str(sig))
     
 #
 # Start processing 
@@ -158,7 +168,7 @@ context = Context(
     },
     0 )
 
-parser = argparse.ArgumentParser(description='summary of results')
+parser = argparse.ArgumentParser(description='Produce a summary of signatures found in the sarif file.')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
 parser.add_argument('-u', '--unique-array-signatures', action="store_true",
                     help='Only report unique array entry signatures')
