@@ -2,21 +2,15 @@
 """ Print the type signature of a sarif file, at various levels of verbosity.
 """
 import argparse
-from dataclasses import dataclass
 import json
 import sarif_cli.signature as S
 import sys
 from pprint import pprint
 
-@dataclass
-class Context:
-    sig_to_typedef: dict        # signature to typedef name map
-    sig_count: int              # simple struct counter for Struct%03d names
-
 #
 # Start processing 
 #
-context = Context(
+context = S.Context(
     {
         "string" : "String",
         "int" : "Int",
@@ -32,27 +26,41 @@ parser.add_argument('-t', '--typedef-signatures', action="store_true",
                     help='Give every object signature a type and report by types')
 parser.add_argument('-d', '--dot-output', action="store_true",
                     help='Output type table as dot graph.  Implies -t -u')
+parser.add_argument('-f', '--fill-structure', action="store_true",
+                    help='Fill in missing (optional) entries in sarif input before other steps.')
 args = parser.parse_args()
 if args.dot_output:
     args.unique_array_signatures = True
     args.typedef_signatures = True
 
+#
+# Load data
+# 
 with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
     sarif_struct = json.load(fp)
-
+#
+# Preprocess if applicable
+#
+if args.fill_structure:
+    sarif_struct = S.fillsig(args, sarif_struct, context)
+    
+#
+# Form signatures and write output
+#
 if args.dot_output:
     S._signature(args, sarif_struct, context)
     struct_graph = [(typedef, sig) for sig, typedef in context.sig_to_typedef.items()]
-    write_header(sys.stdout)
+    S.write_header(sys.stdout)
     for typedef, sig in struct_graph:
-        write_node(sys.stdout, typedef, sig)
+        S.write_node(sys.stdout, typedef, sig)
     for typedef, sig in struct_graph:
-        write_edges(sys.stdout, typedef, sig)
-    write_footer(sys.stdout)
+        S.write_edges(sys.stdout, typedef, sig)
+    S.write_footer(sys.stdout)
 
 elif args.typedef_signatures:
     S._signature(args, sarif_struct, context)
     struct_graph = [(typedef, sig) for sig,typedef in context.sig_to_typedef.items()]
     pprint(struct_graph, sys.stdout, indent=2)
+
 else:
     pprint(S._signature(args, sarif_struct, context), sys.stdout, indent=2)

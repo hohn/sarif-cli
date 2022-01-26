@@ -3,6 +3,9 @@
 These functions convert a SARIF (or any json structure) to its signature, with various options.  
 See sarif-to-dot for options and examples.
 """
+from dataclasses import dataclass
+import sarif_cli.traverse as traverse
+
 # 
 # These are internal node format samples produced by the _signature* functions, as
 # (typedef, sig) tuples:
@@ -21,6 +24,17 @@ See sarif-to-dot for options and examples.
 #       ('tags', 'Array002'))),
 # ...
 
+#
+# Context for signature functions
+#
+@dataclass
+class Context:
+    sig_to_typedef: dict        # signature to typedef name map
+    sig_count: int              # simple struct counter for Struct%03d names
+
+#
+# Signature formation
+#
 def _signature_dict(args, elem, context):
     """ Assemble and return the signature for a dictionary.
     """
@@ -89,6 +103,9 @@ def _signature(args, elem, context):
     else:
         return ("unknown", elem)
 
+#
+# Dot output routines
+#
 def write_header(fp):
     fp.write("""digraph sarif_types {
     node [shape=box,fontname="Charter"];
@@ -98,7 +115,6 @@ def write_header(fp):
     # Alternative font choices:
     #     node [shape=box,fontname="Avenir"];
     #     node [shape=box,fontname="Enriqueta Regular"];
-
 
 def write_footer(fp):
     fp.write("}")
@@ -121,7 +137,6 @@ def write_node(fp, typedef, sig):
     """.format(name=typedef, head=typedef, body=label)
     fp.write(node)
 
-# See format samples above write_node
 def write_edges(fp, typedef, sig):
     """ Write edges in dot format.
     """
@@ -150,3 +165,58 @@ def write_edges(fp, typedef, sig):
     else:
         raise Exception("unknown signature: " + str(sig))
     
+#
+# Fill missing elements
+#
+region_keys = set([first for first, _ in  [ ('endColumn', 'Int'),
+                                            ('endLine', 'Int'),
+                                            ('startColumn', 'Int'),
+                                            ('startLine', 'Int')]
+                   ])
+def fillsig_dict(args, elem, context):
+    """ 
+    """
+    # Supplement all missing fields for a 'region'
+    if region_keys.intersection(elem.keys()):
+        startLine, startColumn, endLine, endColumn = traverse.lineinfo(elem)
+        full_elem = {}
+        full_elem['endColumn'] = endColumn
+        full_elem['endLine'] = endLine
+        full_elem['startColumn'] = startColumn
+        full_elem['startLine'] = startLine
+        rest = set(elem.keys()) - set(full_elem.keys())
+        for key in rest:
+            full_elem[key] = elem[key]
+    else:
+        full_elem = elem
+
+    # Sort signature for consistency across inputs.
+    final = {}
+    keys = sorted(full_elem.keys())
+    for key in keys:
+        val = full_elem[key]
+        final[key] = fillsig(args, val, context)
+    return final
+
+def fillsig_list(args, elem, context):
+    """ 
+    """
+    # Collect all entries
+    final = []
+    for el in elem:
+        final.append(fillsig(args, el, context))
+    return final
+
+def fillsig(args, elem, context):
+    """ Assemble and return the signature for a list/dict/value structure.
+    """
+    t = type(elem)
+    if t == dict:
+        return fillsig_dict(args, elem, context)
+    elif t == list:
+        return fillsig_list(args, elem, context)
+    elif t in [str, int, bool]:
+        return elem
+    else:
+        raise Exception("Unknown element type")
+
