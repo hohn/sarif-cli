@@ -26,9 +26,15 @@ parser.add_argument('-t', '--typedef-signatures', action="store_true",
                     help='Give every object signature a type and report by types')
 parser.add_argument('-d', '--dot-output', action="store_true",
                     help='Output type table as dot graph.  Implies -t -u')
+parser.add_argument('-n', '--no-edges-to-scalars', action="store_true",
+                    help='Suppress edges to int/bool/string types in dot graph.  Implies -d')
 parser.add_argument('-f', '--fill-structure', action="store_true",
                     help='Fill in missing (optional) entries in sarif input before other steps.')
 args = parser.parse_args()
+
+if args.no_edges_to_scalars:
+    args.dot_output = True
+
 if args.dot_output:
     args.unique_array_signatures = True
     args.typedef_signatures = True
@@ -54,7 +60,7 @@ if args.dot_output:
     for typedef, sig in struct_graph:
         S.write_node(sys.stdout, typedef, sig)
     for typedef, sig in struct_graph:
-        S.write_edges(sys.stdout, typedef, sig)
+        S.write_edges(args, sys.stdout, typedef, sig)
     S.write_footer(sys.stdout)
 
 elif args.typedef_signatures:

@@ -137,7 +137,7 @@ def write_node(fp, typedef, sig):
     """.format(name=typedef, head=typedef, body=label)
     fp.write(node)
 
-def write_edges(fp, typedef, sig):
+def write_edges(args, fp, typedef, sig):
     """ Write edges in dot format.
     """
     if sig in ["string", "int", "bool"]:
@@ -158,10 +158,13 @@ def write_edges(fp, typedef, sig):
             field_name, field_type = field
             label = ""
             dest = str(field_type)
-            edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
-            """.format(src_node=typedef, src_port=field_name, dest=field_type,
-                       label=label)
-            fp.write(edge)
+            if dest in ["String", "Int", "Bool"] and args.no_edges_to_scalars:
+                pass
+            else:
+                edge = """ {src_node}:"{src_port}" -> {dest} [label="{label}"];
+                """.format(src_node=typedef, src_port=field_name, dest=field_type,
+                           label=label)
+                fp.write(edge)
     else:
         raise Exception("unknown signature: " + str(sig))
     
