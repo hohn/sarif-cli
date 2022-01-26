@@ -174,8 +174,8 @@ def write_edges(args, fp, typedef, sig):
 region_keys = set([first for first, _ in  [ ('endColumn', 'Int'),
                                             ('endLine', 'Int'),
                                             ('startColumn', 'Int'),
-                                            ('startLine', 'Int')]
-                   ])
+                                            ('startLine', 'Int')]])
+
 def dummy_region():
     """ Return a region with needed keys and "empty" entries -1
     """
@@ -187,28 +187,51 @@ def dummy_region():
     }
 
 physicalLocation_keys = set([first for first, _ in
-                             [ ('artifactLocation', 'Struct000'), ('region', 'Struct005')]])
+                             [ ('artifactLocation', 'Struct000'), 
+                               ('region', 'Struct005')]])
+
+properties_keys = set([first for first, _ in
+                       [ ('kind', 'String'),
+                         ('precision', 'String'),
+                         ('security-severity', 'String'),
+                         ('severity', 'String'),
+                         ('sub-severity', 'String'),
+                         ('tags', 'Array003'),
+                        ]])
+dummy_properties = { 'kind' : 'unspecified',
+                     'precision' : 'unspecified',
+                     'security-severity' : 'unspecified',
+                     'severity' : 'unspecified',
+                     'sub-severity' : 'unspecified',
+                     'tags' : ['unspecified'],
+                    }
 
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
-    # Supplement all missing fields for a 'region'
+    full_elem = {}
+    def _remaining_keys():
+        # Supplement final keys with keys from input.  This is to ensure that keys
+        # not explicit here (like additions to the sarif standard) are propagated. 
+        rest = set(elem.keys()) - set(full_elem.keys())
+        for key in rest:
+            full_elem[key] = elem[key]
+        
     if region_keys.intersection(elem.keys()):
         startLine, startColumn, endLine, endColumn = traverse.lineinfo(elem)
-        full_elem = {}
         full_elem['endColumn'] = endColumn
         full_elem['endLine'] = endLine
         full_elem['startColumn'] = startColumn
         full_elem['startLine'] = startLine
-        rest = set(elem.keys()) - set(full_elem.keys())
-        for key in rest:
-            full_elem[key] = elem[key]
+        _remaining_keys()
     elif physicalLocation_keys.intersection(elem.keys()):
-        full_elem = {}
         full_elem['region'] = elem.get('region', dummy_region())
-        rest = set(elem.keys()) - set(full_elem.keys())
-        for key in rest:
-            full_elem[key] = elem[key]
+        _remaining_keys()
+    elif properties_keys.intersection(elem.keys()):
+        full_elem = {}
+        for k, dummy_val in dummy_properties.items():
+            full_elem[k] = elem.get(k, dummy_val)
+        _remaining_keys()
     else:
         full_elem = elem
 
