@@ -173,8 +173,21 @@ region_keys = set([first for first, _ in  [ ('endColumn', 'Int'),
                                             ('startColumn', 'Int'),
                                             ('startLine', 'Int')]
                    ])
+def dummy_region():
+    """ Return a region with needed keys and "empty" entries -1
+    """
+    return {
+        'endColumn' : -1,
+        'endLine' : -1,
+        'startColumn' : -1,
+        'startLine' : -1
+    }
+
+physicalLocation_keys = set([first for first, _ in
+                             [ ('artifactLocation', 'Struct000'), ('region', 'Struct005')]])
+
 def fillsig_dict(args, elem, context):
-    """ 
+    """ Fill in the missing fields in dictionary signatures.
     """
     # Supplement all missing fields for a 'region'
     if region_keys.intersection(elem.keys()):
@@ -184,6 +197,12 @@ def fillsig_dict(args, elem, context):
         full_elem['endLine'] = endLine
         full_elem['startColumn'] = startColumn
         full_elem['startLine'] = startLine
+        rest = set(elem.keys()) - set(full_elem.keys())
+        for key in rest:
+            full_elem[key] = elem[key]
+    elif physicalLocation_keys.intersection(elem.keys()):
+        full_elem = {}
+        full_elem['region'] = elem.get('region', dummy_region())
         rest = set(elem.keys()) - set(full_elem.keys())
         for key in rest:
             full_elem[key] = elem[key]
