@@ -212,6 +212,8 @@ relatedLocations_keys = set([first for first, _ in
                               ('id', 'Int'),
                               ]])
 
+dummy_newlineSequences = ['\r\n', '\n', '\u2028', '\u2029']
+
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
@@ -240,6 +242,10 @@ def fillsig_dict(args, elem, context):
     elif {'message', 'physicalLocation'}.issubset(elem.keys()):
         # Ensure an id is present when message/physicalLocation are
         full_elem['id'] = elem.get('id', -1)
+        _remaining_keys()
+    elif 'versionControlProvenance' in elem.keys():
+        # Ensure newlineSequences is present versionControlProvenance is
+        full_elem['newlineSequences'] = elem.get('newlineSequences', dummy_newlineSequences)
         _remaining_keys()
     else:
         full_elem = elem
