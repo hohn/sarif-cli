@@ -109,7 +109,7 @@ def _signature(args, elem, context):
 def write_header(fp):
     fp.write("""digraph sarif_types {
     node [shape=box,fontname="Charter"];
-    graph [rankdir = "LR"];
+    graph [rankdir = "LR", ranksep=2];
     edge [];
     """)
     # Alternative font choices:
