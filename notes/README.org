@@ -1,0 +1,5 @@
+* The notes directory
+  This directory is for notes that may be useful, but aren't complete enough to
+  serve as documentation in their current state.
+
+  Think of it as staging for [[../docs]].
