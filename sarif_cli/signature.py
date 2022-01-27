@@ -206,6 +206,12 @@ dummy_properties = { 'kind' : 'unspecified',
                      'tags' : ['unspecified'],
                     }
 
+relatedLocations_keys = set([first for first, _ in
+                             [('message', 'Struct009'),
+                              ('physicalLocation', 'Struct006'),
+                              ('id', 'Int'),
+                              ]])
+
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
@@ -228,9 +234,12 @@ def fillsig_dict(args, elem, context):
         full_elem['region'] = elem.get('region', dummy_region())
         _remaining_keys()
     elif properties_keys.intersection(elem.keys()):
-        full_elem = {}
         for k, dummy_val in dummy_properties.items():
             full_elem[k] = elem.get(k, dummy_val)
+        _remaining_keys()
+    elif {'message', 'physicalLocation'}.issubset(elem.keys()):
+        # Ensure an id is present when message/physicalLocation are
+        full_elem['id'] = elem.get('id', -1)
         _remaining_keys()
     else:
         full_elem = elem
