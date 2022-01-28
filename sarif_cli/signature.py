@@ -216,6 +216,17 @@ relatedLocations_keys = set([first for first, _ in
 
 dummy_newlineSequences = ['\r\n', '\n', '\u2028', '\u2029']
 
+dummy_relatedLocations_entry = [
+    {'id': -1,
+     'physicalLocation': {'artifactLocation': {'uri': '',
+                                               'uriBaseId': '%SRCROOT%',
+                                               'index': -1},
+                          'region': {'startLine': -1, 
+                                     'startColumn': -1,
+                                     'endLine': -1, 
+                                     'endColumn': -1}},
+     'message': {'text': ''}}]
+
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
@@ -246,8 +257,13 @@ def fillsig_dict(args, elem, context):
         full_elem['id'] = elem.get('id', -1)
         _remaining_keys()
     elif 'versionControlProvenance' in elem.keys():
-        # Ensure newlineSequences is present versionControlProvenance is
+        # Ensure newlineSequences is present when versionControlProvenance is
         full_elem['newlineSequences'] = elem.get('newlineSequences', dummy_newlineSequences)
+        _remaining_keys()
+    elif 'partialFingerprints' in elem.keys():
+        # Ensure relatedLocations is present
+        full_elem['relatedLocations'] = elem.get('relatedLocations',
+                                                 dummy_relatedLocations_entry)
         _remaining_keys()
     else:
         full_elem = elem
