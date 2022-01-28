@@ -227,6 +227,8 @@ dummy_relatedLocations_entry = [
                                      'endColumn': -1}},
      'message': {'text': ''}}]
 
+dummy_message_entry = {'text': ''}
+
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
@@ -264,6 +266,11 @@ def fillsig_dict(args, elem, context):
         # Ensure relatedLocations is present
         full_elem['relatedLocations'] = elem.get('relatedLocations',
                                                  dummy_relatedLocations_entry)
+        _remaining_keys()
+    elif 'physicalLocation' in elem.keys():
+        # Ensure id and message are present
+        full_elem['id'] = elem.get('id', -1)
+        full_elem['message'] = elem.get('message', dummy_message_entry)
         _remaining_keys()
     else:
         full_elem = elem
