@@ -5,6 +5,7 @@ See sarif-to-dot for options and examples.
 """
 from dataclasses import dataclass
 import sarif_cli.traverse as traverse
+import zlib
 
 # 
 # These are internal node format samples produced by the _signature* functions, as
@@ -30,7 +31,10 @@ import sarif_cli.traverse as traverse
 @dataclass
 class Context:
     sig_to_typedef: dict        # signature to typedef name map
-    sig_count: int              # simple struct counter for Struct%03d names
+
+def shorthash(signature):
+    return zlib.adler32(str(signature).encode('utf-8')) % 10000
+
 
 #
 # Signature formation
@@ -50,8 +54,7 @@ def _signature_dict(args, elem, context):
     if args.typedef_signatures:
         # Give every unique struct a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
-            context.sig_to_typedef[signature] = "Struct%03d" % context.sig_count
-            context.sig_count += 1
+            context.sig_to_typedef[signature] = "Struct%04d" % shorthash(signature)
         signature = context.sig_to_typedef[signature]
     return signature
 
@@ -75,8 +78,7 @@ def _signature_list(args, elem, context):
     if args.typedef_signatures:
         # Give every unique array a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
-            context.sig_to_typedef[signature] = "Array%03d" % context.sig_count
-            context.sig_count += 1
+            context.sig_to_typedef[signature] = "Array%04d" % shorthash(signature)
         signature = context.sig_to_typedef[signature]
     return signature
 

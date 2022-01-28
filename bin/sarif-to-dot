@@ -15,8 +15,7 @@ context = S.Context(
         "string" : "String",
         "int" : "Int",
         "bool" : "Bool"
-    },
-    0 )
+    }) 
 
 parser = argparse.ArgumentParser(description='Produce a summary of signatures found in the sarif file.')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
