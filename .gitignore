@@ -13,3 +13,6 @@
 # Backup files
 *~
 
+# Temporary files
+foo*
+tmp*
