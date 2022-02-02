@@ -15,7 +15,8 @@ context = S.Context(
         "string" : "String",
         "int" : "Int",
         "bool" : "Bool"
-    }) 
+    }
+) 
 
 parser = argparse.ArgumentParser(description='Produce a summary of signatures found in the sarif file.')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
@@ -65,7 +66,7 @@ if args.dot_output:
 elif args.typedef_signatures:
     S._signature(args, sarif_struct, context)
     struct_graph = [(typedef, sig) for sig,typedef in context.sig_to_typedef.items()]
-    pprint(struct_graph, sys.stdout, indent=2)
+    pprint(struct_graph, sys.stdout, indent=4)
 
 else:
-    pprint(S._signature(args, sarif_struct, context), sys.stdout, indent=2)
+    pprint(S._signature(args, sarif_struct, context), sys.stdout, indent=4)

@@ -30,16 +30,15 @@ import zlib
 #
 @dataclass
 class Context:
-    sig_to_typedef: dict        # signature to typedef name map
+    sig_to_typedef: dict                     # signature -> typedef name map
 
 def shorthash(signature):
     return zlib.adler32(str(signature).encode('utf-8')) % 10000
 
-
 #
 # Signature formation
 #
-def _signature_dict(args, elem, context):
+def _signature_dict(args, elem, context: Context):
     """ Assemble and return the signature for a dictionary.
     """
     # Collect signatures
@@ -55,8 +54,10 @@ def _signature_dict(args, elem, context):
         # Give every unique struct a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
             context.sig_to_typedef[signature] = "Struct%04d" % shorthash(signature)
-        signature = context.sig_to_typedef[signature]
-    return signature
+        typedef = context.sig_to_typedef[signature]
+        return typedef
+    else:
+        return signature
 
 def _signature_list(args, elem, context):
     """ Assemble and return the signature for a Python list.
@@ -79,8 +80,10 @@ def _signature_list(args, elem, context):
         # Give every unique array a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
             context.sig_to_typedef[signature] = "Array%04d" % shorthash(signature)
-        signature = context.sig_to_typedef[signature]
-    return signature
+        typedef = context.sig_to_typedef[signature]
+        return typedef
+    else:
+        return signature
 
 def _signature(args, elem, context):
     """ Assemble and return the signature for a list/dict/value structure.
