@@ -1,0 +1,131 @@
+#!/usr/bin/env python
+""" Extract data from sarif files in table form.
+"""
+import argparse
+import json
+import sarif_cli.signature as S
+import sarif_cli.typegraph as T
+import sys
+from pprint import pprint
+from collections import defaultdict
+
+#
+# Start processing 
+#
+parser = argparse.ArgumentParser(description='Read a sarif file and produce tabular output.')
+parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+# XX
+# parser.add_argument('-t', '--typedef-signatures', action="store_true",
+#                     help='Give every object signature a type and report by types')
+args = parser.parse_args()
+
+#
+# Load data
+# 
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
+#
+# Preprocess raw SARIF to get smaller signature
+#
+context = S.Context(
+    {
+        "string" : "String",
+        "int" : "Int",
+        "bool" : "Bool"
+    }
+) 
+sarif_struct = S.fillsig(args, sarif_struct, context)
+    
+#
+# Use reference type graph (signature) to traverse sarif and attach values to tables
+#
+tgraph = T.Typegraph(T.struct_graph_2022_02_01)
+T.destructure(tgraph, T.start_node_2022_02_01, sarif_struct)
+
+import IPython
+IPython.embed(header="""
+--------------------------------- 
+ipython repl for
+
+    tgraph = T.Typegraph(T.struct_graph_2022_02_01)
+
+--------------------------------- 
+Sanity checks:
+    In [4]: tgraph.fields
+    Out[4]: 
+    {'String': None,
+     'Int': None,
+     'Bool': None,
+     ...
+     }
+    In [6]: tgraph.instances['String']
+    Out[6]: []
+
+    In [7]: tgraph.instances['Int']
+    Out[7]: []
+
+    In [8]: tgraph.instances['Bool']
+    Out[8]: []
+
+Select value checks:
+    In [9]: tgraph.instances['Struct6787']
+    Out[9]: 
+    [(4358601472,
+      'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+      4362190016,
+      '2.1.0')]
+
+    In [10]: tgraph.fields['Struct6787']
+    Out[10]: ['$schema', 'runs', 'version']
+
+    In [5]: tgraph.instances['Array0177']
+    Out[5]: 
+    [(4337396800, 0, 'Struct3388', 4337396928),
+     (4337396800, 1, 'Struct3388', 4337397056)]
+
+    In [12]: tgraph.fields['Array0177']
+    Out[12]: [0]
+
+    In [9]: tgraph.instances['Array7069'][0:5]
+    Out[9]: 
+    [(4337397248, 0, 'String', '\r\n'),
+     (4337397248, 1, 'String', '\n'),
+     (4337397248, 2, 'String', '\u2028'),
+     (4337397248, 3, 'String', '\u2029'),
+     (4339863424, 0, 'String', 'maintainability')]
+
+
+    In [10]: tgraph.instances['Struct6299'][:3]
+    Out[10]: 
+    [(4315110720, 17, 1214, 13, 1214),
+     (4315111232, -1, -1, 1, -1),
+     (4315124096, 30, 847, 17, 847)]
+
+    In [11]: tgraph.fields['Struct6299']
+    Out[11]: ['endColumn', 'endLine', 'startColumn', 'startLine']
+
+
+""")
+
+#
+# Form output tables
+# 
+
+if args.dot_output:
+    S._signature(args, sarif_struct, context)
+    struct_graph = [(typedef, sig) for sig, typedef in context.sig_to_typedef.items()]
+    S.write_header(sys.stdout)
+    for typedef, sig in struct_graph:
+        S.write_node(sys.stdout, typedef, sig)
+    for typedef, sig in struct_graph:
+        S.write_edges(args, sys.stdout, typedef, sig)
+    S.write_footer(sys.stdout)
+
+elif args.typedef_signatures:
+    S._signature(args, sarif_struct, context)
+    struct_graph = dict((typedef, sig) for sig,typedef in context.sig_to_typedef.items())
+    pprint(struct_graph, sys.stdout, indent=4)
+
+else:
+    pprint(S._signature(args, sarif_struct, context), sys.stdout, indent=2)
