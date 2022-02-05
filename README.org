@@ -32,12 +32,13 @@
   Set up the virtual environment and install the packages:
   # pip freeze > requirements.txt
   #+BEGIN_SRC sh
+    # Using requirements.txt 
     python3 -m venv .venv
     . .venv/bin/activate
     python3 -m pip install -r requirements.txt
     # Or separately:
     pip install --upgrade pip
-    pip install ipython pyyaml
+    pip install ipython pyyaml pandas
   #+END_SRC
 
   "Install" for local development:

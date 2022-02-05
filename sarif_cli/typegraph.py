@@ -1,10 +1,15 @@
-"""Operations on the type graph produced by sarif-to-dot -u -t -f 
+"""Operations on the type graph produced by sarif-to-dot -u -t -f
 
-Also contains some type graph reference values; these may be moved out into
+To get a map of this type graph, use
+    cd sarif-cli/data/treeio
+    ../../bin/sarif-to-dot -u -t -f -n -d  results.sarif | dot -Tpdf > typegraph.pdf
+
+This file also contains some type graph reference values; these may be moved out into
 separate files at some point.
 """
 from dataclasses import dataclass
 from typing import *
+import pandas as pd
 
 # 
 # Structure graph from ../../bin/sarif-to-dot -u -t -f results.sarif
@@ -145,6 +150,7 @@ class Typegraph:
     signature_graph : Dict[NodeId, Any]   # (typedef -> signature) dict
     instances : Dict[NodeId, List[Tuple]] # (node -> (row list)) dict
     fields: Dict[NodeId, List]            # (node -> (field list)) dict
+    dataframes: Dict[NodeId, Any]         # (node -> dataframe) dict
 
     """
     # Given this typedef
@@ -195,6 +201,7 @@ class Typegraph:
         self.signature_graph = dict(signature_graph)
         self.instances = {}
         self.fields = {}
+        self.dataframes = {}
         for typedef, signature in signature_graph:
             self.instances[typedef] = []
             self.fields[typedef] = fields(signature)
@@ -346,3 +353,19 @@ def _destructure_list(typegraph, node: str, tree: List):
                     # next `signature`
                     if (sigindex, sigtype) == signature[-1]:
                         raise
+
+#
+# Form tables from destructured json/sarif
+#
+def attach_tables(typegraph):
+    for typedef, valarray in typegraph.instances.items():
+        if typedef.startswith('Array'):
+            # Arrays
+            colheader = ('array_id', 'value_index', 'type_at_index', 'id_or_value_at_index')
+        elif typedef.startswith('Struct'):
+            # Structs
+            colheader = ('struct_id', *typegraph.fields[typedef])
+        else:
+            continue            # skip String etc.
+        typegraph.dataframes[typedef] = pd.DataFrame(valarray, columns = colheader)
+        
