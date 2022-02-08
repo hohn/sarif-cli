@@ -178,7 +178,114 @@ Follow the edges in typegraph.pdf to find joining typedefs and paths.
 
 """)
 
+# 
+# These merges are for reconstructing ../../bin/sarif-results-summary output, but
+# they also form the "bottom right" dataframe on the type graph (see the .pdf) and
+# can be used for other result-oriented output.
 
+# 
+# original dataframes
+# 
+#         Struct2685/uri
+f2685 = odf_location = tgraph.dataframes['Struct2685']
+
+#         Struct6299/startLine/startColumn/endLine/endColumn
+f6299 = odf_region = tgraph.dataframes['Struct6299']
+
+#         Struct2774/message
+f2774 = odf_message = tgraph.dataframes['Struct2774']
+
+# 
+# Linking dataframes
+# 
+f4963 = ldf_physicalLocation = tgraph.dataframes['Struct4963']
+
+f2683 = tgraph.dataframes['Struct2683']
+
+# f4963 -> f6299
+m_f4963_f6299 = pd.merge(
+    f4963,
+    f6299,
+    how="inner",
+    on=None,
+    left_on='region',
+    right_on='struct_id',
+    left_index=False,
+    right_index=False,
+    sort=True,
+    suffixes=("_f4963", "_f6299"),
+    copy=True,
+    indicator=False,
+    validate="1:m",
+)
+# m_f4963_f6299 -> f2685
+m_f4963_f6299_f2685 = pd.merge(
+    m_f4963_f6299,
+    f2685,
+    how="inner",
+    on=None,
+    left_on='artifactLocation',
+    right_on='struct_id',
+    left_index=False,
+    right_index=False,
+    sort=True,
+    suffixes=("_m_f4963_f6299", "_f2685"),
+    copy=True,
+    indicator=False,
+    validate="1:m",
+)
+
+# f2683 -> m_f4963_f6299_f2685
+m_f2683_f4963_f6299_f2685 = pd.merge(
+    f2683,
+    m_f4963_f6299_f2685,
+    how="inner",
+    on=None,
+    left_on='physicalLocation',
+    right_on='struct_id_f4963',
+    left_index=False,
+    right_index=False,
+    sort=True,
+    suffixes=("_f2683", "_m_f4963_f6299_f2685"),
+    copy=True,
+    indicator=False,
+    validate="1:m",
+)
+
+# m_f2683_f4963_f6299_f2685 -> f2774
+m_f2683_f4963_f6299_f2685_f2774 = pd.merge(
+    m_f2683_f4963_f6299_f2685,
+    f2774,
+    how="inner",
+    on=None,
+    left_on='message',
+    right_on='struct_id',
+    left_index=False,
+    right_index=False,
+    sort=True,
+    suffixes=("_m_f2683_f4963_f6299_f2685", "_f2774"),
+    copy=True,
+    indicator=False,
+    validate="1:m",
+)
+
+#
+# Remove indexing columns.  Note: each row corresponds to the fields of an
+# original table.
+#
+qdf = m_f2683_f4963_f6299_f2685_f2774[
+    ['id', 'message', 'physicalLocation',
+     'artifactLocation', 'region', 
+     'endColumn', 'endLine', 'startColumn', 'startLine',
+     'index', 'uri', 'uriBaseId',
+     'text']]
+
+qdf[qdf.uri == "static/js/fileuploader.js"]
+qdf[qdf.text.str.contains("Unused variable size")]
+
+# 
+# 
+# 
 
 
 
