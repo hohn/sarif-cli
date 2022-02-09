@@ -6,7 +6,6 @@ import json
 from sarif_cli import signature
 from sarif_cli import typegraph
 import sys
-from pprint import pprint
 from collections import defaultdict
 import pandas as pd
 
@@ -15,9 +14,10 @@ import pandas as pd
 #
 parser = argparse.ArgumentParser(description='Read a sarif file and produce tabular output.')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
-# XX
-# parser.add_argument('-t', '--typedef-signatures', action="store_true",
-#                     help='Give every object signature a type and report by types')
+parser.add_argument('-f', '--output-format', metavar='format', type=str, default="csv",
+                    help='Output format for table.  Currently just csv; '
+                    '  other formats supported by pandas can be added.')
+
 args = parser.parse_args()
 
 #
@@ -44,265 +44,107 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 tgraph = typegraph.Typegraph(typegraph.struct_graph_2022_02_01)
 typegraph.destructure(tgraph, typegraph.start_node_2022_02_01, sarif_struct)
 
-if 0:
-    import IPython
-    IPython.embed(header="""
-    --------------------------------- 
-    ipython repl for
-
-        tgraph = typegraph.Typegraph(typegraph.struct_graph_2022_02_01)
-
-    --------------------------------- 
-    Sanity checks:
-        In [4]: tgraph.fields
-        Out[4]: 
-        {'String': None,
-         'Int': None,
-         'Bool': None,
-         ...
-         }
-        In [6]: tgraph.instances['String']
-        Out[6]: []
-
-        In [7]: tgraph.instances['Int']
-        Out[7]: []
-
-        In [8]: tgraph.instances['Bool']
-        Out[8]: []
-
-    Select value checks:
-        In [9]: tgraph.instances['Struct6787']
-        Out[9]: 
-        [(4358601472,
-          'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-          4362190016,
-          '2.1.0')]
-
-        In [10]: tgraph.fields['Struct6787']
-        Out[10]: ['$schema', 'runs', 'version']
-
-        In [5]: tgraph.instances['Array0177']
-        Out[5]: 
-        [(4337396800, 0, 'Struct3388', 4337396928),
-         (4337396800, 1, 'Struct3388', 4337397056)]
-
-        In [12]: tgraph.fields['Array0177']
-        Out[12]: [0]
-
-        In [9]: tgraph.instances['Array7069'][0:5]
-        Out[9]: 
-        [(4337397248, 0, 'String', '\r\n'),
-         (4337397248, 1, 'String', '\n'),
-         (4337397248, 2, 'String', '\u2028'),
-         (4337397248, 3, 'String', '\u2029'),
-         (4339863424, 0, 'String', 'maintainability')]
-
-
-        In [10]: tgraph.instances['Struct6299'][:3]
-        Out[10]: 
-        [(4315110720, 17, 1214, 13, 1214),
-         (4315111232, -1, -1, 1, -1),
-         (4315124096, 30, 847, 17, 847)]
-
-        In [11]: tgraph.fields['Struct6299']
-        Out[11]: ['endColumn', 'endLine', 'startColumn', 'startLine']
-    """)
-
 #
 # Form output tables
 # 
 typegraph.attach_tables(tgraph)
 
-import IPython
-IPython.embed(header="""
---------------------------------- 
-    ipython repl for tables
-
----------------------------------
-
-tgraph.dataframes
-In [7]: sorted(tgraph.dataframes.keys())
-Out[7]: 
-['Array0177',
- 'Array0350',
- 'Array1075',...]
-
-sorted(tgraph.dataframes.keys())
-tgraph.dataframes['Array0177']
-tgraph.dataframes['Struct3388']
-tgraph.signature_graph['Struct3388']
-
-XX: reproduce the 
+"""
+Reproduce the 
 
     file:line:col:line:col: message
 
 output from 
 
-    ../../bin/sarif-results-summary results.sarif | less
+    ../../bin/sarif-results-summary results.sarif | grep size
 
-as test.  Sample:
+as test/example.  Sample output is
 
     RESULT: static/js/fileuploader.js:1214:13:1214:17: Unused variable size.
+    RESULT: static/js/tinymce/jscripts/tiny_mce/plugins/media/js/media.js:438:30:438:34: Unused variable size.
 
-Collect typedef/fields via typegraph.pdf:
+The tree paths that match up .startLine with .text and .uri are
+- .results > .[] > .message > .text
+- .results > .[] > .locations > .[] > .physicalLocation > .region > .startLine
+- .results > .[] > .locations > .[] > .physicalLocation > .artifactLocation > .uri
 
-    static/js/fileuploader.js
-        Struct2685/uri
+Note that this IGNORES the path
+- .results > .[] > .relatedLocations > .[] > .physicalLocation > .text
 
-        In [22]: d1 = tgraph.dataframes['Struct2685']
-        In [24]: d1[d1.uri == "static/js/fileuploader.js"]
-        Out[24]: 
-              struct_id  index                        uri  uriBaseId
-        0    4856718656      0  static/js/fileuploader.js  %SRCROOT%
-        77   4856758336      0  static/js/fileuploader.js  %SRCROOT%
-        ...
+We need appropriate table joins to replicate those tree paths; following the edges
+in typegraph.pdf is the most direct way to find relevant tables and keys.
 
-    :1214:13:1214:17:
-        Struct6299/startLine/startColumn/endLine/endColumn
+We only care about .message with matching .startLine, so left joins should
+work without losing any data.  Here are the tree paths and their corresponding
+tables; the tree paths are from left to right and the joins can be done in the
+same order.
 
-    Unused variable size.
-        Struct2774/message
-            d1 = tgraph.dataframes['Struct2774']
-            In [31]: d1[d1.text.str.contains("Unused variable size")]
-            Out[31]: 
-                  struct_id                   text
-            1    4856749504  Unused variable size.
-            103  4856879296  Unused variable size.
+Using ../notes/typegraph.pdf, we find these: 
 
-Follow the edges in typegraph.pdf to find joining typedefs and paths.
+    |------------+----------+---------+-------------------+-------------------+------------|
+    | .locations |          | .[]     | .physicalLocation | .artifactLocation | .uri       |
+    | sf(4055)   |          | af(350) | sf(2683)          | sf(4963)          | sf(2685)   |
+    |------------+----------+---------+-------------------+-------------------+------------|
+    | .locations |          | .[]     | .physicalLocation | .region           | .startLine |
+    | sf(4055)   |          | af(350) | sf(2683)          | sf(4963)          | sf(6299)   |
+    |------------+----------+---------+-------------------+-------------------+------------|
+    | .message   | .text    |         |                   |                   |            |
+    | sf(4055)   | sf(2774) |         |                   |                   |            |
+    |------------+----------+---------+-------------------+-------------------+------------|
 
-    Struct4963
-
-    Struct2683
-
-
-""")
+"""
+# 
+# Access convenience functions
+# 
+sf = lambda num: tgraph.dataframes['Struct' + str(num)]
+af = lambda num: tgraph.dataframes['Array' + str(num)]
 
 # 
-# These merges are for reconstructing ../../bin/sarif-results-summary output, but
-# they also form the "bottom right" dataframe on the type graph (see the .pdf) and
-# can be used for other result-oriented output.
-
+# Form the dataframe via joins
 # 
-# original dataframes
-# 
-#         Struct2685/uri
-f2685 = odf_location = tgraph.dataframes['Struct2685']
-
-#         Struct6299/startLine/startColumn/endLine/endColumn
-f6299 = odf_region = tgraph.dataframes['Struct6299']
-
-#         Struct2774/message
-f2774 = odf_message = tgraph.dataframes['Struct2774']
-
-# 
-# Linking dataframes
-# 
-f4963 = ldf_physicalLocation = tgraph.dataframes['Struct4963']
-
-f2683 = tgraph.dataframes['Struct2683']
-
-# f4963 -> f6299
-m_f4963_f6299 = pd.merge(
-    f4963,
-    f6299,
-    how="inner",
-    on=None,
-    left_on='region',
-    right_on='struct_id',
-    left_index=False,
-    right_index=False,
-    sort=True,
-    suffixes=("_f4963", "_f6299"),
-    copy=True,
-    indicator=False,
-    validate="1:m",
+d1 = (
+    sf(4055)
+    .merge(af('0350'), how="left", left_on='locations', right_on='array_id', validate="1:m")
+    .drop(columns=['struct_id', 'locations', 'array_id', 'value_index', 'type_at_index'])
+    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
+           suffixes=("_4055", "_2683"), validate="1:m")
+    .drop(columns=['struct_id', 'id_or_value_at_index'])
+    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'physicalLocation'])
+    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'region'])
+    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'artifactLocation'])
+    .merge(sf(2774), how="left", left_on='message_4055', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'message_4055'])
+    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id',
+           suffixes=("_4055", "_2683"), validate="1:m")
 )
-# m_f4963_f6299 -> f2685
-m_f4963_f6299_f2685 = pd.merge(
-    m_f4963_f6299,
-    f2685,
-    how="inner",
-    on=None,
-    left_on='artifactLocation',
-    right_on='struct_id',
-    left_index=False,
-    right_index=False,
-    sort=True,
-    suffixes=("_m_f4963_f6299", "_f2685"),
-    copy=True,
-    indicator=False,
-    validate="1:m",
-)
+#
+# As expected from the above note
+#  
+#     Note that this IGNORES the path
+#     - .results > .[] > .relatedLocations > .[] > .physicalLocation > .text
+#  
+# we have no text entries that table:
+#  
+#     In [88]: d1[d1.text_2683 != '']
+#     Out[88]: 
+#     Empty DataFrame
 
-# f2683 -> m_f4963_f6299_f2685
-m_f2683_f4963_f6299_f2685 = pd.merge(
-    f2683,
-    m_f4963_f6299_f2685,
-    how="inner",
-    on=None,
-    left_on='physicalLocation',
-    right_on='struct_id_f4963',
-    left_index=False,
-    right_index=False,
-    sort=True,
-    suffixes=("_f2683", "_m_f4963_f6299_f2685"),
-    copy=True,
-    indicator=False,
-    validate="1:m",
-)
-
-# m_f2683_f4963_f6299_f2685 -> f2774
-m_f2683_f4963_f6299_f2685_f2774 = pd.merge(
-    m_f2683_f4963_f6299_f2685,
-    f2774,
-    how="inner",
-    on=None,
-    left_on='message',
-    right_on='struct_id',
-    left_index=False,
-    right_index=False,
-    sort=True,
-    suffixes=("_m_f2683_f4963_f6299_f2685", "_f2774"),
-    copy=True,
-    indicator=False,
-    validate="1:m",
-)
+# 
+# Reproduce ALL `file:line:col:line:col: message` entries as a table
+# 
+d2 = (d1[['uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text_4055']]
+      .rename({'text_4055': 'message'}, axis='columns'))
 
 #
-# Remove indexing columns.  Note: each row corresponds to the fields of an
-# original table.
+# Write output
 #
-qdf = m_f2683_f4963_f6299_f2685_f2774[
-    ['id', 'message', 'physicalLocation',
-     'artifactLocation', 'region', 
-     'endColumn', 'endLine', 'startColumn', 'startLine',
-     'index', 'uri', 'uriBaseId',
-     'text']]
-
-qdf[qdf.uri == "static/js/fileuploader.js"]
-qdf[qdf.text.str.contains("Unused variable size")]
-
-# 
-# 
-# 
-
-
-
-if args.dot_output:
-    signature._signature(args, sarif_struct, context)
-    struct_graph = [(typedef, sig) for sig, typedef in context.sig_to_typedef.items()]
-    signature.write_header(sys.stdout)
-    for typedef, sig in struct_graph:
-        signature.write_node(sys.stdout, typedef, sig)
-    for typedef, sig in struct_graph:
-        signature.write_edges(args, sys.stdout, typedef, sig)
-    signature.write_footer(sys.stdout)
-
-elif args.typedef_signatures:
-    signature._signature(args, sarif_struct, context)
-    struct_graph = dict((typedef, sig) for sig,typedef in context.sig_to_typedef.items())
-    pprint(struct_graph, sys.stdout, indent=4)
+if args.output_format == 'csv':
+    d2.to_csv(sys.stdout, index_label='index')
 
 else:
-    pprint(signature._signature(args, sarif_struct, context), sys.stdout, indent=2)
+    sys.stderr.write("unknown output format")
+    sys.exit(1)
+
