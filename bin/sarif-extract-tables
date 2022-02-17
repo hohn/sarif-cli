@@ -3,6 +3,7 @@
 """
 import argparse
 import json
+import pathlib
 from sarif_cli import signature
 from sarif_cli import typegraph
 import sys
@@ -14,6 +15,7 @@ import pandas as pd
 #
 parser = argparse.ArgumentParser(description='Read a sarif file and produce tabular output.')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+parser.add_argument('outdir', metavar='output-dir', type=str, help='output directory')
 parser.add_argument('-f', '--output-format', metavar='format', type=str, default="csv",
                     help='Output format for table.  Currently just csv; '
                     '  other formats supported by pandas can be added.')
@@ -100,15 +102,15 @@ sf = lambda num: tgraph.dataframes['Struct' + str(num)]
 af = lambda num: tgraph.dataframes['Array' + str(num)]
 
 # 
-# Form the dataframe via joins
+# Form the message dataframe via joins
 # 
 d1 = (
     sf(4055)
     .merge(af('0350'), how="left", left_on='locations', right_on='array_id', validate="1:m")
-    .drop(columns=['struct_id', 'locations', 'array_id', 'value_index', 'type_at_index'])
+    .drop(columns=['locations', 'array_id', 'value_index', 'type_at_index'])
     .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
            suffixes=("_4055", "_2683"), validate="1:m")
-    .drop(columns=['struct_id', 'id_or_value_at_index'])
+    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
     .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
     .drop(columns=['struct_id', 'physicalLocation'])
     .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
@@ -135,14 +137,48 @@ d1 = (
 # 
 # Reproduce ALL `file:line:col:line:col: message` entries as a table
 # 
-d2 = (d1[['uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text_4055']]
+d2 = (d1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text_4055']]
       .rename({'text_4055': 'message'}, axis='columns'))
+
+# 
+# Form the relatedLocation dataframe via joins.  This is subtly different from d1:
+# left_on=relatedLocations, and no left_on='message_4055'
+dr1 = (
+    sf(4055)
+    .merge(af('0350'), how="left", left_on='relatedLocations', right_on='array_id', validate="1:m")
+    .drop(columns=['relatedLocations', 'array_id', 'value_index', 'type_at_index'])
+    # 
+    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
+           suffixes=("_4055", "_2683"), validate="1:m")
+    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
+    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
+    # 
+    .drop(columns=['struct_id', 'physicalLocation'])
+    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'region'])
+    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
+    # 
+    .drop(columns=['struct_id', 'artifactLocation'])
+    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'message_2683'])
+)
+
+dr2 = (dr1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text']]
+      .rename({'text': 'message'}, axis='columns'))
+
+# Remove dummy locations previously injected by signature.fillsig
+dr3 = dr2[dr2.uri != 'scli-dyys dummy value']
 
 #
 # Write output
 #
 if args.output_format == 'csv':
-    d2.to_csv(sys.stdout, index_label='index')
+    p = pathlib.Path(args.outdir)
+    p.mkdir(exist_ok=True)
+    with p.joinpath('messages.csv').open(mode='wb') as messages:
+        d2.to_csv(messages, index_label='index')
+    with p.joinpath('relatedLocations.csv').open(mode='wb') as relo:
+        dr3.to_csv(relo, index_label='index')
 
 else:
     sys.stderr.write("unknown output format")

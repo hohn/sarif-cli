@@ -203,12 +203,15 @@ properties_keys = set([first for first, _ in
                          ('sub-severity', 'String'),
                          ('tags', 'Array003'),
                         ]])
-dummy_properties = { 'kind' : 'unspecified',
-                     'precision' : 'unspecified',
-                     'security-severity' : 'unspecified',
-                     'severity' : 'unspecified',
-                     'sub-severity' : 'unspecified',
-                     'tags' : ['unspecified'],
+# 
+# scli-dyys is a random id string for later identification of dummy values
+# 
+dummy_properties = { 'kind' : 'scli-dyys dummy value',
+                     'precision' : 'scli-dyys dummy value',
+                     'security-severity' : 'scli-dyys dummy value',
+                     'severity' : 'scli-dyys dummy value',
+                     'sub-severity' : 'scli-dyys dummy value',
+                     'tags' : ['scli-dyys dummy value'],
                     }
 
 relatedLocations_keys = set([first for first, _ in
@@ -221,16 +224,16 @@ dummy_newlineSequences = ['\r\n', '\n', '\u2028', '\u2029']
 
 dummy_relatedLocations_entry = [
     {'id': -1,
-     'physicalLocation': {'artifactLocation': {'uri': '',
-                                               'uriBaseId': '%SRCROOT%',
+     'physicalLocation': {'artifactLocation': {'uri': 'scli-dyys dummy value',
+                                               'uriBaseId': 'scli-dyys dummy value',
                                                'index': -1},
                           'region': {'startLine': -1, 
                                      'startColumn': -1,
                                      'endLine': -1, 
                                      'endColumn': -1}},
-     'message': {'text': ''}}]
+     'message': {'text': 'scli-dyys dummy value'}}]
 
-dummy_message_entry = {'text': ''}
+dummy_message_entry = {'text': 'scli-dyys dummy value'}
 
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
