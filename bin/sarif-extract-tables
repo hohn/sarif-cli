@@ -140,36 +140,6 @@ d1 = (
 d2 = (d1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text_4055']]
       .rename({'text_4055': 'message'}, axis='columns'))
 
-# 
-# Form the relatedLocation dataframe via joins.  This is subtly different from d1:
-# left_on=relatedLocations, and no left_on='message_4055'
-dr1 = (
-    sf(4055)
-    .merge(af('0350'), how="left", left_on='relatedLocations', right_on='array_id', validate="1:m")
-    .drop(columns=['relatedLocations', 'array_id', 'value_index', 'type_at_index'])
-    # 
-    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
-           suffixes=("_4055", "_2683"), validate="1:m")
-    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
-    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
-    # 
-    .drop(columns=['struct_id', 'physicalLocation'])
-    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'region'])
-    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
-    # 
-    .drop(columns=['struct_id', 'artifactLocation'])
-    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'message_2683'])
-)
-
-# Keep columns of interest
-dr2 = (dr1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text']]
-      .rename({'text': 'message'}, axis='columns'))
-
-# Remove dummy locations previously injected by signature.fillsig
-dr3 = dr2[dr2.uri != 'scli-dyys dummy value']
-
 #
 # Form the codeFlows dataframe
 # 
@@ -230,6 +200,42 @@ dco2 = (dco1[['uri',
 # Remove dummy locations previously injected by signature.fillsig
 dco3 = dco2[dco2.uri != 'scli-dyys dummy value']
     
+# 
+# Form the relatedLocation dataframe via joins, starting from the union of
+# relatedLocations from `kind problem` (sf(4055)) and `kind path-problem`
+# (sf(9699)).  This is only sligthly different from d1: left_on=relatedLocations,
+# and no left_on='message_4055'
+#
+dr1 = (
+    pd.concat([sf(4055)[['relatedLocations', 'struct_id']], sf(9699)[['relatedLocations', 'struct_id']]])
+    .merge(af('0350'), how="left", left_on='relatedLocations', right_on='array_id', validate="1:m")
+    .drop(columns=['relatedLocations', 'array_id', 'value_index', 'type_at_index'])
+    # 
+    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
+           suffixes=("_4055_9699", "_2683"), validate="1:m")
+    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
+    # 
+    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'physicalLocation'])
+    # 
+    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'region'])
+    # 
+    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'artifactLocation'])
+    # 
+    .merge(sf(2774), how="left", left_on='message', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'message'])
+)
+
+# Keep columns of interest
+dr2 = (dr1[['struct_id_4055_9699', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text']]
+      .rename({'text': 'message', 'struct_id_4055_9699': 'struct_id'}, axis='columns'))
+
+# Remove dummy locations previously injected by signature.fillsig
+dr3 = dr2[dr2.uri != 'scli-dyys dummy value']
+
+
 #
 # Write output
 #
