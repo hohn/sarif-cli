@@ -163,6 +163,7 @@ dr1 = (
     .drop(columns=['struct_id', 'message_2683'])
 )
 
+# Keep columns of interest
 dr2 = (dr1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text']]
       .rename({'text': 'message'}, axis='columns'))
 
@@ -170,13 +171,75 @@ dr2 = (dr1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'end
 dr3 = dr2[dr2.uri != 'scli-dyys dummy value']
 
 #
+# Form the codeFlows dataframe
+# 
+dco1 = (
+    sf(9699)
+    .merge(af(9799), how="left", left_on='codeFlows', right_on='array_id', validate="1:m")
+    .drop(columns=['struct_id', 'codeFlows', 'array_id', 'type_at_index'])
+    # 
+    .merge(sf(7122), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+    .drop(columns=['id_or_value_at_index', 'struct_id'])
+    # 
+    .merge(af(1597), how="left", left_on='threadFlows', right_on='array_id',
+           suffixes=("_codeFlow_9799", "_threadFlows_1597"), validate="1:m")
+    .drop(columns=['threadFlows', 'array_id', 'type_at_index'])
+    #
+    .merge(sf(4194), how="left", left_on='id_or_value_at_index', right_on='struct_id', 
+           suffixes=("_9699", "_4194"), validate="1:m")
+    .drop(columns=['id_or_value_at_index', 'struct_id'])
+    #
+    .merge(af(1075), how="left", left_on='locations_4194', right_on='array_id', validate="1:m")
+    .drop(columns=['locations_4194', 'array_id', 'type_at_index'])
+    .rename(columns={"value_index": "value_index_locations_1075"})
+    #
+    .merge(sf('0987'), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+    .drop(columns=['id_or_value_at_index', 'struct_id'])    
+    # 
+    .merge(sf(2683), how="left", left_on='location', right_on='struct_id',
+           suffixes=("_9699", "_2683"), validate="1:m")
+    .drop(columns=['location', 'struct_id'])
+    # 
+    # The below is similar to dr1
+    # 
+    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'physicalLocation'])
+    # 
+    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'region'])
+    # 
+    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'artifactLocation'])
+    # 
+    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id', validate="1:m")
+    .drop(columns=['struct_id', 'message_2683'])
+)
+
+# Keep columns of interest
+dco2 = (dco1[['uri', 
+              'startLine', 'startColumn', 'endLine', 'endColumn', 
+              'text', 
+              'ruleIndex', 'value_index_codeFlow_9799',
+              'value_index_threadFlows_1597', 'value_index_locations_1075',
+              ]]
+        .rename({'text': 'message', 
+                 'value_index_codeFlow_9799': 'idx_codeFlow', 
+                 'value_index_threadFlows_1597': 'idx_threadFlows', 
+                 'value_index_locations_1075': 'idx_locations'}, axis='columns'))
+
+# Remove dummy locations previously injected by signature.fillsig
+dco3 = dco2[dco2.uri != 'scli-dyys dummy value']
+    
+#
 # Write output
 #
 if args.output_format == 'csv':
     p = pathlib.Path(args.outdir)
     p.mkdir(exist_ok=True)
-    with p.joinpath('messages.csv').open(mode='wb') as messages:
-        d2.to_csv(messages, index_label='index')
+    with p.joinpath('problem.csv').open(mode='wb') as problem:
+        d2.to_csv(problem, index_label='index')
+    with p.joinpath('path-problem.csv').open(mode='wb') as path_problem:
+        dco3.to_csv(path_problem, index_label='index')
     with p.joinpath('relatedLocations.csv').open(mode='wb') as relo:
         dr3.to_csv(relo, index_label='index')
 
