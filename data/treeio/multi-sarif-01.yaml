@@ -1,0 +1,21 @@
+- creation_date: '2021-12-09'   # Repository creation date
+  primary_language: javascript  # By lines of code
+  project_name: treeio/treeio   # Repo name-short name
+  query_commit_id: fa9571646c   # Commit id for custom (non-library) queries
+  sarif_content: {}             # The sarif content will be attached here
+  sarif_file_name: 2021-12-09/results.sarif # Path to sarif file
+  scan_start_date: '2021-12-09'             # Beginning date/time of scan
+  scan_stop_date:  '2021-12-10'             # End date/time of scan
+  tool_name: codeql
+  tool_version: v1.27
+
+- creation_date: '2022-02-25'  
+  primary_language: javascript 
+  project_name: treeio/treeio  
+  query_commit_id: fa9571646c  
+  sarif_content: {}            
+  sarif_file_name: 2022-02-25/results.sarif 
+  scan_start_date: '2022-02-25'  
+  scan_stop_date:  '2022-02-26'  
+  tool_name: codeql
+  tool_version: v1.29

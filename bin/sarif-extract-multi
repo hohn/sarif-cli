@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+""" Extract data from multiple sarif files in table form.
+"""
+import argparse
+import json
+import pathlib
+from sarif_cli import signature, signature_multi
+from sarif_cli import typegraph
+import sarif_cli.table_joins as tj
+import sys
+from collections import defaultdict
+import pandas as pd
+
+#
+# Start processing 
+#
+parser = argparse.ArgumentParser(description='Read a collection of sarif files and produce tabular output.')
+parser.add_argument('file', metavar='sarif-files.json', type=str,
+                    help="json file containing the metadata array.  Use - for stdin. ")
+parser.add_argument('outdir', metavar='output-dir', type=str, help='output directory')
+parser.add_argument('-c', '--combine-only', action="store_true",
+                    help='Read the referenced input file(s) and write the combined structure to stdout')
+args = parser.parse_args()
+
+# Load meta info
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    meta_struct = json.load(fp)
+
+# Attach referenced files
+def load(fname):
+    with open(fname, 'rb') as fp: 
+        content = json.load(fp)
+    return content
+
+for sarif_meta in meta_struct:
+    sarif_meta['sarif_content'] = load(sarif_meta['sarif_file_name'])
+
+# Only output composite?
+if args.combine_only:
+    json.dump(meta_struct, sys.stdout, indent=4)
+    sys.exit(0)
+#
+# Preprocess raw SARIF to get smaller signature
+#
+context = signature.Context(
+    {
+        "string" : "String",
+        "int" : "Int",
+        "bool" : "Bool"
+    }
+) 
+meta_struct = signature.fillsig(args, meta_struct, context)
+#
+# Use reference type graph (signature) to traverse sarif and attach values to tables
+#
+tgraph = typegraph.Typegraph(signature_multi.struct_graph_2022_03_08)
+typegraph.destructure(tgraph, signature_multi.start_node_2022_03_08, meta_struct)
+#
+# Form output tables
+# 
+typegraph.attach_tables(tgraph)
+# 
+# Form dataframes originally introduced by sarif-extract-tables
+# 
+sf_2683 = tj.joins_for_sf_2683(tgraph)
+kind_problem = tj.joins_for_problem(tgraph, sf_2683)
+kind_pathproblem = tj.joins_for_path_problem(tgraph, sf_2683)
+codeflows_9799 = tj.joins_for_codeflows(tgraph, sf_2683)
+related_locations = tj.joins_for_relatedLocations(tgraph, sf_2683)
+# 
+# Form the new dataframes
+# 
+project_df = tj.joins_for_project(tgraph)
+artifacts_df = tj.joins_for_artifacts(tgraph)
+#
+# Write output
+#
+p = pathlib.Path(args.outdir)
+p.mkdir(exist_ok=True)
+def write(path, frame):
+    with p.joinpath(path).open(mode='wb') as fh:
+        frame.to_csv(fh, index_label='index')
+write('problem.csv', kind_problem)
+write('path-problem.csv', kind_pathproblem)
+write('codeflows.csv', codeflows_9799)
+write('related-locations.csv', related_locations)
+write('project.csv', project_df)
+write('artifacts.csv', artifacts_df)

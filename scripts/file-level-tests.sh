@@ -29,7 +29,7 @@ done
 # cases covering the different output options.  They are intended for manual use
 # and review.
 #
-read -r file srcroot <<< "../data/treeio/results.sarif ../data/treeio/treeio"
+read -r file srcroot <<< "../data/treeio/2021-12-09/results.sarif ../data/treeio/treeio"
 
 # All results, minimal output
 sarif-results-summary             $file | less

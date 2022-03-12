@@ -4,7 +4,7 @@ These functions convert a SARIF (or any json structure) to its signature, with v
 See sarif-to-dot for options and examples.
 """
 from dataclasses import dataclass
-import sarif_cli.traverse as traverse
+from . import traverse
 import zlib
 
 # 

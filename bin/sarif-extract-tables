@@ -1,10 +1,21 @@
 #!/usr/bin/env python
 """ Extract data from sarif files in table form.
+
+These particular table joins create tables matching the content of
+./sarif-results-summary
+
+Return tables providing the `problem`, `path-problem` and `relatedLocations`
+information.
+
+The `problem` and `path-problem` entries provide that information; the
+`relatedLocations` table provides the details when multiple results are present
+for either.
+
 """
 import argparse
 import json
 import pathlib
-from sarif_cli import signature
+from sarif_cli import signature, signature_single
 from sarif_cli import typegraph
 import sys
 from collections import defaultdict
@@ -43,8 +54,8 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 #
 # Use reference type graph (signature) to traverse sarif and attach values to tables
 #
-tgraph = typegraph.Typegraph(typegraph.struct_graph_2022_02_01)
-typegraph.destructure(tgraph, typegraph.start_node_2022_02_01, sarif_struct)
+tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
+typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
 
 #
 # Form output tables
