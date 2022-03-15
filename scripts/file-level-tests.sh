@@ -15,7 +15,7 @@ sarif-results-summary  -h
 test_files="
 ../data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif
 ../data/torvalds_linux__2021-10-21_10_07_00__export.sarif
-../data/treeio/results.sarif
+../data/treeio/2021-12-09/results.sarif
 "
 for file in $test_files ; do
     sarif-results-summary $file > /dev/null 

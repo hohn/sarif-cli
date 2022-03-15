@@ -223,9 +223,9 @@ def joins_for_project(tgraph):
     af = lambda num: tgraph.dataframes['Array' + str(num)]
     # 
     project_df = (
-        af(6785)
+        af(7481)
         #
-        .merge(sf(3739), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+        .merge(sf(3452), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
         .drop(columns=['id_or_value_at_index', 'struct_id', 'array_id', 'type_at_index'])
         #
         .merge(sf(6787), how="left", left_on='sarif_content', right_on='struct_id', validate="1:m")
@@ -233,7 +233,7 @@ def joins_for_project(tgraph):
         .rename(columns={"version": "version_6787"})
         #
         .merge(af('0177'), how="left", left_on='runs', right_on='array_id',
-               suffixes=("_6785", "_0177"), validate="1:m")
+               suffixes=("_7481", "_0177"), validate="1:m")
         .drop(columns=['runs', 'array_id', 'type_at_index'])
         #
         .merge(sf(3388), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")

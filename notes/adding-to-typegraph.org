@@ -1,0 +1,57 @@
+* Adding to / updating the typegraph
+
+  1. Open the current graph in [[./typegraph-multi.pdf]] as reference
+  2. Identify the element to update, e.g. Struct3739
+  3. Find its uses via
+     #+BEGIN_SRC sh
+       ag 3739 bin sarif_cli
+     #+END_SRC
+     or so.
+  4. Update or follow the steps in the found files; in this case
+     #+BEGIN_SRC text
+       sarif_cli/table_joins.py
+       228:        .merge(sf(3739), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+
+       sarif_cli/signature_multi.py
+       135:    (   'Struct3739',
+       147:    ('Array6785', ('array', (0, 'Struct3739')))]
+     #+END_SRC
+     1. First update the signature.  The file [[./sarif_cli/signature_multi.py]] has
+        instructions for updating (or creating) a typegraph.
+
+        The update from commit 0f070a6ae to 0f070a6ae+1 introduces the changes
+        #+BEGIN_SRC text
+          -    (   'Struct3739',
+          +    (   'Struct3452',
+
+          -    ('Array6785', ('array', (0, 'Struct3739')))]
+          +    ('Array7481', ('array', (0, 'Struct3452')))]
+        #+END_SRC
+
+     2. Update the existing uses.  Ids are unique, so a simple search is enough:
+        #+BEGIN_SRC sh
+          cd ~/local/sarif-cli
+          ag '(3739|6785)' bin sarif_cli
+
+          sarif_cli/table_joins.py
+          226:        af(6785)
+          228:        .merge(sf(3739), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+          236:               suffixes=("_6785", "_0177"), validate="1:m")
+
+          sarif_cli/signature_multi.py
+          26:start_node_2022_03_08 = 'Array6785'
+        #+END_SRC
+
+  5. Update the typegraph's pdf.  For this case,
+     #+BEGIN_SRC sh
+       cd ../data/treeio
+       sarif-extract-multi -c multi-sarif-01.json none | \
+           sarif-to-dot -u -t -f -n -d  - | dot -Tpdf > typegraph-multi.pdf
+
+       mv typegraph-multi.pdf ../../notes/
+     #+END_SRC
+
+  6. Run the tests.  Currently, =*test*= files in [[../scripts/]].
+
+  
+      

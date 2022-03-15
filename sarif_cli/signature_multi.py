@@ -23,7 +23,7 @@ To get a map of this type graph, use
 # 
 # The starting node is the leftmost node in ../notes/typegraph-multi.pdf
 # 
-start_node_2022_03_08 = 'Array6785'
+start_node_2022_03_08 = 'Array7481'
 
 struct_graph_2022_03_08 = (
 [   ('String', 'string'),
@@ -131,8 +131,8 @@ struct_graph_2022_03_08 = (
         (   'struct',
             ('$schema', 'String'),
             ('runs', 'Array0177'),
-            ('version', 'String'))), # Up to here identical to struct_graph_2022_02_01
-    (   'Struct3739',
+            ('version', 'String'))),    # Up to here identical to struct_graph_2022_02_01
+    (   'Struct3452',
         (   'struct',
             ('creation_date', 'String'),
             ('primary_language', 'String'),
@@ -140,9 +140,10 @@ struct_graph_2022_03_08 = (
             ('query_commit_id', 'String'),
             ('sarif_content', 'Struct6787'),
             ('sarif_file_name', 'String'),
+            ('scan_id', 'Int'),
             ('scan_start_date', 'String'),
             ('scan_stop_date', 'String'),
             ('tool_name', 'String'),
             ('tool_version', 'String'))),
-    ('Array6785', ('array', (0, 'Struct3739')))]
+    ('Array7481', ('array', (0, 'Struct3452')))]
 )
