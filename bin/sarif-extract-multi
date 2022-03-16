@@ -6,9 +6,10 @@ import json
 import pathlib
 from sarif_cli import signature, signature_multi
 from sarif_cli import typegraph
+from dataclasses import dataclass
 import sarif_cli.table_joins as tj
 import sys
-from collections import defaultdict
+from collections import UserDict
 import pandas as pd
 
 #
@@ -62,27 +63,43 @@ typegraph.attach_tables(tgraph)
 # 
 # Form dataframes originally introduced by sarif-extract-tables
 # 
+@dataclass
+class BaseTables:
+    kind_problem : pd.DataFrame
+    kind_pathproblem : pd.DataFrame
+    codeflows : pd.DataFrame
+    relatedLocations : pd.DataFrame
+    project : pd.DataFrame
+    rules : pd.DataFrame
+    artifacts : pd.DataFrame
+    def __init__(self): pass
+
+bt = BaseTables()
+
 sf_2683 = tj.joins_for_sf_2683(tgraph)
-kind_problem = tj.joins_for_problem(tgraph, sf_2683)
-kind_pathproblem = tj.joins_for_path_problem(tgraph, sf_2683)
-codeflows_9799 = tj.joins_for_codeflows(tgraph, sf_2683)
-related_locations = tj.joins_for_relatedLocations(tgraph, sf_2683)
+bt.kind_problem = tj.joins_for_problem(tgraph, sf_2683)
+bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, sf_2683)
+bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
+bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
 # 
 # Form the new dataframes
 # 
-project_df = tj.joins_for_project(tgraph)
-artifacts_df = tj.joins_for_artifacts(tgraph)
+bt.project = tj.joins_for_project(tgraph)
+bt.rules = tj.joins_for_rules(tgraph)
+bt.artifacts = tj.joins_for_artifacts(tgraph)
 #
 # Write output
 #
 p = pathlib.Path(args.outdir)
 p.mkdir(exist_ok=True)
 def write(path, frame):
-    with p.joinpath(path).open(mode='wb') as fh:
+    with p.joinpath(path + ".csv").open(mode='wb') as fh:
         frame.to_csv(fh, index_label='index')
-write('problem.csv', kind_problem)
-write('path-problem.csv', kind_pathproblem)
-write('codeflows.csv', codeflows_9799)
-write('related-locations.csv', related_locations)
-write('project.csv', project_df)
-write('artifacts.csv', artifacts_df)
+write('kind_problem', bt.kind_problem)
+write('kind_pathproblem', bt.kind_pathproblem)
+write('codeflows', bt.codeflows)
+write('relatedLocations', bt.relatedLocations)
+write('project', bt.project)
+write('rules', bt.rules)
+write('artifacts', bt.artifacts)
+

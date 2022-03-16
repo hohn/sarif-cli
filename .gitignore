@@ -16,3 +16,8 @@
 # Temporary files
 foo*
 tmp*
+.ipynb_checkpoints
+
+# MacOS index files
+.DS_Store
+

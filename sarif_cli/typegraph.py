@@ -251,3 +251,30 @@ def attach_tables(typegraph):
             continue            # skip String etc.
         typegraph.dataframes[typedef] = pd.DataFrame(valarray, columns = colheader)
         
+
+def tagged_array_columns(typegraph, array_id):
+    """ Return a dict mapping the array column names to versions tagged with the id.
+    
+    Example:
+    The original table headers are 
+
+        array_id  value_index type_at_index  id_or_value_at_index
+
+    the tagged versions become
+
+        t8754_array_id  t8754_value_index t8754_type_at_index  t8754_id_or_value_at_index    
+    """
+    array_id = str(array_id)
+    typedef = 'Array' + array_id
+    colheader = ('array_id', 'value_index', 'type_at_index', 'id_or_value_at_index')
+    return { header:"t{:s}_{:s}".format(array_id, header) for header in colheader}
+
+
+def tagged_struct_columns(typegraph, struct_id):
+    """ Return a dict mapping the struct column names to versions tagged with the id.
+    XX:
+    """
+    struct_id = str(struct_id)
+    typedef = 'Struct' + struct_id
+    colheader = ('struct_id', *typegraph.fields[typedef])
+    return { header:"t{:s}_{:s}".format(struct_id, header) for header in colheader}

@@ -6,6 +6,7 @@
     provides those for the other tables.
 """
 import pandas as pd
+from .typegraph import tagged_array_columns, tagged_struct_columns
 
 def joins_for_sf_2683(tgraph):
     """ 
@@ -256,31 +257,6 @@ def joins_for_project(tgraph):
         .drop(columns=['driver', 'struct_id'])
         .rename(columns={"version": "driver_version_7820", "name": "driver_name_7820"})
         # 
-        .merge(af(8754), how="left", left_on='rules', right_on='array_id', validate="1:m")
-        .drop(columns=['rules', 'array_id', 'type_at_index'])
-        .rename(columns={"value_index": "rule_value_index_8754"}) # rule index
-        #
-        .merge(sf(6818), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id'])
-        .rename(columns={"id": "rule_id_6818", "name": "rule_name_6818"})
-        # 
-        .merge(sf(8581), how="left", left_on='defaultConfiguration', right_on='struct_id', validate="1:m")
-        .drop(columns=['defaultConfiguration', 'struct_id'])
-        # 
-        .merge(sf(2774), how="left", left_on='fullDescription', right_on='struct_id', validate="1:m")
-        .drop(columns=['fullDescription', 'struct_id'])
-        .rename(columns={"text": "rule_fullDescription_6818"})
-        # 
-        .merge(sf(2774), how="left", left_on='shortDescription', right_on='struct_id', validate="1:m")
-        .drop(columns=['shortDescription', 'struct_id'])
-        .rename(columns={"text": "rule_shortDescription_6818"})
-        # 
-        .merge(sf(7849), how="left", left_on='properties', right_on='struct_id', validate="1:m")
-        .drop(columns=['properties', 'struct_id'])
-        # 
-        .merge(af(7069), how="left", left_on='tags', right_on='array_id', validate="1:m")
-        .drop(columns=['tags', 'array_id', 'type_at_index'])
-        .rename(columns={"value_index": "tag_index_7069", "id_or_value_at_index": "tag_text_7069"})
         # versionControlProvenance - repositoryUri
         # The merge with af(8754) replicates versionControlProvenance, no 1:m validation
         .merge(af(5511), how="left", left_on='versionControlProvenance', right_on='array_id')
@@ -292,6 +268,50 @@ def joins_for_project(tgraph):
         #
     )
     return project_df
+
+def joins_for_rules(tgraph):
+    """ 
+    Return table providing the `rules` information.
+    """
+    # Access convenience functions
+    sf = lambda num: tgraph.dataframes['Struct' + str(num)]
+    sft = lambda id: sf(id).rename(columns = tagged_struct_columns(tgraph, id))
+    af = lambda num: tgraph.dataframes['Array' + str(num)]
+    aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
+    # 
+    rules_df = (
+        aft(8754)
+        # 
+        .drop(columns=['t8754_type_at_index'])
+        # 
+        .merge(sft(6818), how="left", left_on='t8754_id_or_value_at_index',
+               right_on='t6818_struct_id',
+               validate="1:m")
+        .drop(columns=['t8754_id_or_value_at_index', 't6818_struct_id'])
+        # 
+        .merge(sft(8581), how="left", left_on='t6818_defaultConfiguration',
+               right_on='t8581_struct_id', validate="1:m") 
+        .drop(columns=['t6818_defaultConfiguration', 't8581_struct_id'])
+        # 
+        .merge(sft(2774), how="left", left_on='t6818_fullDescription',
+               right_on='t2774_struct_id', validate="1:m") 
+        .drop(columns=['t6818_fullDescription', 't2774_struct_id'])
+        .rename(columns={'t2774_text': "t6818_t2774_fullDescription"})
+        # 
+        .merge(sft(2774), how="left", left_on='t6818_shortDescription',
+               right_on='t2774_struct_id', validate="1:m") 
+        .drop(columns=['t6818_shortDescription', 't2774_struct_id'])
+        .rename(columns={"t2774_text": 't6818_t2774_shortDescription'})
+        # 
+        .merge(sft(7849), how="left", left_on='t6818_properties',
+               right_on='t7849_struct_id', validate="1:m") 
+        .drop(columns=['t6818_properties', 't7849_struct_id'])
+        # 
+        .merge(aft(7069), how="left", left_on='t7849_tags',
+               right_on='t7069_array_id', validate="1:m")  
+        .drop(columns=['t7849_tags', 't7069_array_id', 't7069_type_at_index'])
+        )
+    return rules_df
 
 def joins_for_artifacts(tgraph):
     """ 
