@@ -18,7 +18,6 @@ import pathlib
 from sarif_cli import signature, signature_single
 from sarif_cli import typegraph
 import sys
-from collections import defaultdict
 import pandas as pd
 
 #

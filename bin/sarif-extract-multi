@@ -9,7 +9,6 @@ from sarif_cli import typegraph
 from dataclasses import dataclass
 import sarif_cli.table_joins as tj
 import sys
-from collections import UserDict
 import pandas as pd
 
 #

@@ -8,7 +8,7 @@ This file also contains some type graph reference values; these may be moved out
 separate files at some point.
 """
 from dataclasses import dataclass
-from typing import *
+from typing import Any, Dict, List, Tuple, Union
 import pandas as pd
 
 #
@@ -230,7 +230,7 @@ def _destructure_list(typegraph, node: str, tree: List):
                          id(value)))
                     # Next `value` on success
                     break           
-                except MissingFieldException as e:
+                except MissingFieldException:
                     # Re-raise if last available signature failed, otherwise try
                     # next `signature`
                     if (sigindex, sigtype) == signature[-1]:
@@ -265,14 +265,12 @@ def tagged_array_columns(typegraph, array_id):
         t8754_array_id  t8754_value_index t8754_type_at_index  t8754_id_or_value_at_index    
     """
     array_id = str(array_id)
-    typedef = 'Array' + array_id
     colheader = ('array_id', 'value_index', 'type_at_index', 'id_or_value_at_index')
     return { header:"t{:s}_{:s}".format(array_id, header) for header in colheader}
 
 
 def tagged_struct_columns(typegraph, struct_id):
     """ Return a dict mapping the struct column names to versions tagged with the id.
-    XX:
     """
     struct_id = str(struct_id)
     typedef = 'Struct' + struct_id

@@ -2,9 +2,7 @@
 import argparse
 import json
 import sarif_cli.traverse as S
-import re
 import sys
-import collections
 
 parser = argparse.ArgumentParser(description='summary of results')
 parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')

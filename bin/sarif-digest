@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import json
-import sarif_cli.traverse as S
 import sys
 
 # TODO command-line: sarif-digest [<file>]
