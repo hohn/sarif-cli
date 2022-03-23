@@ -59,33 +59,35 @@ typegraph.destructure(tgraph, signature_multi.start_node_2022_03_08, meta_struct
 # Form output tables
 # 
 typegraph.attach_tables(tgraph)
-# 
-# Form dataframes originally introduced by sarif-extract-tables
+
+#
+# Dataframe / table collection
 # 
 @dataclass
 class BaseTables:
-    kind_problem : pd.DataFrame
-    kind_pathproblem : pd.DataFrame
-    codeflows : pd.DataFrame
-    relatedLocations : pd.DataFrame
-    project : pd.DataFrame
-    rules : pd.DataFrame
     artifacts : pd.DataFrame
+    codeflows : pd.DataFrame
+    kind_pathproblem : pd.DataFrame
+    kind_problem : pd.DataFrame
+    project : pd.DataFrame
+    relatedLocations : pd.DataFrame
+    rules : pd.DataFrame
     def __init__(self): pass
 
 bt = BaseTables()
-
+# 
+# Add dataframes
+# 
 sf_2683 = tj.joins_for_sf_2683(tgraph)
-bt.kind_problem = tj.joins_for_problem(tgraph, sf_2683)
-bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, sf_2683)
-bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
-bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
-# 
-# Form the new dataframes
-# 
-bt.project = tj.joins_for_project(tgraph)
-bt.rules = tj.joins_for_rules(tgraph)
+af_0350_location = tj.joins_for_af_0350_location(tgraph)
 bt.artifacts = tj.joins_for_artifacts(tgraph)
+bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
+bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, af_0350_location)
+bt.kind_problem = tj.joins_for_problem(tgraph, af_0350_location)
+bt.project = tj.joins_for_project(tgraph) # multi-sarif only
+bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
+bt.rules = tj.joins_for_rules(tgraph)
+
 #
 # Write output
 #
@@ -93,12 +95,12 @@ p = pathlib.Path(args.outdir)
 p.mkdir(exist_ok=True)
 def write(path, frame):
     with p.joinpath(path + ".csv").open(mode='wb') as fh:
-        frame.to_csv(fh, index_label='index')
-write('kind_problem', bt.kind_problem)
-write('kind_pathproblem', bt.kind_pathproblem)
-write('codeflows', bt.codeflows)
-write('relatedLocations', bt.relatedLocations)
-write('project', bt.project)
-write('rules', bt.rules)
+        frame.to_csv(fh, index=False)
 write('artifacts', bt.artifacts)
+write('codeflows', bt.codeflows)
+write('kind_pathproblem', bt.kind_pathproblem)
+write('kind_problem', bt.kind_problem)
+write('project', bt.project)
+write('relatedLocations', bt.relatedLocations)
+write('rules', bt.rules)
 

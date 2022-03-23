@@ -6,7 +6,56 @@
     provides those for the other tables.
 """
 import pandas as pd
+import re
 from .typegraph import tagged_array_columns, tagged_struct_columns
+
+def joins_for_af_0350_location(tgraph):
+    """ 
+    Join all the tables used by 0350's right side into one.
+    """
+    # Access convenience functions
+    sf = lambda num: tgraph.dataframes['Struct' + str(num)]
+    af = lambda num: tgraph.dataframes['Array' + str(num)]
+    sft = lambda id: sf(id).rename(columns = tagged_struct_columns(tgraph, id))
+    aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
+    
+    af_0350_location =  (
+        aft('0350')
+        # 
+        .merge(sft(2683), how="left", left_on='t0350_id_or_value_at_index', right_on='t2683_struct_id',
+               validate="1:m")
+        .drop(columns=['t0350_id_or_value_at_index', 't2683_struct_id', 't0350_type_at_index'])
+        # 
+        .merge(sft(4963), how="left", left_on='t2683_physicalLocation', right_on='t4963_struct_id',
+               validate="1:m")
+        .drop(columns=['t2683_physicalLocation', 't4963_struct_id'])
+        # 
+        .merge(sft(6299), how="left", left_on='t4963_region', right_on='t6299_struct_id', 
+               validate="1:m")
+        .drop(columns=['t4963_region', 't6299_struct_id'])
+        # 
+        .merge(sft(2685), how="left", left_on='t4963_artifactLocation', right_on='t2685_struct_id', 
+               validate="1:m")
+        .drop(columns=['t4963_artifactLocation', 't2685_struct_id'])
+        # 
+        .merge(sft(2774), how="left", left_on='t2683_message', right_on='t2774_struct_id', 
+               validate="1:m")
+        .drop(columns=['t2683_message', 't2774_struct_id'])
+        #
+        .rename(columns={'t0350_array_id'    : 'm0350_location_array_id',
+                         't0350_value_index' : 'm0350_location_array_index',
+                         't2683_id'          : 'm0350_location_id',
+                         't6299_endColumn'   : 'm0350_location_endColumn', 
+                         't6299_endLine'     : 'm0350_location_endLine', 
+                         't6299_startColumn' : 'm0350_location_startColumn', 
+                         't6299_startLine'   : 'm0350_location_startLine', 
+                         't2685_index'       : 'm0350_location_index',
+                         't2685_uri'         : 'm0350_location_uri',
+                         't2685_uriBaseId'   : 'm0350_location_uriBaseId',
+                         't2774_text'        : 'm0350_location_message',
+                         })
+    )
+    return af_0350_location
 
 def joins_for_sf_2683(tgraph):
     """ 
@@ -39,45 +88,71 @@ def joins_for_sf_2683(tgraph):
 
     return sf_2683
 
-def joins_for_problem(tgraph, sf_2683):
+def joins_for_problem(tgraph, af_0350_location):
     """ 
     Return table providing the `problem` information.
     """
     # Access convenience functions
     sf = lambda num: tgraph.dataframes['Struct' + str(num)]
     af = lambda num: tgraph.dataframes['Array' + str(num)]
+    sft = lambda id: sf(id).rename(columns = tagged_struct_columns(tgraph, id))
+    aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
     # 
     # Form the message dataframe (@kind problem) via joins
     # 
+
     kind_problem_1 = (
-        af(6343)
-        .rename(columns={"value_index": "results_idx_6343", "array_id": "result_id_6343"})
-        .merge(sf(4055), how="inner", left_on='id_or_value_at_index', right_on='struct_id',
+        aft(6343)
+        .merge(sft(4055), how="inner",
+               left_on='t6343_id_or_value_at_index', right_on='t4055_struct_id', 
                validate="1:m")
-        .drop(columns=['type_at_index', 'id_or_value_at_index', 'struct_id'])
-        .rename(columns={"message": "result_message_4055",
-                         "relatedLocations": "relatedLocations_id"})
-        # locations
-        .merge(af('0350'), how="left", left_on='locations', right_on='array_id', validate="1:m")
-        .drop(columns=['locations', 'array_id', 'type_at_index'])
-        # 
-        .merge(sf_2683, how="left", left_on='id_or_value_at_index', right_on='struct_id_2683', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id_2683'])
-        # 
-        .merge(sf(2774), how="left", left_on='result_message_4055', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 'result_message_4055'])
-        .rename(columns={"text": "message_text_4055"})
-        # 
-        .merge(sf(4199), how="left", left_on='partialFingerprints', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 'partialFingerprints'])
+        .drop(columns=['t6343_type_at_index', 't6343_id_or_value_at_index',
+                       't4055_struct_id']) 
         #
-        .merge(
-            sf(3942).rename(columns={"id": "rule_id", "index": "rule_index"}), 
-            how="left", left_on='rule', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 'rule'])
+        .merge(af_0350_location, how="left", left_on='t4055_locations',
+               right_on='m0350_location_array_id', validate="1:m")
+        .drop(columns=['t4055_locations', 'm0350_location_array_id'])
         #
+        .merge(af_0350_location.rename(columns=lambda x: re.sub('m0350_location',
+                                                                'm0350_relatedLocation',
+                                                                x)),
+               how="left", left_on='t4055_relatedLocations',
+               right_on='m0350_relatedLocation_array_id', validate="1:m")
+        .drop(columns=['t4055_relatedLocations', 'm0350_relatedLocation_array_id'])
+        #
+        .merge(sft(2774), how="left", left_on='t4055_message', right_on='t2774_struct_id')
+        .drop(columns=['t4055_message', 't2774_struct_id'])
+        .rename(columns={"t2774_text": "t4055_message_text"})
+        # 
+        .merge(sft(4199), how="left", left_on='t4055_partialFingerprints',
+               right_on='t4199_struct_id')
+        .drop(columns=['t4055_partialFingerprints', 't4199_struct_id'])
+        #
+        .merge(sft(3942), how="left", left_on='t4055_rule',
+               right_on='t3942_struct_id')
+        .drop(columns=['t4055_rule', 't3942_struct_id'])
     )
-    return kind_problem_1
+
+    kind_problem_2 = (
+        kind_problem_1
+        .rename({
+            't6343_array_id'     : 'results_array_id',
+            't6343_value_index'  : 'results_array_index',
+            't4055_ruleId'       : 'ruleId',
+            't4055_ruleIndex'    : 'ruleIndex',
+            't4055_message_text' : 'message_text',
+            't3942_id'           : 'rule_id',
+            't3942_index'        : 'rule_index',
+        }, axis='columns')
+        # Strip type prefix for the rest
+        .rename(columns = lambda x: re.sub('m0350_|t4199_', '', x))
+    )
+    # # TODO potential cleanup
+    # # Remove dummy locations previously injected by signature.fillsig
+    # kind_problem_2 = kind_problem_1[kind_problem_1.uri != 'scli-dyys dummy value']
+    # #
+    return kind_problem_2
+
 
 def joins_for_codeflows(tgraph, sf_2683):
     """ 
@@ -87,7 +162,7 @@ def joins_for_codeflows(tgraph, sf_2683):
     sf = lambda num: tgraph.dataframes['Struct' + str(num)]
     af = lambda num: tgraph.dataframes['Array' + str(num)]
     #
-    af_9799 = (
+    codeflows = (
         af(9799).rename(columns={"array_id": "t9799_array_id", "value_index": "t9799_idx"})
         # 
         .merge(sf(7122), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
@@ -111,66 +186,79 @@ def joins_for_codeflows(tgraph, sf_2683):
         .merge(sf_2683, how="left", left_on='location', right_on='struct_id_2683', validate="1:m")
         .drop(columns=['location', 'struct_id_2683'])
     )
-    return af_9799
+    codeflows_1 = (
+        codeflows
+        .drop(columns=['id_2683'])
+        .rename({
+            't9799_array_id': 'codeflow_id',
+            't9799_idx': 'codeflow_index',
+            't1597_idx': 'threadflow_index',
+            't1075_locations_idx': 'location_index',
+            'location_index_2685': 'artifact_index',
+            'message_text_2683': 'message',
+        }, axis='columns')
+    )
+    return codeflows_1
 
-def joins_for_path_problem(tgraph, sf_2683):
+def joins_for_path_problem(tgraph, af_0350_location):
     """ 
     Return table providing the `path-problem` information.
     """
     # Access convenience functions
     sf = lambda num: tgraph.dataframes['Struct' + str(num)]
     af = lambda num: tgraph.dataframes['Array' + str(num)]
-    #
+    sft = lambda id: sf(id).rename(columns = tagged_struct_columns(tgraph, id))
+    aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
+
     kind_pathproblem_1 = (
-        af(6343)
-        .rename(columns={"value_index": "t6343_result_idx", "array_id": "t6343_result_id"})
-        .merge(sf(9699), how="inner", left_on='id_or_value_at_index', right_on='struct_id',
+        aft(6343)
+        .merge(sft(9699), how="inner", left_on='t6343_id_or_value_at_index', right_on='t9699_struct_id',
                validate="1:m")
-        .rename(columns={"codeFlows"           : "t9699_codeFlows",
-                         "locations"           : "t9699_locations",
-                         "message"             : "t9699_message",
-                         "partialFingerprints" : "t9699_partialFingerprints",
-                         "relatedLocations"    : "t9699_relatedLocations",
-                         "rule"                : "t9699_rule",
-                         "ruleId"              : "t9699_ruleId",
-                         "ruleIndex"           : "t9699_ruleIndex",
-                         })
-        .drop(columns=['id_or_value_at_index', 'struct_id', 'type_at_index'])
-        # 9699.locations
-        .merge(af('0350').rename(columns={"value_index": "t0350_location_idx"}),
-               how="left", left_on='t9699_locations', right_on='array_id', validate="1:m")
-        .drop(columns=['t9699_locations', 'array_id', 'type_at_index'])
-        # 
-        .merge(sf_2683, how="left", left_on='id_or_value_at_index', right_on='struct_id_2683', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id_2683'])
+        .drop(columns=['t6343_id_or_value_at_index', 't9699_struct_id', 't6343_type_at_index'])
         #
-        # # TODO: merge or keep separate?
-        # # 9699.codeFlows
-        # .merge(af_9799, how="left", left_on='t9699_codeFlows', right_on='t9799_array_id', validate="1:m")
+        .merge(af_0350_location, how="left", left_on='t9699_locations',
+               right_on='m0350_location_array_id', validate="1:m")
+        .drop(columns=['t9699_locations', 'm0350_location_array_id'])
         #
-        # 9699.message
-        .merge(sf(2774), how="left", left_on='t9699_message', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 't9699_message'])
-        .rename(columns={"text": "t9699_message_text"})
-        # 
-        # 9699.partialFingerprints
-        .merge(sf(4199), how="left", left_on='t9699_partialFingerprints', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 't9699_partialFingerprints'])
+        .merge(af_0350_location.rename(columns=lambda x: re.sub('m0350_location',
+                                                                'm0350_relatedLocation',
+                                                                x)),
+               how="left", left_on='t9699_relatedLocations',
+               right_on='m0350_relatedLocation_array_id', validate="1:m")
+        .drop(columns=['t9699_relatedLocations', 'm0350_relatedLocation_array_id'])
         #
-        # 9699.relatedLocations -- keep ids
+        .merge(sft(2774), how="left", left_on='t9699_message', right_on='t2774_struct_id')
+        .drop(columns=['t9699_message', 't2774_struct_id'])
+        .rename(columns={"t2774_text": "t9699_message_text"})
         # 
-        # 9699.rule
-        .merge(
-            sf(3942).rename(columns={"id": "t3942_rule_id", "index": "t3942_rule_idx"}), 
-            how="left", left_on='t9699_rule', right_on='struct_id', validate="1:m")
-        .drop(columns=['struct_id', 't9699_rule'])
+        .merge(sft(4199), how="left", left_on='t9699_partialFingerprints',
+               right_on='t4199_struct_id')
+        .drop(columns=['t9699_partialFingerprints', 't4199_struct_id'])
+        #
+        .merge(sft(3942), how="left", left_on='t9699_rule',
+               right_on='t3942_struct_id')
+        .drop(columns=['t9699_rule', 't3942_struct_id'])
     )
+    strip_colums = lambda x: re.sub('t9699_|m0350_|t4199_', '', x)
+    kind_pathproblem_2 = (kind_pathproblem_1
+                          .rename({
+                              't6343_array_id'     : 'results_array_id',
+                              't6343_value_index'  : 'results_array_index',
+                              't9699_codeFlows'    : 'codeFlows_id',
+                              't9699_ruleId'       : 'ruleId',
+                              't9699_ruleIndex'    : 'ruleIndex',
+                              't9699_message_text' : 'message_text',
+                              't3942_id'           : 'rule_id',
+                              't3942_index'        : 'rule_index',
+                          }, axis='columns')
+                          # Strip type prefix for the rest
+                          .rename(columns = strip_colums))
 
     # # TODO potential cleanup
     # # Remove dummy locations previously injected by signature.fillsig
     # kind_pathproblem_2 = kind_pathproblem_1[kind_pathproblem_1.uri != 'scli-dyys dummy value']
     # #
-    return kind_pathproblem_1
+    return kind_pathproblem_2
 
 def joins_for_relatedLocations(tgraph, sf_2683):
     """ 
@@ -267,7 +355,18 @@ def joins_for_project(tgraph):
         .drop(columns=['id_or_value_at_index', 'struct_id'])
         #
     )
-    return project_df
+    # Keep columns of interest
+    project_df_1 = (
+        project_df
+        .drop(columns=['value_index_7481', 'versionControl_value_index_5511'])
+        .rename({
+            'version_6787': 'sarif_version',
+            'value_index_0177': 'run_index',
+            'driver_name_7820': 'driver_name',
+            'driver_version_7820': 'driver_version',
+        }, axis='columns')
+    )
+    return project_df_1
 
 def joins_for_rules(tgraph):
     """ 
@@ -310,8 +409,19 @@ def joins_for_rules(tgraph):
         .merge(aft(7069), how="left", left_on='t7849_tags',
                right_on='t7069_array_id', validate="1:m")  
         .drop(columns=['t7849_tags', 't7069_array_id', 't7069_type_at_index'])
-        )
-    return rules_df
+    )
+    rules_2 = (
+        rules_df
+        .rename({
+            't8754_array_id'             : 'rules_array_id',
+            't8754_value_index'          : 'rules_array_index',
+            't7069_value_index'          : 'tag_index',
+            't7069_id_or_value_at_index' : 'tag_text',
+        }, axis='columns')
+        # Strip type prefix for the rest
+        .rename(columns = lambda x: re.sub('t6818_t2774_|t6818_|t8581_|t7849_', '', x))
+    )
+    return rules_2
 
 def joins_for_artifacts(tgraph):
     """ 
@@ -330,7 +440,17 @@ def joins_for_artifacts(tgraph):
         #
         .merge(sf(2685), how="left", left_on='location', right_on='struct_id', validate="1:m")
         .drop(columns=['location', 'struct_id'])
-        .rename(columns={"index": "location_index_2685", "uri": "location_uri_2685",
-                         "uriBaseId": "location_uriBaseId_2685"})
     )
-    return artifacts_df
+    # Keep columns of interest and rename
+    df_1 = (
+        artifacts_df
+        .rename({
+            'array_id': 'artifacts_id',
+            'artifact_index_4640': 'artifacts_array_index',
+        }, axis='columns')
+    )
+
+    if (df_1['artifacts_array_index'] == df_1['index']).all():
+        df_1 = df_1.drop(columns=['artifacts_array_index'])
+
+    return df_1
