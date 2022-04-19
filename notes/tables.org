@@ -1,0 +1,279 @@
+# -*- coding: utf-8 -*-
+# Created [Apr-19-2022]
+#+TITLE: 
+#+AUTHOR: Michael Hohn
+#+LANGUAGE:  en
+#+TEXT:      
+#+OPTIONS: ^:{} H:2 num:t \n:nil @:t ::t |:t ^:nil f:t *:t TeX:t LaTeX:t skip:nil p:nil
+#+OPTIONS: toc:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./l3style.css"/>
+#+HTML: <div id="toc">
+#+TOC: headlines 2        insert TOC here, with two headline levels
+#+HTML: </div> 
+# 
+#+HTML: <div id="org-content">
+
+* Overview
+  The current ==> project.csv <== table is broken.  It's a combination of project
+  meta info (to be moved to a separate =project= table) and the entry point to a
+  single =project='s sarif results 
+
+* Currently Exported Tables
+  Tables exported by sarif-extract-multi, commit d5390bb87, [Mar-23-2022]
+
+  #+BEGIN_SRC text
+    ==> artifacts.csv <==
+    artifacts_id
+    index
+    uri
+    uriBaseId
+  #+END_SRC
+
+  #+BEGIN_SRC text
+    ==> codeflows.csv <==
+    codeflow_id
+    codeflow_index
+    threadflow_index
+    location_index
+    endColumn
+    endLine
+    startColumn
+    startLine
+    artifact_index
+    uri
+    uriBaseId
+    message
+  #+END_SRC
+
+  #+BEGIN_SRC text
+    ==> kind_pathproblem.csv <==
+    results_array_id
+    results_array_index
+    codeFlows_id
+    ruleId
+    ruleIndex
+    location_array_index
+    location_id
+    location_endColumn
+    location_endLine
+    location_startColumn
+    location_startLine
+    location_index
+    location_uri
+    location_uriBaseId
+    location_message
+    relatedLocation_array_index
+    relatedLocation_id
+    relatedLocation_endColumn
+    relatedLocation_endLine
+    relatedLocation_startColumn
+    relatedLocation_startLine
+    relatedLocation_index
+    relatedLocation_uri
+    relatedLocation_uriBaseId
+    relatedLocation_message
+    message_text
+    primaryLocationLineHash
+    primaryLocationStartColumnFingerprint
+    rule_id
+    rule_index
+
+  #+END_SRC
+
+
+  #+BEGIN_SRC text
+    ==> kind_problem.csv <==
+    results_array_id
+    results_array_index
+    ruleId
+    ruleIndex
+    location_array_index
+    location_id
+    location_endColumn
+    location_endLine
+    location_startColumn
+    location_startLine
+    location_index
+    location_uri
+    location_uriBaseId
+    location_message
+    relatedLocation_array_index
+    relatedLocation_id
+    relatedLocation_endColumn
+    relatedLocation_endLine
+    relatedLocation_startColumn
+    relatedLocation_startLine
+    relatedLocation_index
+    relatedLocation_uri
+    relatedLocation_uriBaseId
+    relatedLocation_message
+    message_text
+    primaryLocationLineHash
+    primaryLocationStartColumnFingerprint
+    rule_id
+    rule_index
+
+  #+END_SRC
+
+
+  #+BEGIN_SRC text
+    ==> project.csv <==
+    creation_date
+    primary_language
+    project_name
+    query_commit_id
+    sarif_file_name
+    scan_id
+    scan_start_date
+    scan_stop_date
+    tool_name
+    tool_version
+    $schema
+    sarif_version
+    run_index
+    artifacts
+    columnKind
+    results
+    semmle.formatSpecifier
+    semmle.sourceLanguage
+    driver_name
+    organization
+    rules
+    driver_version
+    repositoryUri
+    revisionId
+
+  #+END_SRC
+
+
+  #+BEGIN_SRC text
+    ==> relatedLocations.csv <==
+    struct_id
+    uri
+    startLine
+    startColumn
+    endLine
+    endColumn
+    message
+
+  #+END_SRC
+
+
+  #+BEGIN_SRC text
+    ==> rules.csv <==
+    rules_array_id
+    rules_array_index
+    id
+    name
+    enabled
+    level
+    fullDescription
+    shortDescription
+    kind
+    precision
+    security-severity
+    severity
+    sub-severity
+    tag_index
+    tag_text
+  #+END_SRC
+
+* New tables to be exported
+  Possible splits from =project.csv=
+
+  The scan results are the root of the sarif tree, so this is a required base table.
+  #+BEGIN_SRC text
+    ==> project-scan-result.csv <==
+    $schema
+    sarif_version
+    run_index
+    artifacts
+    columnKind
+    results
+    semmle.formatSpecifier
+    semmle.sourceLanguage
+    driver_name
+    organization
+    rules
+    driver_version
+    repositoryUri
+    revisionId
+  #+END_SRC
+
+  The rest of the [Mar-23-2022] =projects.csv= table is ad-hoc and included in the
+  other tables below; it can be discarded.
+  #+BEGIN_SRC text
+    ==> project-meta.csv <==
+    creation_date
+    primary_language
+    project_name
+    query_commit_id
+    sarif_file_name
+    scan_id
+    scan_start_date
+    scan_stop_date
+    tool_name
+    tool_version
+
+  #+END_SRC
+
+  New tables intended for reporting infrastructure:
+  #+BEGIN_SRC text
+    ==> project.csv <==
+    id
+    project_name
+    creation_date
+    repository_url -- new
+    primary_language -- from github api
+    languages_analyzed
+  #+END_SRC
+
+  #+BEGIN_SRC text
+    ==> scans.csv <==
+    id
+    commit_id
+    project_id
+    db_create_start
+    db_create_stop
+    scan_start_date
+    scan_stop_date
+    tool_name
+    tool_version
+    tool_query_commit_id
+    sarif_content
+    sarif_file_name
+
+  #+END_SRC
+
+  #+BEGIN_SRC text
+    ==> results.csv <==
+    id INT,                  -- primary key
+    scan_id INT,             -- scans.id
+    query_id STRING,         -- git commit id of the ql query set
+    location STRING,
+    message STRING,
+    message_object OBJ,
+    -- for kind_path_problem, use distinct source / sink
+    -- for kind_problem, use the same location for both
+    result_type STRING,      -- kind_problem | kind_path_problem
+    -- link to codeflows (kind_pathproblem.csv only, NULL otherwise)
+    codeFlow_id INT,
+    --
+    source_startLine int,
+    source_startCol int,
+    source_endLine int,
+    source_endCol int,
+    --
+    sink_startLine int,
+    sink_startCol int,
+    sink_endLine int,
+    sink_endCol int,
+    --
+    source_object STRING, -- higher-level info: 'args', 'request', etc.
+    sink_object string, -- higher level: 'execute', 'sql statement', etc.
+
+  #+END_SRC
+
+
+
+#+HTML: </div> 
