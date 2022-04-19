@@ -1,0 +1,141 @@
+* Use the Github API to supplement sarif info
+  These notes use two interactive sessions to explore parts of the github API via
+  distinct connection layers.
+
+** General notes
+   Before running, 
+   :    export GITHUB_TOKEN=...
+   or 
+   :    os.environ['GITHUB_TOKEN'] = '...'
+   to avoid the 
+   :    HTTP404NotFoundError
+
+   =code_scanning.list_recent_analyses= and others require
+   an access token with the =security_events= scope
+   and avoid =HTTP401UnauthorizedError= and =HTTP403ForbiddenError=
+
+** Using urllib3
+   #+BEGIN_SRC sh
+     source .venv/bin/activate
+     pip install urllib3
+   #+END_SRC
+
+   #+BEGIN_SRC python
+     import urllib3
+     import os
+     import sys
+     import json
+     from pprint import pprint
+
+
+     # Documentation:
+     # https://urllib3.readthedocs.io/en/stable/user-guide.html
+
+     #* Init
+     header_auth = {'Authorization': 'token %s' % os.environ['GITHUB_TOKEN']}
+
+     http = urllib3.PoolManager()
+
+     owner = 'hohn'
+     repo = 'tabu-soda'
+     header_accept = {'Accept' : 'application/vnd.github.v3+json'}
+
+     #* GET /repos/{owner}/{repo}/events
+     r01 = http.request(
+         'GET',
+         'https://api.github.com/' + f'repos/{owner}/{repo}/events',
+         headers={**header_auth, **header_accept}
+     )
+
+     r01.status
+     r01.headers
+     r01.data
+     json.loads(r01.data.decode('utf-8'))
+
+     #* Local utility functions using lexical variables
+     def gh_get(path, headers={}):
+         r02 = http.request(
+             'GET', 
+             'https://api.github.com/' + path,
+             headers={**header_auth, **header_accept, **headers}
+             )
+         return r02
+
+     def gh_dump(result, stream=sys.stdout):
+         print(result.status, file=stream)
+         pprint(json.loads(result.data.decode('utf-8')), stream=stream)
+
+     def res_json(result):
+         return json.loads(result.data.decode('utf-8'))
+
+     #* GET /repos/{owner}/{repo}/code-scanning/analyses
+     r02 = gh_get(f'repos/{owner}/{repo}/code-scanning/analyses')
+     gh_dump(r02)
+
+     #** GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}, overview only:
+     analysis_id = res_json(r02)[0]['id']
+     r02s01 = gh_get(f'repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}')
+     gh_dump(r02s01)
+
+     #** GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}, full sarif:
+     r02s02 = gh_get(f'repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}',
+                     headers = {'Accept': 'application/sarif+json'})
+     gh_dump(r02s02, open("r02s02.json", "w", encoding='utf-8'))
+
+     # r = http.request(
+     #      'post',
+     #      'http://httpbin.org/post',
+     #      fields={'hello': 'world'}
+     #      headers=header_auth
+
+     #  )
+     # # get, head, delete
+     # r = http.request(
+     #      'get',
+     #      'http://httpbin.org/headers',
+     #     fields={'arg': 'value'}
+     #      headers={
+     #          'x-something': 'value'
+     #      }
+     #  )
+   #+END_SRC
+
+** Using ghapi
+   ghapi exposes a Python API via openapi spec; see
+   https://github.com/fastai/ghapi.
+
+   Two problems:
+   1. The API has to be manually mapped from the official github documentation,
+      and this is tedious and not obvios.
+   2. The returned json is converted to ghapi classes instead of nested
+      dicts/lists, making it hard to work with.
+
+   #+BEGIN_SRC sh
+     source .venv/bin/activate
+     pip install ghapi
+   #+END_SRC
+
+   #+BEGIN_SRC python
+     import os
+     import json
+     from pprint import pprint
+     from ghapi.all import GhApi
+
+     api = GhApi(token=os.environ['GITHUB_TOKEN'])
+
+     r1 = api.activity.list_repo_events('hohn', 'tabu-soda')
+     pprint(list(r1))
+
+     r02 = api.code_scanning.list_recent_analyses('hohn', 'tabu-soda')
+     pprint(list(r02))
+
+     # Overview only:
+     r02s01 = api.code_scanning.get_analysis('hohn', 'tabu-soda', r02[0]['id'])
+     print(json.dumps(r02s01, indent=4))
+
+     # Full sarif:
+     r02s02 = api.code_scanning.get_analysis(
+         'hohn', 'tabu-soda', r02[0]['id'],
+         headers = {'Accept': 'application/sarif+json'})
+     json.dump(r02s02, open("r02s02.py", "w", encoding='utf-8'), indent=4)
+   #+END_SRC
