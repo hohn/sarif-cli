@@ -80,7 +80,6 @@
 
   #+END_SRC
 
-
   #+BEGIN_SRC text
     ==> kind_problem.csv <==
     results_array_id
@@ -115,7 +114,8 @@
 
   #+END_SRC
 
-
+  The parts above =$schema= in the =projects.csv= table is ad-hoc and the
+  information for those fields is not yet collected.  They can be discarded.
   #+BEGIN_SRC text
     ==> project.csv <==
     creation_date
@@ -178,11 +178,92 @@
     tag_text
   #+END_SRC
 
-* New tables to be exported
-  Possible splits from =project.csv=
-
-  The scan results are the root of the sarif tree, so this is a required base table.
+* Tables or entries to be removed
+  The top of the [Mar-23-2022] =projects.csv= table, enumerated below, is ad-hoc
+  and included in the other tables below; the information for its fields is not
+  yet collected to it can be discarded.
   #+BEGIN_SRC text
+    ==> project-meta.csv <==
+    creation_date
+    primary_language
+    project_name
+    query_commit_id
+    sarif_file_name
+    scan_id
+    scan_start_date
+    scan_stop_date
+    tool_name
+    tool_version
+  #+END_SRC
+
+* New tables to be exported
+  This section enumerates new tables intended for reporting infrastructure. 
+  
+  Using the github API starting points
+  #+BEGIN_SRC python
+    # Code scanning information
+    # Get the full list:
+    r02 = gith(GET, f'/repos/{owner}/{repo}/code-scanning/analyses')
+
+    # Work with one entry
+    _, analysis_id = pathval(r02, 0, 'id')
+    r02s01 = gith(GET, f'/repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}')
+
+    r02s02 = gith(GET, f'/repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}',
+                  headers = {'Accept': 'application/sarif+json'})
+
+    # Repository information via GET /repos/{owner}/{repo}
+    r03 = gith(GET, f'/repos/{owner}/{repo}')
+  #+END_SRC
+  we can populate the =project.csv= and =scans.csv= tables:
+  #+BEGIN_SRC sql
+    ==> project.csv <==
+    id
+    project_name                    -- pathval(r03, 'full_name')
+    creation_date                   -- pathval(r03, 'created_at')
+    owner                           -- r03
+    repo                            -- r03 = gith(GET, f'/repos/{owner}/{repo}')
+    repository_url                  -- pathval(r03, 'clone_url')
+    primary_language                -- pathval(r03, 'language')
+    languages_analyzed              --
+  #+END_SRC
+  #+BEGIN_SRC sql
+    ==> scans.csv <==
+    id                              --
+    commit_id                       -- pathval(r02s01, 'commit_sha')
+    project_id                      -- project.id
+    db_create_start                 -- pathval(r02s01, 'created_at')
+    db_create_stop
+    scan_start_date
+    scan_stop_date
+    tool_name                       -- pathval(r02s01, 'tool', 'name')
+    tool_version                    -- pathval(r02s01, 'tool', 'version')
+    tool_query_commit_id            -- pathval(r02, 0, 'tool', 'version') is sufficient
+    sarif_content                   -- r02s02
+    sarif_file_name                 -- used on upload
+    sarif_id                        -- pathval(r02s01, 'sarif_id')
+    results_count                   -- pathval(r02s01, 'results_count')
+    rules_count                     -- pathval(r02s01, 'rules_count')
+  #+END_SRC
+
+  The sarif upload from codeql analysis to github uses the following API and
+  parameters which naturally are the minimal parameters needed to run the
+  analysis. 
+  #+BEGIN_SRC python
+    # untested
+    r04 = gith(POST, f'/repos/{owner}/{repo}/code-scanning/sarifs',
+               fields={'commit_sha': 'aa22233',
+                       'ref': 'refs/heads/<branch name>',
+                       'sarif': 'gzip < sarif | base64 -w0',
+                       'tool_name' : 'codeql',
+                       'started_at': 'when the analysis started',
+                       },
+               headers = {'Accept': 'application/sarif+json'})
+  #+END_SRC
+
+  The scan results from =project.csv= are the root of the sarif tree, so this is a
+  required base table.
+  #+BEGIN_SRC sql
     ==> project-scan-result.csv <==
     $schema
     sarif_version
@@ -200,52 +281,9 @@
     revisionId
   #+END_SRC
 
-  The rest of the [Mar-23-2022] =projects.csv= table is ad-hoc and included in the
-  other tables below; it can be discarded.
-  #+BEGIN_SRC text
-    ==> project-meta.csv <==
-    creation_date
-    primary_language
-    project_name
-    query_commit_id
-    sarif_file_name
-    scan_id
-    scan_start_date
-    scan_stop_date
-    tool_name
-    tool_version
-
-  #+END_SRC
-
-  New tables intended for reporting infrastructure:
-  #+BEGIN_SRC text
-    ==> project.csv <==
-    id
-    project_name
-    creation_date
-    repository_url -- new
-    primary_language -- from github api
-    languages_analyzed
-  #+END_SRC
-
-  #+BEGIN_SRC text
-    ==> scans.csv <==
-    id
-    commit_id
-    project_id
-    db_create_start
-    db_create_stop
-    scan_start_date
-    scan_stop_date
-    tool_name
-    tool_version
-    tool_query_commit_id
-    sarif_content
-    sarif_file_name
-
-  #+END_SRC
-
-  #+BEGIN_SRC text
+  Using joins of the =project-scan-result.csv= table and the 
+  other [[*Currently Exported Tables][Currently Exported Tables]], the =results.csv= table can be formed:
+  #+BEGIN_SRC sql
     ==> results.csv <==
     id INT,                  -- primary key
     scan_id INT,             -- scans.id
@@ -271,9 +309,6 @@
     --
     source_object STRING, -- higher-level info: 'args', 'request', etc.
     sink_object string, -- higher level: 'execute', 'sql statement', etc.
-
   #+END_SRC
-
-
 
 #+HTML: </div> 
