@@ -1,0 +1,1060 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2022-04-28 Thu 16:09 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>&lrm;</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Michael Hohn" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="./l3style.css"/>
+<script type="text/javascript">
+// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
+<!--/*--><![CDATA[/*><!--*/
+     function CodeHighlightOn(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.add("code-highlighted");
+         target.classList.add("code-highlighted");
+       }
+     }
+     function CodeHighlightOff(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.remove("code-highlighted");
+         target.classList.remove("code-highlighted");
+       }
+     }
+    /*]]>*///-->
+// @license-end
+</script>
+</head>
+<body>
+<div id="content">
+<div id="toc">
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org8d07361">1. Overview</a></li>
+<li><a href="#org821d058">2. Code scanning @metric and @diagnostic queries</a></li>
+<li><a href="#org2d92388">3. Project &amp; codeql db build</a></li>
+<li><a href="#org08b2df4">4. Existing queries producing diagnostic info</a>
+<ul>
+<li><a href="#org8ff677a">4.1. Metric and Diagnostic queries</a></li>
+<li><a href="#org51382e8">4.2. Table queries</a></li>
+<li><a href="#orgd05c2f8">4.3. Treemap queries</a></li>
+<li><a href="#org59c972a">4.4. Custom queries</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div id="org-content">
+
+<div id="outline-container-org8d07361" class="outline-2">
+<h2 id="org8d07361"><span class="section-number-2">1</span> Overview</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+There may be metrics and other meta-information of interest that are not
+provided by the default queries.  Additional project-related information is
+available through the github API, and almost any meta-information can be
+collected by the build process at build time.
+</p>
+
+<p>
+In addition to these two additional source of information, there are several
+CodeQL queries and classes that provide additional meta-information.  These are
+summarized in the rest of this document.
+</p>
+
+<p>
+Short samples for the github API are found in
+<a href="../notes/gathering-api-information.html">../notes/gathering-api-information.html</a> and those are used in
+<a href="../notes/tables.html">../notes/tables.html</a>, "New tables to be exported".
+</p>
+</div>
+</div>
+
+<div id="outline-container-org821d058" class="outline-2">
+<h2 id="org821d058"><span class="section-number-2">2</span> Code scanning @metric and @diagnostic queries</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+The CodeQL library contains many <code>@kinds</code> of query in addition to problem and
+path-problem:
+</p>
+<div class="org-src-container">
+<pre class="src src-sh">hohn@gh-hohn ~/local/codeql-v2.8.4/ql/cpp/ql/src
+0:$ ag <span style="color: #8b2252;">'@kind'</span> |sed <span style="color: #8b2252;">'s/^.*@//g;'</span> | sort -u
+kind alert-suppression
+kind chart
+kind definitions
+kind diagnostic
+kind display-string
+kind extent
+kind file-classifier
+kind graph
+kind metric
+kind path-problem
+kind problem
+kind source-link
+kind table
+kind tree
+kind treemap
+</pre>
+</div>
+
+<p>
+The queries of <code>@kind</code> diagnostic and metric contains those; some more
+statistics are found under <code>@kind</code> table and treemap.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2d92388" class="outline-2">
+<h2 id="org2d92388"><span class="section-number-2">3</span> Project &amp; codeql db build</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+For testing, we build a mid-size C project that builds on multiple architectures
+and for which alerts are found.  A <code>.zip</code> file of the resulting database is in
+<a href="./pure-ftpd-4f26ce6.db.zip">./pure-ftpd-4f26ce6.db.zip</a>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh"><span style="color: #b22222;"># </span><span style="color: #b22222;">Get</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata 
+git clone https://github.com/jedisct1/pure-ftpd.git
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Configure</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+./autogen.sh 
+./configure
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Build</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Build db</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">PATH</span>=$<span style="color: #a0522d;">HOME</span>/local/codeql-v2.8.4/codeql:<span style="color: #8b2252;">"$PATH"</span>
+codeql --version
+codeql resolve qlpacks
+
+<span style="color: #a0522d;">GITREV</span>=$(<span style="color: #ff00ff;">git</span> rev-parse --short HEAD)
+codeql database create --language=cpp -s . -vvvv pure-ftpd-$<span style="color: #a0522d;">GITREV</span>.db <span style="color: #8b2252;">\</span>
+       --command=<span style="color: #8b2252;">'make -j8'</span> 
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Logs</span>
+ls pure-ftpd-$<span style="color: #a0522d;">GITREV</span>.db/log
+: build-tracer.log  database-create-20220422.121448.872.log
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org08b2df4" class="outline-2">
+<h2 id="org08b2df4"><span class="section-number-2">4</span> Existing queries producing diagnostic info</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Some existing queries from the standard library and their <code>@kinds</code> are
+</p>
+<ul class="org-ul">
+<li>@id cpp/diagnostics/successfully-extracted-files (@kind diagnostic)</li>
+<li>@id cpp/diagnostics/extraction-warnings (@kind diagnostic)</li>
+<li>@id cpp/architecture/general-statistics (@kind table)</li>
+<li>@id cpp/external-dependencies (@kind treemap)</li>
+<li>@id cpp/summary/lines-of-code (@kind metric)</li>
+<li>@id cpp/summary/lines-of-user-code (@kind metric)</li>
+</ul>
+
+<p>
+The next sections run them and show samples of their output.
+</p>
+</div>
+
+<div id="outline-container-org8ff677a" class="outline-3">
+<h3 id="org8ff677a"><span class="section-number-3">4.1</span> Metric and Diagnostic queries</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+Not all <code>@kind</code> s support all output formats; for <code>@kind metric</code> and <code>@kind
+   diagnostic</code> queries, only the <code>sarif</code> format produces output in the named files.
+</p>
+
+<p>
+To run all of those queries, use the query suite via
+</p>
+<div class="org-src-container">
+<pre class="src src-sh"><span style="color: #b22222;"># </span><span style="color: #b22222;">Common variables</span>
+<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">PATH</span>=$<span style="color: #a0522d;">HOME</span>/local/codeql-v2.8.4/codeql:<span style="color: #8b2252;">"$PATH"</span>
+<span style="color: #a0522d;">GITREV</span>=$(<span style="color: #ff00ff;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd &amp;&amp; git rev-parse --short HEAD)
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Working directory</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">List the queries run</span>
+codeql resolve queries diagnostic-and-metric.qls |sed <span style="color: #8b2252;">'s|.*codeql-|codeql-|g;'</span>
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Run queries and collect output</span>
+codeql database analyze --format=sarif-latest   <span style="color: #8b2252;">\</span>
+       --output diagnostic-and-metric.sarif     <span style="color: #8b2252;">\</span>
+       -j8                                      <span style="color: #8b2252;">\</span>
+       --                                       <span style="color: #8b2252;">\</span>
+       pure-ftpd/pure-ftpd-$<span style="color: #a0522d;">GITREV</span>.db           <span style="color: #8b2252;">\</span>
+       diagnostic-and-metric.qls
+</pre>
+</div>
+
+<p>
+Those queries enumerated:
+</p>
+<div class="org-src-container">
+<pre class="src src-text">codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionWarnings.ql
+codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/FailedExtractorInvocations.ql
+codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/SuccessfullyExtractedFiles.ql
+codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfCode.ql
+codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfUserCode.ql
+</pre>
+</div>
+
+<p>
+Summaries of the results of running <code>diagnostic</code> and <code>metric</code> queries are part
+of the log output:
+</p>
+
+<p>
+<i>Analysis produced the following diagnostic data:</i>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Diagnostic</th>
+<th scope="col" class="org-left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Extraction warnings</td>
+<td class="org-left">0 results</td>
+</tr>
+
+<tr>
+<td class="org-left">Failed extractor invocations</td>
+<td class="org-left">0 results</td>
+</tr>
+
+<tr>
+<td class="org-left">Successfully extracted files</td>
+<td class="org-left">85 results</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<i>Analysis produced the following metric data:</i>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Metric</th>
+<th scope="col" class="org-right">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Total lines of C/C++ code in the database</td>
+<td class="org-right">45606</td>
+</tr>
+
+<tr>
+<td class="org-left">Total lines of user written C/C++ code in the database</td>
+<td class="org-right">23932</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Entries in <code>diagnostic-and-metric.sarif</code> provide the details of non-zero
+summaries, so no entries for
+</p>
+<div class="org-src-container">
+<pre class="src src-text">codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionWarnings.ql
+codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/FailedExtractorInvocations.ql
+</pre>
+</div>
+
+<p>
+Typical sarif entries &#x2013; but in different subtrees from <code>results</code> &#x2013; for
+<code>codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/SuccessfullyExtractedFiles.ql</code>
+</p>
+<div class="org-src-container">
+<pre class="src src-yaml"><span style="color: #a0522d;">$schema</span>: https://json.schemastore.org/sarif-2.1.0.json
+<span style="color: #a0522d;">runs</span>:
+- <span style="color: #a0522d;">artifacts</span>:
+  <span style="color: #a0522d;">invocations</span>:
+  - <span style="color: #a0522d;">executionSuccessful</span>: <span style="color: #008b8b;">true</span>
+    - <span style="color: #a0522d;">descriptor</span>:
+        <span style="color: #a0522d;">id</span>: cpp/diagnostics/successfully-extracted-files
+        <span style="color: #a0522d;">index</span>: 2
+      <span style="color: #a0522d;">level</span>: none
+      <span style="color: #a0522d;">locations</span>:
+      - <span style="color: #a0522d;">physicalLocation</span>:
+          <span style="color: #a0522d;">artifactLocation</span>:
+            <span style="color: #a0522d;">index</span>: 0
+            <span style="color: #a0522d;">uri</span>: config.h
+            <span style="color: #a0522d;">uriBaseId</span>: <span style="color: #8b2252;">'%SRCROOT%'</span>
+      <span style="color: #a0522d;">message</span>:
+        <span style="color: #a0522d;">text</span>: File successfully extracted
+      <span style="color: #a0522d;">properties</span>:
+        <span style="color: #a0522d;">formattedMessage</span>:
+          <span style="color: #a0522d;">text</span>: File successfully extracted
+        <span style="color: #a0522d;">relatedLocations</span>: []
+    - ...
+</pre>
+</div>
+
+<p>
+and <code>codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfCode.ql</code>
+</p>
+<div class="org-src-container">
+<pre class="src src-yaml"><span style="color: #a0522d;">$schema</span>: https://json.schemastore.org/sarif-2.1.0.json
+<span style="color: #a0522d;">runs</span>:
+- <span style="color: #a0522d;">artifacts</span>:
+  <span style="color: #a0522d;">properties</span>:
+    <span style="color: #a0522d;">metricResults</span>:
+    - <span style="color: #a0522d;">rule</span>:
+        <span style="color: #a0522d;">id</span>: cpp/summary/lines-of-code
+        <span style="color: #a0522d;">index</span>: 0
+      <span style="color: #a0522d;">ruleId</span>: cpp/summary/lines-of-code
+      <span style="color: #a0522d;">ruleIndex</span>: 0
+      <span style="color: #a0522d;">value</span>: 45606
+</pre>
+</div>
+
+<p>
+and <code>codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfUserCode.ql</code>
+</p>
+<div class="org-src-container">
+<pre class="src src-yaml"><span style="color: #a0522d;">$schema</span>: https://json.schemastore.org/sarif-2.1.0.json
+<span style="color: #a0522d;">runs</span>:
+- <span style="color: #a0522d;">artifacts</span>:
+  <span style="color: #a0522d;">properties</span>:
+    <span style="color: #a0522d;">metricResults</span>:
+    - <span style="color: #a0522d;">baseline</span>: 29497
+      <span style="color: #a0522d;">rule</span>:
+        <span style="color: #a0522d;">id</span>: cpp/summary/lines-of-user-code
+        <span style="color: #a0522d;">index</span>: 1
+      <span style="color: #a0522d;">ruleId</span>: cpp/summary/lines-of-user-code
+      <span style="color: #a0522d;">ruleIndex</span>: 1
+      <span style="color: #a0522d;">value</span>: 23932
+</pre>
+</div>
+
+<p>
+In addition to <code>file.getMetrics()</code>, these libraries provide support:
+</p>
+<ol class="org-ol">
+<li><code>codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionProblems.qll</code> provides a
+common hierarchy of all types of problems that can occur during extraction.</li>
+
+<li><code>codeql-v2.8.4/ql/cpp/ql/lib/semmle/code/cpp/Compilation.qll</code> provides
+<code>class Compilation</code>, an invocation of the compiler.</li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org51382e8" class="outline-3">
+<h3 id="org51382e8"><span class="section-number-3">4.2</span> Table queries</h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+Generating table output is more involved; the following produces CSV from all results.
+</p>
+<div class="org-src-container">
+<pre class="src src-sh"><span style="color: #b22222;"># </span><span style="color: #b22222;">Common variables</span>
+<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">PATH</span>=$<span style="color: #a0522d;">HOME</span>/local/codeql-v2.8.4/codeql:<span style="color: #8b2252;">"$PATH"</span>
+<span style="color: #a0522d;">GITREV</span>=$(<span style="color: #ff00ff;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd &amp;&amp; git rev-parse --short HEAD)
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Working directory</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Remove prior files</span>
+find pure-ftpd -name <span style="color: #8b2252;">"*.bqrs"</span> -exec rm {} <span style="color: #8b2252;">\;</span> 
+
+<span style="color: #b22222;"># </span>
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Run a query against the database, saving the results to the results/</span>
+<span style="color: #b22222;"># </span><span style="color: #b22222;">subdirectory of the database directory for further processing.</span>
+codeql database run-queries -j8 --ram=20000 -- <span style="color: #8b2252;">\</span>
+       pure-ftpd/pure-ftpd-$<span style="color: #a0522d;">GITREV</span>.db  tables.qls
+
+find pure-ftpd -name <span style="color: #8b2252;">"*.bqrs"</span> &gt; bqrs-files
+
+codeql resolve queries tables.qls  | <span style="color: #8b2252;">\</span>
+    <span style="color: #a020f0;">while </span><span style="color: #483d8b;">read</span> path ; <span style="color: #a020f0;">do</span> basename <span style="color: #8b2252;">"$path"</span> ; <span style="color: #a020f0;">done</span> &gt; table-filenames
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Get general info about available results</span>
+cat bqrs-files | <span style="color: #a020f0;">while </span><span style="color: #483d8b;">read</span> file 
+<span style="color: #a020f0;">do</span>
+    codeql bqrs info --format=text -- <span style="color: #8b2252;">"$file"</span>
+<span style="color: #a020f0;">done</span> 
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Format result as csv for processing</span>
+codeql bqrs decode  --result-set=<span style="color: #8b2252;">"#select"</span> <span style="color: #8b2252;">\</span>
+       --format=csv <span style="color: #8b2252;">\</span>
+       --entities=all -- <span style="color: #8b2252;">"$file"</span>
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Format results as text for reading</span>
+cat bqrs-files | <span style="color: #a020f0;">while </span><span style="color: #483d8b;">read</span> file
+<span style="color: #a020f0;">do</span>
+    <span style="color: #483d8b;">echo</span> <span style="color: #8b2252;">"==&gt; $file &lt;=="</span>
+    codeql bqrs decode  --result-set=<span style="color: #8b2252;">"#select"</span> <span style="color: #8b2252;">\</span>
+           --format=text <span style="color: #8b2252;">\</span>
+           --entities=all -- <span style="color: #8b2252;">"$file"</span> |<span style="color: #8b2252;">\</span>
+        sed <span style="color: #8b2252;">'s/\+--/|--/g;'</span> | sed <span style="color: #8b2252;">'s/--\+/--|/g;'</span>
+<span style="color: #a020f0;">done</span>
+
+</pre>
+</div>
+
+<p>
+Repository-level results:
+</p>
+
+<p>
+<code>=&gt; /cpp-queries/Metrics/Internal/DiagnosticsSumElapsedTimes.bqrs &lt;=</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">sum_frontend_elapsed_seconds</th>
+<th scope="col" class="org-right">sum_extractor_elapsed_seconds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">6.0</td>
+<td class="org-right">4.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<code>=&gt; /cpp-queries/Architecture/General Top-Level Information/GeneralStatistics.bqrs &lt;=</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Title</th>
+<th scope="col" class="org-right">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Number of Files</td>
+<td class="org-right">363</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Unions</td>
+<td class="org-right">8</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of C Files</td>
+<td class="org-right">53</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Structs</td>
+<td class="org-right">235</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Namespaces</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Functions</td>
+<td class="org-right">1851</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Header Files</td>
+<td class="org-right">310</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Classes</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of C++ Files</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-left">Number of Lines Of Code</td>
+<td class="org-right">45606</td>
+</tr>
+
+<tr>
+<td class="org-left">Self-Containedness</td>
+<td class="org-right">100%</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Data to external API (truncated to fit):
+</p>
+
+<p>
+<code>=&gt; /cpp-queries/Security/CWE/CWE-020/CountUntrustedDataToExternalAPI.bqrs &lt;=</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">ID of externalApi</th>
+<th scope="col" class="org-left">externalApi</th>
+<th scope="col" class="org-right">numberOfUses</th>
+<th scope="col" class="org-right">numberOfUntrustedSources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">read [param 1]</td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">read [param 2]</td>
+<td class="org-right">4</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">__builtin___memmove_chk [param 2]</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">0</td>
+<td class="org-left">fwrite [param 2]</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">poll [param 2]</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+<code>=&gt; /cpp-queries/Security/CWE/CWE-020/IRCountUntrustedDataToExternalAPI.bqrs &lt;=</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">ID of externalApi</th>
+<th scope="col" class="org-left">externalApi</th>
+<th scope="col" class="org-right">numberOfUses</th>
+<th scope="col" class="org-right">numberOfUntrustedSources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">9</td>
+<td class="org-left">read [param 1]</td>
+<td class="org-right">12</td>
+<td class="org-right">6</td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">free [param 0]</td>
+<td class="org-right">27</td>
+<td class="org-right">5</td>
+</tr>
+
+<tr>
+<td class="org-right">16</td>
+<td class="org-left">poll [param 2]</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-right">12</td>
+<td class="org-left">__builtin_object_size [param 0]</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Hub classes (truncated to fit):
+<code>=&gt; /cpp-queries/Architecture/General Class-Level Information/HubClasses.bqrs &lt;=</code>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">ID of Class</th>
+<th scope="col" class="org-left">Class</th>
+<th scope="col" class="org-left">URL for Class</th>
+<th scope="col" class="org-right">AfferentCoupling</th>
+<th scope="col" class="org-right">EfferentCoupling</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">39174</td>
+<td class="org-left">in_addr</td>
+<td class="org-left"><a href="file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/netinet/in.h:301:8:301:14">file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/netinet/in.h:301:8:301:14</a></td>
+<td class="org-right">8</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">15020</td>
+<td class="org-left">__darwin_fp_status</td>
+<td class="org-left"><a href="file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:150:1:150:17">file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:150:1:150:17</a></td>
+<td class="org-right">6</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">15007</td>
+<td class="org-left">__darwin_xmm_reg</td>
+<td class="org-left"><a href="file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:213:1:213:15">file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:213:1:213:15</a></td>
+<td class="org-right">6</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">15013</td>
+<td class="org-left">__darwin_mmst_reg</td>
+<td class="org-left"><a href="file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:194:1:194:16">file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:194:1:194:16</a></td>
+<td class="org-right">6</td>
+<td class="org-right">0</td>
+</tr>
+
+<tr>
+<td class="org-right">15042</td>
+<td class="org-left">__darwin_fp_control</td>
+<td class="org-left"><a href="file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:92:1:92:18">file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:92:1:92:18</a></td>
+<td class="org-right">6</td>
+<td class="org-right">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div id="outline-container-orgd05c2f8" class="outline-3">
+<h3 id="orgd05c2f8"><span class="section-number-3">4.3</span> Treemap queries</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+The treemap queries are a large collection of code metrics intended for display
+as a treemap; the queries themselves produce table output.  These metrics are
+not further explored here, but listed for completeness:
+</p>
+<div class="org-src-container">
+<pre class="src src-sh">hohn@gh-hohn ~/local/codeql-v2.8.4/ql/cpp/ql/src
+0:$ ag -l <span style="color: #8b2252;">'kind treemap'</span>
+Metrics/Classes/CLackOfCohesionHS.ql
+Metrics/Classes/CHalsteadVocabulary.ql
+Metrics/Classes/CNumberOfFunctions.ql
+Metrics/Classes/CHalsteadLength.ql
+Metrics/Classes/CPercentageOfComplexCode.ql
+Metrics/Classes/CSizeOfAPI.ql
+Metrics/Classes/CLinesOfCode.ql
+Metrics/Classes/CAfferentCoupling.ql
+Metrics/Classes/CEfferentCoupling.ql
+Metrics/Classes/CHalsteadVolume.ql
+Metrics/Classes/CHalsteadEffort.ql
+Metrics/Classes/CResponse.ql
+Metrics/Classes/CHalsteadDifficulty.ql
+Metrics/Classes/CHalsteadBugs.ql
+Metrics/Classes/CInheritanceDepth.ql
+Metrics/Classes/CNumberOfStatements.ql
+Metrics/Classes/CSpecialisation.ql
+Metrics/Classes/CLackOfCohesionCK.ql
+Metrics/Classes/CNumberOfFields.ql
+Metrics/Dependencies/ExternalDependencies.ql
+Metrics/Files/FLinesOfCommentedOutCode.ql
+Metrics/Files/NumberOfParameters.ql
+Metrics/Files/FHalsteadLength.ql
+Metrics/Files/FLines.ql
+Metrics/Files/FHalsteadVocabulary.ql
+Metrics/Files/FCommentRatio.ql
+Metrics/Files/FTransitiveIncludes.ql
+Metrics/Files/AutogeneratedLOC.ql
+Metrics/Files/FLinesOfCode.ql
+Metrics/Files/FNumberOfClasses.ql
+Metrics/Files/NumberOfGlobals.ql
+Metrics/Files/NumberOfPublicGlobals.ql
+Metrics/Files/FNumberOfTests.ql
+Metrics/Files/FTimeInFrontend.ql
+Metrics/Files/FTodoComments.ql
+Metrics/Files/FCyclomaticComplexity.ql
+Metrics/Files/NumberOfFunctions.ql
+Metrics/Files/FTransitiveSourceIncludes.ql
+Metrics/Files/FHalsteadDifficulty.ql
+Metrics/Files/FHalsteadBugs.ql
+Metrics/Files/FLinesOfComments.ql
+Metrics/Files/ConditionalSegmentLines.ql
+Metrics/Files/FMacroRatio.ql
+Metrics/Files/ConditionalSegmentConditions.ql
+Metrics/Files/FHalsteadEffort.ql
+Metrics/Files/FAfferentCoupling.ql
+Metrics/Files/FHalsteadVolume.ql
+Metrics/Files/FDirectIncludes.ql
+Metrics/Files/NumberOfPublicFunctions.ql
+Metrics/Files/FEfferentCoupling.ql
+Metrics/Files/FunctionLength.ql
+Metrics/Functions/FunCyclomaticComplexity.ql
+Metrics/Functions/StatementNestingDepth.ql
+Metrics/Functions/FunLinesOfCode.ql
+Metrics/Functions/FunNumberOfCalls.ql
+Metrics/Functions/FunPercentageOfComments.ql
+Metrics/Functions/FunNumberOfStatements.ql
+Metrics/Functions/FunIterationNestingDepth.ql
+Metrics/Functions/FunNumberOfParameters.ql
+Metrics/Functions/FunLinesOfComments.ql
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org59c972a" class="outline-3">
+<h3 id="org59c972a"><span class="section-number-3">4.4</span> Custom queries</h3>
+<div class="outline-text-3" id="text-4-4">
+<p>
+This script and the <code>metrics01.ql</code> files serve as starting point for custom
+metric / diagnostic queries using the CodeQL <code>File</code>, <code>Compilation</code>, or
+<code>Diagnostic</code> classes.
+</p>
+<div class="org-src-container">
+<pre class="src src-sh"><span style="color: #b22222;"># </span><span style="color: #b22222;">Common variables</span>
+<span style="color: #483d8b;">export</span> <span style="color: #a0522d;">PATH</span>=$<span style="color: #a0522d;">HOME</span>/local/codeql-v2.8.4/codeql:<span style="color: #8b2252;">"$PATH"</span>
+<span style="color: #a0522d;">GITREV</span>=$(<span style="color: #ff00ff;">cd</span> ~/local/sarif-cli/non-sarif-metadata/pure-ftpd &amp;&amp; git rev-parse --short HEAD)
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Working directory</span>
+<span style="color: #483d8b;">cd</span> ~/local/sarif-cli/non-sarif-metadata/
+
+<span style="color: #b22222;"># </span><span style="color: #b22222;">Run the custom query</span>
+codeql database analyze --format=sarif-latest <span style="color: #8b2252;">\</span>
+       --output metrics01.sarif                         <span style="color: #8b2252;">\</span>
+       -j8                                              <span style="color: #8b2252;">\</span>
+       --                                               <span style="color: #8b2252;">\</span>
+       pure-ftpd/pure-ftpd-$<span style="color: #a0522d;">GITREV</span>.db                   <span style="color: #8b2252;">\</span>
+       metrics01.ql
+
+</pre>
+</div>
+
+<p>
+with log output:
+</p>
+
+<p>
+<i>Analysis produced the following diagnostic data:</i>
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Diagnostic</th>
+<th scope="col" class="org-left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">metrics01</td>
+<td class="org-left">1 result</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Michael Hohn</p>
+<p class="date">Created: 2022-04-28 Thu 16:09</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

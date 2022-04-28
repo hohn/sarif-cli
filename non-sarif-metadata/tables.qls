@@ -1,0 +1,9 @@
+- description: Select the table queries
+- queries: .
+  from: codeql/cpp-queries
+- include:
+    kind:        
+    - table
+# 
+# Interpreting results requires bqrs decode.  See README.org
+#

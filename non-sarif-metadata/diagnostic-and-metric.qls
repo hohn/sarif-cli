@@ -1,0 +1,7 @@
+- description: Selectors for selecting the diagnostic queries for a language
+- queries: .
+  from: codeql/cpp-queries
+- include:
+    kind:
+    - metric
+    - diagnostic

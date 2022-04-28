@@ -1,0 +1,422 @@
+# -*- coding: utf-8 -*-
+# Created [Thu Apr 14 10:16:37 2022]
+#+TITLE: 
+#+AUTHOR: Michael Hohn
+#+LANGUAGE:  en
+#+TEXT:      
+#+OPTIONS: ^:{} H:2 num:t \n:nil @:t ::t |:t ^:nil f:t *:t TeX:t LaTeX:t skip:nil p:nil
+#+OPTIONS: toc:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./l3style.css"/>
+#+HTML: <div id="toc">
+#+TOC: headlines 2        insert TOC here, with two headline levels
+#+HTML: </div> 
+# 
+#+HTML: <div id="org-content">
+
+* Overview
+  There may be metrics and other meta-information of interest that are not
+  provided by the default queries.  Additional project-related information is
+  available through the github API, and almost any meta-information can be
+  collected by the build process at build time.
+
+  In addition to these two additional source of information, there are several
+  CodeQL queries and classes that provide additional meta-information.  These are
+  summarized in the rest of this document.
+
+  Short samples for the github API are found in
+  [[../notes/gathering-api-information.org]] and those are used in
+  [[../notes/tables.org]], "New tables to be exported".
+
+* Code scanning @metric and @diagnostic queries
+  The CodeQL library contains many =@kinds= of query in addition to problem and
+  path-problem:
+  #+BEGIN_SRC sh
+    hohn@gh-hohn ~/local/codeql-v2.8.4/ql/cpp/ql/src
+    0:$ ag '@kind' |sed 's/^.*@//g;' | sort -u
+    kind alert-suppression
+    kind chart
+    kind definitions
+    kind diagnostic
+    kind display-string
+    kind extent
+    kind file-classifier
+    kind graph
+    kind metric
+    kind path-problem
+    kind problem
+    kind source-link
+    kind table
+    kind tree
+    kind treemap
+  #+END_SRC
+
+  The queries of =@kind= diagnostic and metric contains those; some more
+  statistics are found under =@kind= table and treemap.
+
+* Project & codeql db build
+  For testing, we build a mid-size C project that builds on multiple architectures
+  and for which alerts are found.  A =.zip= file of the resulting database is in
+  [[./pure-ftpd-4f26ce6.db.zip]]
+
+  #+BEGIN_SRC sh
+    # Get
+    cd ~/local/sarif-cli/non-sarif-metadata 
+    git clone https://github.com/jedisct1/pure-ftpd.git
+
+    # Configure
+    cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+    ./autogen.sh 
+    ./configure
+
+    # Build
+    cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+
+    # Build db
+    cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd
+    export PATH=$HOME/local/codeql-v2.8.4/codeql:"$PATH"
+    codeql --version
+    codeql resolve qlpacks
+
+    GITREV=$(git rev-parse --short HEAD)
+    codeql database create --language=cpp -s . -vvvv pure-ftpd-$GITREV.db \
+           --command='make -j8' 
+
+    # Logs
+    ls pure-ftpd-$GITREV.db/log
+    : build-tracer.log  database-create-20220422.121448.872.log
+  #+END_SRC
+
+* Existing queries producing diagnostic info
+  Some existing queries from the standard library and their =@kinds= are
+  - @id cpp/diagnostics/successfully-extracted-files (@kind diagnostic)
+  - @id cpp/diagnostics/extraction-warnings (@kind diagnostic)
+  - @id cpp/architecture/general-statistics (@kind table)
+  - @id cpp/external-dependencies (@kind treemap)
+  - @id cpp/summary/lines-of-code (@kind metric)
+  - @id cpp/summary/lines-of-user-code (@kind metric)
+
+  The next sections run them and show samples of their output.
+  
+** Metric and Diagnostic queries
+   Not all =@kind= s support all output formats; for =@kind metric= and =@kind
+   diagnostic= queries, only the =sarif= format produces output in the named files.
+
+   To run all of those queries, use the query suite via
+   #+BEGIN_SRC sh
+     # Common variables
+     export PATH=$HOME/local/codeql-v2.8.4/codeql:"$PATH"
+     GITREV=$(cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd && git rev-parse --short HEAD)
+
+     # Working directory
+     cd ~/local/sarif-cli/non-sarif-metadata/
+
+     # List the queries run
+     codeql resolve queries diagnostic-and-metric.qls |sed 's|.*codeql-|codeql-|g;'
+
+     # Run queries and collect output
+     codeql database analyze --format=sarif-latest   \
+            --output diagnostic-and-metric.sarif     \
+            -j8                                      \
+            --                                       \
+            pure-ftpd/pure-ftpd-$GITREV.db           \
+            diagnostic-and-metric.qls
+   #+END_SRC
+
+   Those queries enumerated:
+   #+BEGIN_SRC text
+     codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionWarnings.ql
+     codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/FailedExtractorInvocations.ql
+     codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/SuccessfullyExtractedFiles.ql
+     codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfCode.ql
+     codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfUserCode.ql
+   #+END_SRC
+
+   Summaries of the results of running =diagnostic= and =metric= queries are part
+   of the log output:
+
+   /Analysis produced the following diagnostic data:/
+   |          Diagnostic          |  Summary   |
+   |------------------------------+------------+
+   | Extraction warnings          | 0 results  |
+   | Failed extractor invocations | 0 results  |
+   | Successfully extracted files | 85 results |
+
+   /Analysis produced the following metric data:/
+   |                         Metric                         | Value |
+   |--------------------------------------------------------+-------+
+   | Total lines of C/C++ code in the database              | 45606 |
+   | Total lines of user written C/C++ code in the database | 23932 |
+
+   Entries in =diagnostic-and-metric.sarif= provide the details of non-zero
+   summaries, so no entries for
+   #+BEGIN_SRC text
+     codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionWarnings.ql
+     codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/FailedExtractorInvocations.ql
+   #+END_SRC
+
+   Typical sarif entries -- but in different subtrees from =results= -- for
+   =codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/SuccessfullyExtractedFiles.ql=
+   #+BEGIN_SRC yaml
+     $schema: https://json.schemastore.org/sarif-2.1.0.json
+     runs:
+     - artifacts:
+       invocations:
+       - executionSuccessful: true
+         - descriptor:
+             id: cpp/diagnostics/successfully-extracted-files
+             index: 2
+           level: none
+           locations:
+           - physicalLocation:
+               artifactLocation:
+                 index: 0
+                 uri: config.h
+                 uriBaseId: '%SRCROOT%'
+           message:
+             text: File successfully extracted
+           properties:
+             formattedMessage:
+               text: File successfully extracted
+             relatedLocations: []
+         - ...
+   #+END_SRC
+
+   and =codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfCode.ql=
+   #+BEGIN_SRC yaml
+     $schema: https://json.schemastore.org/sarif-2.1.0.json
+     runs:
+     - artifacts:
+       properties:
+         metricResults:
+         - rule:
+             id: cpp/summary/lines-of-code
+             index: 0
+           ruleId: cpp/summary/lines-of-code
+           ruleIndex: 0
+           value: 45606
+   #+END_SRC
+
+   and =codeql-v2.8.4/ql/cpp/ql/src/Summary/LinesOfUserCode.ql=
+   #+BEGIN_SRC yaml
+     $schema: https://json.schemastore.org/sarif-2.1.0.json
+     runs:
+     - artifacts:
+       properties:
+         metricResults:
+         - baseline: 29497
+           rule:
+             id: cpp/summary/lines-of-user-code
+             index: 1
+           ruleId: cpp/summary/lines-of-user-code
+           ruleIndex: 1
+           value: 23932
+   #+END_SRC
+
+   In addition to =file.getMetrics()=, these libraries provide support:
+   1. =codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionProblems.qll= provides a
+      common hierarchy of all types of problems that can occur during extraction.
+      # ~/local/codeql-v2.8.4/ql/cpp/ql/src/Diagnostics/ExtractionProblems.qll:
+
+   2. =codeql-v2.8.4/ql/cpp/ql/lib/semmle/code/cpp/Compilation.qll= provides
+      =class Compilation=, an invocation of the compiler.
+      # file:~/local/codeql-v2.8.4/ql/cpp/ql/lib/semmle/code/cpp/Compilation.qll
+   
+** Table queries
+   Generating table output is more involved; the following produces CSV from all results.
+   #+BEGIN_SRC sh
+     # Common variables
+     export PATH=$HOME/local/codeql-v2.8.4/codeql:"$PATH"
+     GITREV=$(cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd && git rev-parse --short HEAD)
+
+     # Working directory
+     cd ~/local/sarif-cli/non-sarif-metadata/
+
+     # Remove prior files
+     find pure-ftpd -name "*.bqrs" -exec rm {} \; 
+
+     # 
+     # Run a query against the database, saving the results to the results/
+     # subdirectory of the database directory for further processing.
+     codeql database run-queries -j8 --ram=20000 -- \
+            pure-ftpd/pure-ftpd-$GITREV.db  tables.qls
+
+     find pure-ftpd -name "*.bqrs" > bqrs-files
+
+     codeql resolve queries tables.qls  | \
+         while read path ; do basename "$path" ; done > table-filenames
+
+     # Get general info about available results
+     cat bqrs-files | while read file 
+     do
+         codeql bqrs info --format=text -- "$file"
+     done 
+
+     # Format result as csv for processing
+     codeql bqrs decode  --result-set="#select" \
+            --format=csv \
+            --entities=all -- "$file"
+
+     # Format results as text for reading
+     cat bqrs-files | while read file
+     do
+         echo "==> $file <=="
+         codeql bqrs decode  --result-set="#select" \
+                --format=text \
+                --entities=all -- "$file" |\
+             sed 's/\+--/|--/g;' | sed 's/--\+/--|/g;'
+     done
+
+   #+END_SRC
+
+   Repository-level results:
+
+   ==> /cpp-queries/Metrics/Internal/DiagnosticsSumElapsedTimes.bqrs <==
+   | sum_frontend_elapsed_seconds | sum_extractor_elapsed_seconds |
+   |------------------------------|-------------------------------|
+   |                          6.0 |                           4.0 |
+
+   ==> /cpp-queries/Architecture/General Top-Level Information/GeneralStatistics.bqrs <==
+   |          Title          | Value |
+   |-------------------------|-------|
+   | Number of Files         | 363   |
+   | Number of Unions        | 8     |
+   | Number of C Files       | 53    |
+   | Number of Structs       | 235   |
+   | Number of Namespaces    | 1     |
+   | Number of Functions     | 1851  |
+   | Number of Header Files  | 310   |
+   | Number of Classes       | 0     |
+   | Number of C++ Files     | 0     |
+   | Number of Lines Of Code | 45606 |
+   | Self-Containedness      | 100%  |
+
+   Data to external API (truncated to fit):
+
+   ==> /cpp-queries/Security/CWE/CWE-020/CountUntrustedDataToExternalAPI.bqrs <==
+   | ID of externalApi |            externalApi            | numberOfUses | numberOfUntrustedSources |
+   |-------------------|-----------------------------------|--------------|--------------------------|
+   |                 1 | read [param 1]                    |            4 |                        4 |
+   |                 2 | read [param 2]                    |            4 |                        4 |
+   |                 4 | __builtin___memmove_chk [param 2] |            1 |                        1 |
+   |                 0 | fwrite [param 2]                  |            1 |                        1 |
+   |                 3 | poll [param 2]                    |            1 |                        1 |
+
+   ==> /cpp-queries/Security/CWE/CWE-020/IRCountUntrustedDataToExternalAPI.bqrs <==
+   | ID of externalApi |            externalApi            | numberOfUses | numberOfUntrustedSources |
+   |-------------------|-----------------------------------|--------------|--------------------------|
+   |                 9 | read [param 1]                    |           12 |                        6 |
+   |                 7 | free [param 0]                    |           27 |                        5 |
+   |                16 | poll [param 2]                    |            3 |                        3 |
+   |                12 | __builtin_object_size [param 0]   |            2 |                        2 |
+
+   Hub classes (truncated to fit):
+   ==> /cpp-queries/Architecture/General Class-Level Information/HubClasses.bqrs <==
+   | ID of Class |                    Class                    |                                                                            URL for Class                                                                            | AfferentCoupling | EfferentCoupling |
+   |-------------|---------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|------------------|
+   |       39174 | in_addr                                     | file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/netinet/in.h:301:8:301:14                  |                8 |                0 |
+   |       15020 | __darwin_fp_status                          | file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:150:1:150:17          |                6 |                0 |
+   |       15007 | __darwin_xmm_reg                            | file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:213:1:213:15          |                6 |                0 |
+   |       15013 | __darwin_mmst_reg                           | file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:194:1:194:16          |                6 |                0 |
+   |       15042 | __darwin_fp_control                         | file:///Applications/Xcode-11.4.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/mach/i386/_structs.h:92:1:92:18            |                6 |                0 |
+
+
+** Treemap queries
+   The treemap queries are a large collection of code metrics intended for display
+   as a treemap; the queries themselves produce table output.  These metrics are
+   not further explored here, but listed for completeness:
+   #+BEGIN_SRC sh
+     hohn@gh-hohn ~/local/codeql-v2.8.4/ql/cpp/ql/src
+     0:$ ag -l 'kind treemap'
+     Metrics/Classes/CLackOfCohesionHS.ql
+     Metrics/Classes/CHalsteadVocabulary.ql
+     Metrics/Classes/CNumberOfFunctions.ql
+     Metrics/Classes/CHalsteadLength.ql
+     Metrics/Classes/CPercentageOfComplexCode.ql
+     Metrics/Classes/CSizeOfAPI.ql
+     Metrics/Classes/CLinesOfCode.ql
+     Metrics/Classes/CAfferentCoupling.ql
+     Metrics/Classes/CEfferentCoupling.ql
+     Metrics/Classes/CHalsteadVolume.ql
+     Metrics/Classes/CHalsteadEffort.ql
+     Metrics/Classes/CResponse.ql
+     Metrics/Classes/CHalsteadDifficulty.ql
+     Metrics/Classes/CHalsteadBugs.ql
+     Metrics/Classes/CInheritanceDepth.ql
+     Metrics/Classes/CNumberOfStatements.ql
+     Metrics/Classes/CSpecialisation.ql
+     Metrics/Classes/CLackOfCohesionCK.ql
+     Metrics/Classes/CNumberOfFields.ql
+     Metrics/Dependencies/ExternalDependencies.ql
+     Metrics/Files/FLinesOfCommentedOutCode.ql
+     Metrics/Files/NumberOfParameters.ql
+     Metrics/Files/FHalsteadLength.ql
+     Metrics/Files/FLines.ql
+     Metrics/Files/FHalsteadVocabulary.ql
+     Metrics/Files/FCommentRatio.ql
+     Metrics/Files/FTransitiveIncludes.ql
+     Metrics/Files/AutogeneratedLOC.ql
+     Metrics/Files/FLinesOfCode.ql
+     Metrics/Files/FNumberOfClasses.ql
+     Metrics/Files/NumberOfGlobals.ql
+     Metrics/Files/NumberOfPublicGlobals.ql
+     Metrics/Files/FNumberOfTests.ql
+     Metrics/Files/FTimeInFrontend.ql
+     Metrics/Files/FTodoComments.ql
+     Metrics/Files/FCyclomaticComplexity.ql
+     Metrics/Files/NumberOfFunctions.ql
+     Metrics/Files/FTransitiveSourceIncludes.ql
+     Metrics/Files/FHalsteadDifficulty.ql
+     Metrics/Files/FHalsteadBugs.ql
+     Metrics/Files/FLinesOfComments.ql
+     Metrics/Files/ConditionalSegmentLines.ql
+     Metrics/Files/FMacroRatio.ql
+     Metrics/Files/ConditionalSegmentConditions.ql
+     Metrics/Files/FHalsteadEffort.ql
+     Metrics/Files/FAfferentCoupling.ql
+     Metrics/Files/FHalsteadVolume.ql
+     Metrics/Files/FDirectIncludes.ql
+     Metrics/Files/NumberOfPublicFunctions.ql
+     Metrics/Files/FEfferentCoupling.ql
+     Metrics/Files/FunctionLength.ql
+     Metrics/Functions/FunCyclomaticComplexity.ql
+     Metrics/Functions/StatementNestingDepth.ql
+     Metrics/Functions/FunLinesOfCode.ql
+     Metrics/Functions/FunNumberOfCalls.ql
+     Metrics/Functions/FunPercentageOfComments.ql
+     Metrics/Functions/FunNumberOfStatements.ql
+     Metrics/Functions/FunIterationNestingDepth.ql
+     Metrics/Functions/FunNumberOfParameters.ql
+     Metrics/Functions/FunLinesOfComments.ql
+
+   #+END_SRC
+
+** Custom queries  
+   This script and the =metrics01.ql= files serve as starting point for custom
+   metric / diagnostic queries using the CodeQL =File=, =Compilation=, or
+   =Diagnostic= classes.
+   #+BEGIN_SRC sh
+     # Common variables
+     export PATH=$HOME/local/codeql-v2.8.4/codeql:"$PATH"
+     GITREV=$(cd ~/local/sarif-cli/non-sarif-metadata/pure-ftpd && git rev-parse --short HEAD)
+
+     # Working directory
+     cd ~/local/sarif-cli/non-sarif-metadata/
+
+     # Run the custom query
+     codeql database analyze --format=sarif-latest \
+            --output metrics01.sarif                         \
+            -j8                                              \
+            --                                               \
+            pure-ftpd/pure-ftpd-$GITREV.db                   \
+            metrics01.ql
+
+   #+END_SRC
+
+   with log output:
+
+   /Analysis produced the following diagnostic data:/
+     | Diagnostic | Summary |
+     |------------+----------+
+     | metrics01  | 1 result |
+
+#+HTML: </div> 
