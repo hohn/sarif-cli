@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 """ Extract data from multiple sarif files in table form.
 """
-import argparse
-import json
-import pathlib
+from dataclasses import dataclass
 from sarif_cli import signature, signature_multi
 from sarif_cli import typegraph
-from dataclasses import dataclass
+from sarif_cli import snowflake_id
+import argparse
+import dataclasses as dc
+import json
+import pandas as pd
+import pathlib
 import sarif_cli.table_joins as tj
 import sys
-import pandas as pd
 
 #
 # Start processing 
@@ -89,6 +91,57 @@ bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
 bt.rules = tj.joins_for_rules(tgraph)
 
 #
+# Replace the remaining internal ids with snowflake ids
+# 
+flakegen = snowflake_id.Snowflake(0)
+
+columns_to_reindex = {
+    # template from {field.name : [''] for field in dc.fields(bt)}
+    'artifacts': ['artifacts_id'],
+    'codeflows': ['codeflow_id'],
+    'kind_pathproblem': ['results_array_id', 'codeFlows_id'],
+    'kind_problem': ['results_array_id'],
+    'project': ['artifacts', 'results', 'rules'],
+    'relatedLocations': ['struct_id'],
+    'rules': ['rules_array_id']}
+
+_id_to_flake = {}
+def _get_flake(id):
+    flake = _id_to_flake.get(id, -1)
+    if flake == -1:
+        flake = flakegen.next()
+        _id_to_flake[id] = flake
+    return flake
+
+# 
+# Cleaner, but makes far too many copies; keep the loop below
+# 
+# def _reindex(table, colname):
+#     newtable = table.astype({ colname : 'uint64'}).reset_index(drop=True)
+#     for i in range(0, len(newtable)):
+#         newtable.loc[i, colname] = _get_flake(newtable.loc[i, colname])
+#     return newtable
+# 
+# for field in dc.fields(bt):
+#     table_name = field.name   
+#     for colname in columns_to_reindex[table_name]:
+#         setattr(bt, field.name, _reindex(getattr(bt, field.name), colname))
+# 
+for field in dc.fields(bt):
+    table_name = field.name   
+    table = getattr(bt, field.name)
+    # Turn all snowflake columns into uint64 and reset indexing to 0..len(table)
+    newtable = table.astype(
+        { colname : 'uint64'
+          for colname in columns_to_reindex[table_name]}
+    ).reset_index(drop=True)
+    # Swap ids for flakes
+    for colname in columns_to_reindex[table_name]:
+        for i in range(0, len(newtable)):
+            newtable.loc[i, colname] = _get_flake(newtable.loc[i, colname])
+    # Replace the table
+    setattr(bt, field.name, newtable)
+#
 # Write output
 #
 p = pathlib.Path(args.outdir)
@@ -96,11 +149,6 @@ p.mkdir(exist_ok=True)
 def write(path, frame):
     with p.joinpath(path + ".csv").open(mode='wb') as fh:
         frame.to_csv(fh, index=False)
-write('artifacts', bt.artifacts)
-write('codeflows', bt.codeflows)
-write('kind_pathproblem', bt.kind_pathproblem)
-write('kind_problem', bt.kind_problem)
-write('project', bt.project)
-write('relatedLocations', bt.relatedLocations)
-write('rules', bt.rules)
-
+for field in dc.fields(bt):
+    table = getattr(bt, field.name)
+    write(field.name, table)
