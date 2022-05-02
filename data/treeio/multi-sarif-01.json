@@ -1,1 +1,28 @@
-[{"creation_date": "2021-12-09", "primary_language": "javascript", "project_name": "treeio/treeio", "query_commit_id": "fa9571646c", "sarif_content": {}, "sarif_file_name": "2021-12-09/results.sarif", "scan_id": 123456, "scan_start_date": "2021-12-09", "scan_stop_date": "2021-12-10", "tool_name": "codeql", "tool_version": "v1.27"}, {"creation_date": "2022-02-25", "primary_language": "javascript", "project_name": "treeio/treeio", "query_commit_id": "fa9571646c", "sarif_content": {}, "sarif_file_name": "2022-02-25/results.sarif", "scan_id": 123457, "scan_start_date": "2022-02-25", "scan_stop_date": "2022-02-26", "tool_name": "codeql", "tool_version": "v1.29"}]
+[
+  {
+    "creation_date": "2021-12-09",
+    "primary_language": "javascript",
+    "project_name": "treeio/treeio",
+    "query_commit_id": "fa9571646c",
+    "sarif_content": {},
+    "sarif_file_name": "2021-12-09/results.sarif",
+    "scan_id": 123456,
+    "scan_start_date": "2021-12-09",
+    "scan_stop_date": "2021-12-10",
+    "tool_name": "codeql",
+    "tool_version": "v1.27"
+  },
+  {
+    "creation_date": "2022-02-25",
+    "primary_language": "javascript",
+    "project_name": "treeio/treeio",
+    "query_commit_id": "fa9571646c",
+    "sarif_content": {},
+    "sarif_file_name": "2022-02-25/results.sarif",
+    "scan_id": 123457,
+    "scan_start_date": "2022-02-25",
+    "scan_stop_date": "2022-02-26",
+    "tool_name": "codeql",
+    "tool_version": "v1.29"
+  }
+]
