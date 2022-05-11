@@ -181,7 +181,8 @@
 * Tables or entries to be removed
   The top of the [Mar-23-2022] =projects.csv= table, enumerated below, is ad-hoc
   and included in the other tables below; the information for its fields is not
-  yet collected to it can be discarded.
+  yet collected so it can be discarded.
+
   #+BEGIN_SRC text
     ==> project-meta.csv <==
     creation_date
@@ -195,6 +196,17 @@
     tool_name
     tool_version
   #+END_SRC
+
+  This information was used to expand the sarif tree (see Struct3452 and Array7481
+  in typegraph-multi-with-tables.pdf and the code).  In retrospect, that was a
+  poor choice.  All additional information needed can be represented by one or
+  more tables, so sarif-extract* post commit 30e3dd3a3 do so.
+
+  The minimal information required to drive the sarif-to-table conversion is
+  | project_id      |                      13243 |   |
+  | scan_id         |                     123456 |   |
+  | sarif_file_name | "2021-12-09/results.sarif" |   |
+
 
 * New tables to be exported
   This section enumerates new tables intended for reporting infrastructure. 

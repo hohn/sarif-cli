@@ -305,7 +305,7 @@ def joins_for_relatedLocations(tgraph, sf_2683):
 
 def joins_for_project(tgraph):
     """ 
-    Return table providing the `project` information.
+    Return table providing the `project` information for sarif-extract-multi.
     """
     # Access convenience functions
     sf = lambda num: tgraph.dataframes['Struct' + str(num)]
@@ -359,6 +359,64 @@ def joins_for_project(tgraph):
     project_df_1 = (
         project_df
         .drop(columns=['value_index_7481', 'versionControl_value_index_5511'])
+        .rename({
+            'version_6787': 'sarif_version',
+            'value_index_0177': 'run_index',
+            'driver_name_7820': 'driver_name',
+            'driver_version_7820': 'driver_version',
+        }, axis='columns')
+    )
+    return project_df_1
+
+def joins_for_project_single(tgraph):
+    """ 
+    Return table providing the `project` information for sarif-extract-scans
+    """
+    # Access convenience functions
+    sf = lambda num: tgraph.dataframes['Struct' + str(num)]
+    af = lambda num: tgraph.dataframes['Array' + str(num)]
+    # 
+    project_df = (
+        sf(6787)
+        .rename(columns={"version": "version_6787", "struct_id": "struct_id_6787"})
+        #
+        .merge(af('0177'), how="left", left_on='runs', right_on='array_id',
+               validate="1:m")
+        .drop(columns=['runs', 'array_id', 'type_at_index'])
+        .rename(columns={"value_index": "value_index_0177"})
+        #
+        .merge(sf(3388), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+        .drop(columns=['id_or_value_at_index', 'struct_id'])
+        # 
+        # .merge(af(7069), how="left", left_on='newlineSequences', right_on='array_id',
+        #        validate="1:m")
+        # .drop(columns=['newlineSequences', 'array_id', 'type_at_index'])
+        .drop(columns=['newlineSequences'])
+        #
+        .merge(sf(9543), how="left", left_on='properties', right_on='struct_id', validate="1:m")
+        .drop(columns=['properties', 'struct_id'])
+        #
+        # tool - driver - rules - defaultConfiguration - ( properties - tags )
+        # 
+        .merge(sf(8972), how="left", left_on='tool', right_on='struct_id', validate="1:m")
+        .drop(columns=['tool', 'struct_id'])
+        # 
+        .merge(sf(7820), how="left", left_on='driver', right_on='struct_id', validate="1:m")
+        .drop(columns=['driver', 'struct_id'])
+        .rename(columns={"version": "driver_version_7820", "name": "driver_name_7820"})
+        # 
+        .merge(af(5511), how="left", left_on='versionControlProvenance', right_on='array_id')
+        .drop(columns=['versionControlProvenance', 'array_id', 'type_at_index'])
+        .rename(columns={"value_index": "versionControl_value_index_5511"})
+        # 
+        .merge(sf(3081), how="left", left_on='id_or_value_at_index', right_on='struct_id')
+        .drop(columns=['id_or_value_at_index', 'struct_id'])
+        #
+    )
+    # Keep columns of interest
+    project_df_1 = (
+        project_df
+        .drop(columns=['struct_id_6787', 'versionControl_value_index_5511'])
         .rename({
             'version_6787': 'sarif_version',
             'value_index_0177': 'run_index',

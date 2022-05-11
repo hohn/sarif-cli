@@ -8,6 +8,7 @@ This file also contains some type graph reference values; these may be moved out
 separate files at some point.
 """
 from dataclasses import dataclass
+import logging
 from typing import Any, Dict, List, Tuple, Union
 import pandas as pd
 
@@ -160,13 +161,19 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
     elif set(tree_fields).issuperset(set(type_fields)):
         # Log a warning
         # log.warning("XX: Tree has unrecognized fields")
+        logging.warning('Input tree has unrecognized fields, collecting only '
+                        'known entries: {}'.format(tree))
+        logging.warning('tree fields: {}    type fields: {}'
+                        .format(tree_fields, type_fields))
         _destructure_dict_1(typegraph, node, tree)
 
     elif set(tree_fields).issubset(set(type_fields)):
         raise MissingFieldException("XX: (Sub)tree is missing fields required by typedef")
 
     else:
-        raise Exception("typegraph: unhandled case reached.  Internal error")
+        raise Exception("typegraph: unhandled case reached: cannot match type "
+                        "fields {} to tree fields {}.  Data is invalid."
+                        .format(type_fields, tree_fields))
         
 
 def _destructure_list(typegraph, node: str, tree: List):
