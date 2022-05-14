@@ -12,7 +12,7 @@ import logging
 import pandas as pd
 import pathlib
 import sarif_cli.table_joins as tj
-import sarif_cli.derived_joins as derived
+import sarif_cli.scan_tables as st
 import sys
 
 #
@@ -88,6 +88,16 @@ class ScanTables:
     def __init__(self): pass
 scantabs = ScanTables()
 
+@dataclass
+class ExternalInfo:
+    scan_id : int
+    ql_query_id : str
+
+external_info = ExternalInfo(
+    scan_spec['scan_id'],
+    'deadbeef00',               # TODO: Take ql_query_id from where?
+)
+
 # 
 # Add dataframes for base tables 
 # 
@@ -102,13 +112,10 @@ bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
 bt.rules = tj.joins_for_rules(tgraph)
 
 #
-# Form derived query tables
+# Form scan tables
 #
-# XX
-# scantabs.project = derived.joins_for_project(bt)
-# scantabs.scans = derived.joins_for_scans(bt)
-# scantabs.results = derived.joins_for_results(bt)
-
+scantabs.results = st.joins_for_results(bt, external_info)
+scantabs.scans = st.joins_for_scans(bt, external_info)
 
 #
 # Replace the remaining internal ids with snowflake ids
