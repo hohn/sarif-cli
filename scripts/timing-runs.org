@@ -1,0 +1,142 @@
+* Timing Runs
+  
+  These are simple, manual timing runs intended to get a general idea of the speed
+  of the =sarif-extract-multi= script.  The special cases enumerated were run via
+  simple modifications of =sarif-extract-multi= itself, on a 2.4 GHz Intel i9
+  Macbook Pro running Mac OS 10.15.  
+
+  Starting from the shell.  Includes python library loading.
+  #+BEGIN_SRC sh
+    source ~/local/sarif-cli/.venv/bin/activate
+
+    pushd ~/local/sarif-cli/data/treeio
+
+    for i in `seq 1 6`; do
+        echo "Run $i"
+        time sarif-extract-multi multi-sarif-01.json test-multi-table 
+    done
+
+  #+END_SRC
+
+  Resulted in
+  #+BEGIN_SRC text
+    Run 1
+
+    real	0m1.031s
+    user	0m1.522s
+    sys	0m0.374s
+    Run 2
+
+    real	0m0.998s
+    user	0m1.608s
+    sys	0m0.271s
+    Run 3
+
+    real	0m1.010s
+    user	0m1.538s
+    sys	0m0.346s
+    Run 4
+
+    real	0m0.995s
+    user	0m1.603s
+    sys	0m0.270s
+    Run 5
+
+    real	0m1.003s
+    user	0m1.614s
+    sys	0m0.269s
+    Run 6
+
+    real	0m1.019s
+    user	0m1.622s
+    sys	0m0.279s
+  #+END_SRC
+
+  Starting from a "warmed up" process:  python and libraries loaded.
+  #+BEGIN_SRC sh
+    source ~/local/sarif-cli/.venv/bin/activate
+    cd ~/local/sarif-cli/data/treeio
+    sarif-extract-multi multi-sarif-01.json test-multi-table 
+  #+END_SRC
+
+  Results (equivalent to the =user= time from =time=)
+  #+BEGIN_SRC text
+    Run 0: 0.542348s
+    Run 1: 0.546161s
+    Run 2: 0.54764s
+    Run 3: 0.518991s
+    Run 4: 0.557537s
+    Run 5: 0.536539s
+    Run 6: 0.529583s
+  #+END_SRC
+
+  Without writing CSV output
+  #+BEGIN_SRC text
+    Run 0: 0.511462s
+    Run 1: 0.518179s
+    Run 2: 0.523012s
+    Run 3: 0.489899s
+    Run 4: 0.496991s
+    Run 5: 0.513001s
+    Run 6: 0.507116s
+  #+END_SRC
+
+  Without snowflake replacement
+  #+BEGIN_SRC text
+    Run 0: 0.335577s
+    Run 1: 0.341613s
+    Run 2: 0.312449s
+    Run 3: 0.326661s
+    Run 4: 0.338642s
+    Run 5: 0.335792s
+    Run 6: 0.337349s
+  #+END_SRC
+
+  Only load files
+  #+BEGIN_SRC text
+    Run 0: 0.020657s
+    Run 1: 0.019108s
+    Run 2: 0.020074s
+    Run 3: 0.031301s
+    Run 4: 0.02231s
+    Run 5: 0.02153s
+    Run 6: 0.020675s
+  #+END_SRC
+
+  Load and destructure
+  #+BEGIN_SRC text
+    Run 0: 0.177665s
+    Run 1: 0.16471s
+    Run 2: 0.173436s
+    Run 3: 0.177363s
+    Run 4: 0.172343s
+    Run 5: 0.167929s
+    Run 6: 0.171293s
+  #+END_SRC
+
+  Load, destructure, attach tables
+  #+BEGIN_SRC text
+    Run 0: 0.211985s
+    Run 1: 0.213316s
+    Run 2: 0.195308s
+    Run 3: 0.200123s
+    Run 4: 0.201668s
+    Run 5: 0.209793s
+    Run 6: 0.203792s
+  #+END_SRC
+
+
+# # Use files downloaded via sarif-download-projects.py 
+# cd ~/local/sarif
+
+
+# find g -type f -name "*.sarif" -maxdepth 3 | head -2 
+
+
+# ( find g -type f -name "*.sarif" -maxdepth 3 | while read sarfile ; do
+#     echo "summarizing $sarfile"
+#     if [ ! -f "${sarfile%.sarif}.summary" ] ; then
+#         sarif-results-summary $sarfile > ${sarfile}.summary-tmp && \
+#             mv ${sarfile}.summary-tmp ${sarfile%.sarif}.summary
+#     fi
+# done )  > log.2 2>&1 
