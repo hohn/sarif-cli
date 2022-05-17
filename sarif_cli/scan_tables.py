@@ -4,28 +4,37 @@
 import pandas as pd
 from . import snowflake_id
 
-# id                              --
-# commit_id                       -- pathval(r02s01, 'commit_sha')
-# project_id                      -- project.id
-# db_create_start                 -- pathval(r02s01, 'created_at')
-# db_create_stop
-# scan_start_date
-# scan_stop_date
-# tool_name                       -- pathval(r02s01, 'tool', 'name')
-# tool_version                    -- pathval(r02s01, 'tool', 'version')
-# tool_query_commit_id            -- pathval(r02, 0, 'tool', 'version') is sufficient
-# sarif_content                   -- r02s02
-# sarif_file_name                 -- used on upload
-# sarif_id                        -- pathval(r02s01, 'sarif_id')
-# results_count                   -- pathval(r02s01, 'results_count')
-# rules_count                     -- pathval(r02s01, 'rules_count')
+#
+# Scans table
 # 
-def joins_for_scans(basetables, external_info):
+def joins_for_scans(basetables, external_info, scantables):
     """ 
-    Return the `scans` table
+    Form the `scans` table for the ScanTables dataclass
     """
-    # XX
-    pass
+    b = basetables; e = external_info
+    driver_name = b.project.driver_name.unique()
+    assert len(driver_name) == 1, "More than one driver name found for single sarif file."
+    driver_version = b.project.driver_version.unique()
+    assert len(driver_version) == 1, \
+        "More than one driver version found for single sarif file."
+    res = pd.DataFrame(data={
+        "id"                   : e.scan_id,
+        "commit_id"            : pd.NA,
+        "project_id"           : e.project_id,
+        # 
+        "db_create_start"      : pd.NA,
+        "db_create_stop"       : pd.NA,
+        "scan_start_date"      : pd.NA,
+        "scan_stop_date"       : pd.NA,
+        # 
+        "tool_name"            : driver_name[0],
+        "tool_version"         : driver_version[0],
+        "tool_query_commit_id" : pd.NA,
+        "sarif_file_name"      : e.sarif_file_name,
+        "results_count"        : scantables.results.shape[0],
+        "rules_count"          : len(b.rules['id'].unique()),
+    },index=[0])
+    return res
 
 # 
 # Results table

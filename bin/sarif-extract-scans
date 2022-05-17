@@ -27,6 +27,8 @@ parser = argparse.ArgumentParser(description='Read a collection of sarif files a
 parser.add_argument('file', metavar='scan-spec.json', type=str,
                     help="json file containing required external scan information.")
 parser.add_argument('outdir', metavar='output-dir', type=str, help='output directory')
+parser.add_argument('-r', '--write-raw-tables', action="store_true",
+                    help='Write the raw sarif tables to the output directory')
 args = parser.parse_args()
 
 # Load meta info
@@ -77,6 +79,7 @@ class BaseTables:
     project : pd.DataFrame
     relatedLocations : pd.DataFrame
     rules : pd.DataFrame
+    columns_to_reindex : dict   # (name -> name list) dict
     def __init__(self): pass
 bt = BaseTables()
 
@@ -85,16 +88,21 @@ class ScanTables:
     # project: External table with project information
     scans : pd.DataFrame
     results : pd.DataFrame
+    columns_to_reindex : dict   # (name -> name list) dict
     def __init__(self): pass
 scantabs = ScanTables()
 
 @dataclass
 class ExternalInfo:
+    project_id : int
     scan_id : int
+    sarif_file_name : str
     ql_query_id : str
 
 external_info = ExternalInfo(
-    scan_spec['scan_id'],
+    scan_spec["project_id"],
+    scan_spec["scan_id"],
+    scan_spec["sarif_file_name"],
     'deadbeef00',               # TODO: Take ql_query_id from where?
 )
 
@@ -115,14 +123,14 @@ bt.rules = tj.joins_for_rules(tgraph)
 # Form scan tables
 #
 scantabs.results = st.joins_for_results(bt, external_info)
-scantabs.scans = st.joins_for_scans(bt, external_info)
+scantabs.scans = st.joins_for_scans(bt, external_info, scantabs)
 
 #
 # Replace the remaining internal ids with snowflake ids
 # 
 flakegen = snowflake_id.Snowflake(0)
 
-columns_to_reindex = {
+bt.columns_to_reindex = {
     # template from {field.name : [''] for field in dc.fields(bt)}
     'artifacts': ['artifacts_id'],
     'codeflows': ['codeflow_id'],
@@ -131,6 +139,11 @@ columns_to_reindex = {
     'project': ['artifacts', 'results', 'rules'],
     'relatedLocations': ['struct_id'],
     'rules': ['rules_array_id']}
+
+scantabs.columns_to_reindex = {
+    'scans': [],
+    'results': ['codeFlow_id'],
+    }
 
 _id_to_flake = {}
 def _get_flake(id):
@@ -154,28 +167,56 @@ def _get_flake(id):
 #     for colname in columns_to_reindex[table_name]:
 #         setattr(bt, field.name, _reindex(getattr(bt, field.name), colname))
 # 
-for field in dc.fields(bt):
-    table_name = field.name   
-    table = getattr(bt, field.name)
-    # Turn all snowflake columns into uint64 and reset indexing to 0..len(table)
-    newtable = table.astype(
-        { colname : 'uint64'
-          for colname in columns_to_reindex[table_name]}
-    ).reset_index(drop=True)
-    # Swap ids for flakes
-    for colname in columns_to_reindex[table_name]:
-        for i in range(0, len(newtable)):
-            newtable.loc[i, colname] = _get_flake(newtable.loc[i, colname])
-    # Replace the table
-    setattr(bt, field.name, newtable)
+
+def _replace_ids(tables_dataclass):
+    tdc = tables_dataclass
+    for field in dc.fields(tdc):
+        if field.type != pd.DataFrame:
+            continue
+        table_name = field.name   
+        table = getattr(tdc, field.name)
+        # Turn all snowflake columns into uint64 and reset indexing to 0..len(table)
+        newtable = table.astype(
+            { colname : 'uint64'
+              for colname in tdc.columns_to_reindex[table_name]}
+        ).reset_index(drop=True)
+        # Swap ids for flakes
+        for colname in tdc.columns_to_reindex[table_name]:
+            for i in range(0, len(newtable)):
+                oid = newtable.loc[i, colname]
+                if oid in [0,-1]: 
+                    # Ignore special values
+                    continue
+                newtable.loc[i, colname] = _get_flake(oid)
+        # Replace the table
+        setattr(tdc, field.name, newtable)
+
+# Replace id()s of the base and derived tables
+_replace_ids(bt)
+_replace_ids(scantabs)
+
 #
 # Write output
 #
 p = pathlib.Path(args.outdir)
 p.mkdir(exist_ok=True)
+
 def write(path, frame):
     with p.joinpath(path + ".csv").open(mode='wb') as fh:
         frame.to_csv(fh, index=False)
-for field in dc.fields(bt):
-    table = getattr(bt, field.name)
-    write(field.name, table)
+
+def _write_dataframes_of(tables_dataclass):
+    for field in dc.fields(tables_dataclass):
+        if field.type != pd.DataFrame:
+            continue
+        table = getattr(tables_dataclass, field.name)
+        write(field.name, table)
+
+# Write sarif-based tables
+if args.write_raw_tables:
+    _write_dataframes_of(bt)
+
+# Write derived tables and codeflows
+_write_dataframes_of(scantabs)
+
+write('codeflows', bt.codeflows)
