@@ -239,53 +239,79 @@ def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
     full_elem = {}
-    def _remaining_keys():
-        # Supplement final keys with keys from input.  This is to ensure that keys
-        # not explicit here (like additions to the sarif standard) are propagated. 
-        rest = set(elem.keys()) - set(full_elem.keys())
-        for key in rest:
-            full_elem[key] = elem[key]
         
+    # Several rules overlap and need to be applied together, so this is (now) a
+    # simple sequence tests.
+
+    if {'locations', 'message', 'partialFingerprints', 'ruleId',
+        'ruleIndex'}.issubset(elem.keys()):
+        # Ensure 'rule' is present 
+        rule = elem.get('rule', None)
+        if rule is not None:
+            full_elem['rule'] = rule
+        else:
+            full_elem['rule'] = {
+                "id" : elem.get('ruleId'),
+                "index" : elem.get('ruleIndex'),
+            }
+
+    if {'columnKind', 'properties', 'tool',
+        'versionControlProvenance'}.issubset(elem.keys()):
+        full_elem['artifacts'] = elem.get('artifacts', [])
+
     if region_keys.intersection(elem.keys()):
         startLine, startColumn, endLine, endColumn = traverse.lineinfo(elem)
         full_elem['endColumn'] = endColumn
         full_elem['endLine'] = endLine
         full_elem['startColumn'] = startColumn
         full_elem['startLine'] = startLine
-        _remaining_keys()
-    elif physicalLocation_keys.intersection(elem.keys()):
+
+    if physicalLocation_keys.intersection(elem.keys()):
         full_elem['region'] = elem.get('region', dummy_region())
-        _remaining_keys()
-    elif properties_keys.intersection(elem.keys()):
+
+    if properties_keys.intersection(elem.keys()):
         for k, dummy_val in dummy_properties.items():
             full_elem[k] = elem.get(k, dummy_val)
-        _remaining_keys()
-    elif {'message', 'physicalLocation'}.issubset(elem.keys()):
-        # Ensure an id is present when message/physicalLocation are
+
+    if {'message', 'physicalLocation'}.issubset(elem.keys()):
+         # Ensure an id is present when message/physicalLocation are
         full_elem['id'] = elem.get('id', -1)
-        _remaining_keys()
-    elif 'versionControlProvenance' in elem.keys():
+
+    if elem.get('defaultConfiguration') == {}:
+        full_elem['defaultConfiguration'] = {
+            "enabled" : False,
+            "level" : 'scli-dyys dummy value'
+        }
+
+    if 'level' in elem.keys():
+        full_elem['enabled'] = elem.get('enabled', True)
+
+    if 'versionControlProvenance' in elem.keys():
         # Ensure newlineSequences is present when versionControlProvenance is
         full_elem['newlineSequences'] = elem.get('newlineSequences', dummy_newlineSequences)
-        _remaining_keys()
-    elif 'partialFingerprints' in elem.keys():
+
+    if 'partialFingerprints' in elem.keys():
         # Ensure relatedLocations is present
         full_elem['relatedLocations'] = elem.get('relatedLocations',
                                                  dummy_relatedLocations_entry)
-        _remaining_keys()
-    elif 'physicalLocation' in elem.keys():
+
+    if 'physicalLocation' in elem.keys():
         # Ensure id and message are present
         full_elem['id'] = elem.get('id', -1)
         full_elem['message'] = elem.get('message', dummy_message_entry)
-        _remaining_keys()
-    else:
-        full_elem = elem
+
+    # Supplement final keys with keys from input.  This is to ensure that keys
+    # not explicit here (like additions to the sarif standard) are propagated. 
+    remaining_keys = set(elem.keys()) - set(full_elem.keys())
+    for key in remaining_keys:
+        full_elem[key] = elem[key]
 
     # Sort signature for consistency across inputs.
     final = {}
     keys = sorted(full_elem.keys())
     for key in keys:
         val = full_elem[key]
+        # And recurse to get nested elements
         final[key] = fillsig(args, val, context)
     return final
 
