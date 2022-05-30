@@ -163,12 +163,18 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
         # log.warning("XX: Tree has unrecognized fields")
         logging.warning('Input tree has unrecognized fields, collecting only '
                         'known entries: {}'.format(tree))
-        logging.warning('tree fields: {}    type fields: {}'
-                        .format(tree_fields, type_fields))
+        logging.warning('tree fields: {}'.format(sorted(tree_fields)))
+        logging.warning('type fields: {}'.format(sorted(type_fields)))
         _destructure_dict_1(typegraph, node, tree)
 
     elif set(tree_fields).issubset(set(type_fields)):
-        raise MissingFieldException("XX: (Sub)tree is missing fields required by typedef")
+        raise MissingFieldException(
+            f"(Sub)tree is missing fields required by typedef.\n"
+            f"Expected {type_fields}, found {tree_fields}.\n"
+            f"Missing {set(type_fields) - set(tree_fields)}\n"
+            f"Note: these fields are post-signature fill and may be more extensive than the orginal. \n"
+            f"Check input file for the original signature."
+        )
 
     else:
         raise Exception("typegraph: unhandled case reached: cannot match type "
