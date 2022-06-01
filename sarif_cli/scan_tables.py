@@ -53,34 +53,37 @@ def joins_for_results(basetables, external_info):
 def _results_from_kind_problem(basetables, external_info):
     b = basetables; e = external_info
     flakegen = snowflake_id.Snowflake(2)
-    res = pd.DataFrame(data={
-        'id': [flakegen.next() for _ in range(len(b.kind_problem))],
-
-        'scan_id' : e.scan_id,
-        'query_id' : e.ql_query_id,
-
-        'result_type' : "kind_problem",
-        'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
-
-        'message': b.kind_problem.message_text,
-        'message_object' : pd.NA,
-        'location': b.kind_problem.location_uri,
-
-        # for kind_problem, use the same location for source and sink
-        'source_startLine' : b.kind_problem.location_startLine,
-        'source_startCol' : b.kind_problem.location_startColumn,
-        'source_endLine' : b.kind_problem.location_endLine,
-        'source_endCol' : b.kind_problem.location_endColumn,
-
-        'sink_startLine' : b.kind_problem.location_startLine,
-        'sink_startCol' : b.kind_problem.location_startColumn,
-        'sink_endLine' : b.kind_problem.location_endLine,
-        'sink_endCol' : b.kind_problem.location_endColumn,
-
-        'source_object' : pd.NA, # TODO: find high-level info from query name or tags?
-        'sink_object' : pd.NA,
-    })
-    return res 
+    res = pd.DataFrame(
+        data={
+            'id': [flakegen.next() for _ in range(len(b.kind_problem))],
+            
+            'scan_id' : e.scan_id,
+            'query_id' : e.ql_query_id,
+            
+            'result_type' : "kind_problem",
+            'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
+            
+            'message': b.kind_problem.message_text,
+            'message_object' : pd.NA,
+            'location': b.kind_problem.location_uri,
+            
+            # for kind_problem, use the same location for source and sink
+            'source_startLine' : b.kind_problem.location_startLine,
+            'source_startCol' : b.kind_problem.location_startColumn,
+            'source_endLine' : b.kind_problem.location_endLine,
+            'source_endCol' : b.kind_problem.location_endColumn,
+            
+            'sink_startLine' : b.kind_problem.location_startLine,
+            'sink_startCol' : b.kind_problem.location_startColumn,
+            'sink_endLine' : b.kind_problem.location_endLine,
+            'sink_endCol' : b.kind_problem.location_endColumn,
+            
+            'source_object' : pd.NA, # TODO: find high-level info from query name or tags?
+            'sink_object' : pd.NA,
+        })
+    # Force column type(s) to avoid floats in output.
+    res1 = res.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
+    return res1
 
 
 def _results_from_kind_pathproblem(basetables, external_info):
@@ -168,7 +171,14 @@ def _results_from_kind_pathproblem(basetables, external_info):
                 source_sink_coll.append(res)
     results0 = pd.DataFrame(data=source_sink_coll).drop_duplicates().reset_index(drop=True)
 
-    # Now add the snowflake ids
+    # Add the snowflake ids
     results0['id'] = [flakegen.next() for _ in range(len(results0))]
 
-    return results0
+    # The 'scan_id' column is needed for astype
+    if len(results0) == 0:
+        results0['scan_id'] = []
+
+    # Force column type(s) to avoid floats in output.
+    results1 = results0.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
+
+    return results1
