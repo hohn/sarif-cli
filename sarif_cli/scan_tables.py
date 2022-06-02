@@ -48,11 +48,17 @@ def joins_for_results(basetables, external_info):
     #   kind_pathproblem
     #
     # Concatenation with an empty table triggers type conversion to float, so don't
-    # include empty tables
-    res = pd.concat(
-        [table for table in [_results_from_kind_problem(basetables, external_info),
-                             _results_from_kind_pathproblem(basetables, external_info)]
-         if len(table) > 0])
+    # include empty tables.
+    tables = [_results_from_kind_problem(basetables, external_info),
+              _results_from_kind_pathproblem(basetables, external_info)]
+    stack = [table for table in tables if len(table) > 0]
+
+    # Concatenation fails without at least one table, so avoid that.
+    if len(stack) > 0:
+        res = pd.concat(stack)
+    else:
+        res = tables[0]
+        
     return res
 
 def _results_from_kind_problem(basetables, external_info):
