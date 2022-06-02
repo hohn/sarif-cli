@@ -36,9 +36,11 @@
     python3 -m venv .venv
     . .venv/bin/activate
     python3 -m pip install -r requirements.txt
-    # Or separately:
+    # Or separately, for development:
     pip install --upgrade pip
     pip install ipython pyyaml pandas jupyter pyflakes
+    # Or separately, for running:
+    pip install pandas
   #+END_SRC
 
   "Install" for local development:

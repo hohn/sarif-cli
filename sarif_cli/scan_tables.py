@@ -2,7 +2,39 @@
 
 """
 import pandas as pd
+import re
 from . import snowflake_id
+
+#
+# Projects table
+# 
+def joins_for_projects(basetables, external_info, scantables):
+    """ 
+    Form the 'projects' table for the ScanTables dataclass
+    """
+    b = basetables; e = external_info
+
+    # For a repository url of the form
+    #   (git|https)://*/org/project.*
+    # use the org/project part as the project_name.
+    # 
+    repo_url = b.project.repositoryUri[0]
+    url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/([^/.]+).*', repo_url)
+    if url_parts:
+        project_name = f"{url_parts.group(2)}/{url_parts.group(3)}"
+    else:
+        project_name = pd.NA
+    
+    res = pd.DataFrame(data={
+        "id"                 : e.project_id,
+        "project_name"       : project_name,
+        "creation_date"      : pd.NA,    # TODO: external info 
+        "repo_url"           : repo_url, 
+        "primary_language"   : b.project['semmle.sourceLanguage'][0], # TODO: external info
+        "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
+    },index=[0])
+
+    return res
 
 #
 # Scans table
@@ -19,7 +51,7 @@ def joins_for_scans(basetables, external_info, scantables):
         "More than one driver version found for single sarif file."
     res = pd.DataFrame(data={
         "id"                   : e.scan_id,
-        "commit_id"            : pd.NA,
+        "commit_id"            : b.project.revisionId[0],
         "project_id"           : e.project_id,
         # 
         "db_create_start"      : pd.NA,

@@ -88,6 +88,7 @@ class ScanTables:
     # project: External table with project information
     scans : pd.DataFrame
     results : pd.DataFrame
+    projects : pd.DataFrame
     columns_to_reindex : dict   # (name -> name list) dict
     def __init__(self): pass
 scantabs = ScanTables()
@@ -124,6 +125,8 @@ bt.rules = tj.joins_for_rules(tgraph)
 #
 scantabs.results = st.joins_for_results(bt, external_info)
 scantabs.scans = st.joins_for_scans(bt, external_info, scantabs)
+scantabs.projects = st.joins_for_projects(bt, external_info, scantabs)
+
 
 #
 # Replace the remaining internal ids with snowflake ids
@@ -142,6 +145,7 @@ bt.columns_to_reindex = {
 
 scantabs.columns_to_reindex = {
     'scans': [],
+    'projects' : [],
     'results': ['codeFlow_id'],
     }
 
