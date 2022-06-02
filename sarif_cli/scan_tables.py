@@ -44,11 +44,16 @@ def joins_for_results(basetables, external_info):
     Form and return the `results` table
     """
     # Get one table per result_type, then stack them, 
-    # (kind_problem,
-    #  kind_pathproblem,
-    #  )
-    return pd.concat([_results_from_kind_problem(basetables, external_info),
-                      _results_from_kind_pathproblem(basetables, external_info)])
+    #   kind_problem
+    #   kind_pathproblem
+    #
+    # Concatenation with an empty table triggers type conversion to float, so don't
+    # include empty tables
+    res = pd.concat(
+        [table for table in [_results_from_kind_problem(basetables, external_info),
+                             _results_from_kind_pathproblem(basetables, external_info)]
+         if len(table) > 0])
+    return res
 
 def _results_from_kind_problem(basetables, external_info):
     b = basetables; e = external_info
@@ -83,6 +88,7 @@ def _results_from_kind_problem(basetables, external_info):
         })
     # Force column type(s) to avoid floats in output.
     res1 = res.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
+
     return res1
 
 
