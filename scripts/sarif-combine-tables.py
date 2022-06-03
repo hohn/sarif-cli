@@ -5,6 +5,7 @@
 # projects.csv) tables into 4 tables.
 #
 import os
+import sys
 from datetime import datetime
 import pandas as pd
 
@@ -77,9 +78,11 @@ for path in paths:
         _extract_scans_tables[file_prefix].append(data)
 
     # Some timing information
-    if count % 30 == 0:
+    if count % 100 == 0:
+        print("{:6} {:6}/{:6}".format("COUNT", count, len(paths)))
         print("{:6} {}".format("DATE", datetime.now().isoformat()))
-    
+        sys.stdout.flush()
+              
 # 
 # Create and write the combined dataframes
 # 
