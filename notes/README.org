@@ -3,3 +3,27 @@
   serve as documentation in their current state.
 
   Think of it as staging for [[../docs]].
+
+** The typegraphs
+   The type graph files are derived from a sarif input file, with various options
+   controlling output.
+
+   To produce dot maps of a sarif file type graph, from raw (largest) to fully
+   filled (most compact):
+
+   #+BEGIN_SRC sh
+     cd ../data/treeio/2022-02-25
+
+     # Everything:
+     ../../../bin/sarif-to-dot -t -d  results.sarif | dot -Tpdf > typegraph-td.pdf
+
+     # Suppress edges to int/bool/string types in dot graph
+     ../../../bin/sarif-to-dot -td -n results.sarif | dot -Tpdf > typegraph-tdn.pdf
+
+     # Additionally, only report unique array entry signatures
+     ../../../bin/sarif-to-dot -td -nu results.sarif | dot -Tpdf > typegraph-tdnu.pdf
+
+     # Additionally, fill in missing (optional) entries in sarif input before other steps.
+     ../../../bin/sarif-to-dot -td -nuf results.sarif | dot -Tpdf > typegraph-tdnuf.pdf
+
+   #+END_SRC

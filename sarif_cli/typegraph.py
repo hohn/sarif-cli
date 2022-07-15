@@ -1,8 +1,8 @@
 """Operations on the type graph produced by sarif-to-dot -u -t -f
 
 To get a map of this type graph, use
-    cd sarif-cli/data/treeio
-    ../../bin/sarif-to-dot -u -t -f -n -d  results.sarif | dot -Tpdf > typegraph.pdf
+    cd ../data/treeio/2022-02-25
+    ../../../bin/sarif-to-dot -u -t -f -n -d  results.sarif | dot -Tpdf > typegraph.pdf
 
 This file also contains some type graph reference values; these may be moved out into
 separate files at some point.
