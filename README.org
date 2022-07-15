@@ -1,3 +1,5 @@
+[[./typegraph-td.svg]]
+
 * Collection of cli tools for SARIF processing 
   *THIS IS A WORK IN PROGRESS*
 
