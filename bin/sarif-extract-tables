@@ -1,24 +1,29 @@
 #!/usr/bin/env python
-""" Extract data from sarif files in table form.
+"""Extract data from sarif files in table form.
 
-These particular table joins create tables matching the content of
-./sarif-results-summary
+The table joins for `problem`, `path-problem` and `relatedLocations` create tables
+matching the content of ./sarif-results-summary.
 
-Return tables providing the `problem`, `path-problem` and `relatedLocations`
-information.
-
+The `artifacts`, `codeflows`, `relatedLocations` and `rules` tables provide the
+remaining information from the sarif file; see
+../notes/typegraph-multi-with-tables.pdf for details.
+ 
 The `problem` and `path-problem` entries provide that information; the
 `relatedLocations` table provides the details when multiple results are present
 for either.
 
 """
-import argparse
-import json
-import pathlib
+from dataclasses import dataclass
 from sarif_cli import signature, signature_single
 from sarif_cli import typegraph
-import sys
+from sarif_cli import snowflake_id
+import argparse
+import dataclasses as dc
+import json
 import pandas as pd
+import pathlib
+import sarif_cli.table_joins as tj
+import sys
 
 #
 # Start processing 
@@ -61,6 +66,83 @@ typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_stru
 # 
 typegraph.attach_tables(tgraph)
 
+#
+# Dataframe / table collection
+# 
+@dataclass
+class BaseTables:
+    artifacts : pd.DataFrame
+    codeflows : pd.DataFrame
+    kind_pathproblem : pd.DataFrame
+    kind_problem : pd.DataFrame
+    relatedLocations : pd.DataFrame
+    rules : pd.DataFrame
+    def __init__(self): pass
+
+bt = BaseTables()
+# 
+# Add dataframes
+# 
+sf_2683 = tj.joins_for_sf_2683(tgraph)
+af_0350_location = tj.joins_for_af_0350_location(tgraph)
+bt.artifacts = tj.joins_for_artifacts(tgraph)
+bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
+bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, af_0350_location)
+bt.kind_problem = tj.joins_for_problem(tgraph, af_0350_location)
+bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
+bt.rules = tj.joins_for_rules(tgraph)
+
+#
+# Replace the remaining internal ids with snowflake ids
+# 
+flakegen = snowflake_id.Snowflake(0)
+
+columns_to_reindex = {
+    # template from {field.name : [''] for field in dc.fields(bt)}
+    'artifacts': ['artifacts_id'],
+    'codeflows': ['codeflow_id'],
+    'kind_pathproblem': ['results_array_id', 'codeFlows_id'],
+    'kind_problem': ['results_array_id'],
+    'relatedLocations': ['struct_id'],
+    'rules': ['rules_array_id']}
+
+_id_to_flake = {}
+def _get_flake(id):
+    flake = _id_to_flake.get(id, -1)
+    if flake == -1:
+        flake = flakegen.next()
+        _id_to_flake[id] = flake
+    return flake
+
+
+for field in dc.fields(bt):
+    table_name = field.name   
+    table = getattr(bt, field.name)
+    # Turn all snowflake columns into uint64 and reset indexing to 0..len(table)
+    newtable = table.astype(
+        { colname : 'uint64'
+          for colname in columns_to_reindex[table_name]}
+    ).reset_index(drop=True)
+    # Swap ids for flakes
+    for colname in columns_to_reindex[table_name]:
+        for i in range(0, len(newtable)):
+            newtable.loc[i, colname] = _get_flake(newtable.loc[i, colname])
+    # Replace the table
+    setattr(bt, field.name, newtable)
+#
+# Write output
+#
+p = pathlib.Path(args.outdir)
+p.mkdir(exist_ok=True)
+def write(path, frame):
+    with p.joinpath(path + ".csv").open(mode='wb') as fh:
+        frame.to_csv(fh, index=False)
+for field in dc.fields(bt):
+    table = getattr(bt, field.name)
+    write(field.name, table)
+
+
+# TODO: 
 """
 Reproduce the 
 
@@ -105,161 +187,3 @@ Using ../notes/typegraph.pdf, we find these:
     |------------+----------+---------+-------------------+-------------------+------------|
 
 """
-# 
-# Access convenience functions
-# 
-sf = lambda num: tgraph.dataframes['Struct' + str(num)]
-af = lambda num: tgraph.dataframes['Array' + str(num)]
-
-# 
-# Form the message dataframe via joins
-# 
-d1 = (
-    sf(4055)
-    .merge(af('0350'), how="left", left_on='locations', right_on='array_id', validate="1:m")
-    .drop(columns=['locations', 'array_id', 'value_index', 'type_at_index'])
-    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
-           suffixes=("_4055", "_2683"), validate="1:m")
-    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
-    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'physicalLocation'])
-    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'region'])
-    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'artifactLocation'])
-    .merge(sf(2774), how="left", left_on='message_4055', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'message_4055'])
-    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id',
-           suffixes=("_4055", "_2683"), validate="1:m")
-)
-#
-# As expected from the above note
-#  
-#     Note that this IGNORES the path
-#     - .results > .[] > .relatedLocations > .[] > .physicalLocation > .text
-#  
-# we have no text entries that table:
-#  
-#     In [88]: d1[d1.text_2683 != '']
-#     Out[88]: 
-#     Empty DataFrame
-
-# 
-# Reproduce ALL `file:line:col:line:col: message` entries as a table
-# 
-d2 = (d1[['struct_id_4055', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text_4055']]
-      .rename({'text_4055': 'message'}, axis='columns'))
-
-#
-# Form the codeFlows dataframe
-# 
-dco1 = (
-    sf(9699)
-    .merge(af(9799), how="left", left_on='codeFlows', right_on='array_id', validate="1:m")
-    .drop(columns=['struct_id', 'codeFlows', 'array_id', 'type_at_index'])
-    # 
-    .merge(sf(7122), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-    .drop(columns=['id_or_value_at_index', 'struct_id'])
-    # 
-    .merge(af(1597), how="left", left_on='threadFlows', right_on='array_id',
-           suffixes=("_codeFlow_9799", "_threadFlows_1597"), validate="1:m")
-    .drop(columns=['threadFlows', 'array_id', 'type_at_index'])
-    #
-    .merge(sf(4194), how="left", left_on='id_or_value_at_index', right_on='struct_id', 
-           suffixes=("_9699", "_4194"), validate="1:m")
-    .drop(columns=['id_or_value_at_index', 'struct_id'])
-    #
-    .merge(af(1075), how="left", left_on='locations_4194', right_on='array_id', validate="1:m")
-    .drop(columns=['locations_4194', 'array_id', 'type_at_index'])
-    .rename(columns={"value_index": "value_index_locations_1075"})
-    #
-    .merge(sf('0987'), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-    .drop(columns=['id_or_value_at_index', 'struct_id'])    
-    # 
-    .merge(sf(2683), how="left", left_on='location', right_on='struct_id',
-           suffixes=("_9699", "_2683"), validate="1:m")
-    .drop(columns=['location', 'struct_id'])
-    # 
-    # The below is similar to dr1
-    # 
-    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'physicalLocation'])
-    # 
-    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'region'])
-    # 
-    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'artifactLocation'])
-    # 
-    .merge(sf(2774), how="left", left_on='message_2683', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'message_2683'])
-)
-
-# Keep columns of interest
-dco2 = (dco1[['uri', 
-              'startLine', 'startColumn', 'endLine', 'endColumn', 
-              'text', 
-              'ruleIndex', 'value_index_codeFlow_9799',
-              'value_index_threadFlows_1597', 'value_index_locations_1075',
-              ]]
-        .rename({'text': 'message', 
-                 'value_index_codeFlow_9799': 'idx_codeFlow', 
-                 'value_index_threadFlows_1597': 'idx_threadFlows', 
-                 'value_index_locations_1075': 'idx_locations'}, axis='columns'))
-
-# Remove dummy locations previously injected by signature.fillsig
-dco3 = dco2[dco2.uri != 'scli-dyys dummy value']
-    
-# 
-# Form the relatedLocation dataframe via joins, starting from the union of
-# relatedLocations from `kind problem` (sf(4055)) and `kind path-problem`
-# (sf(9699)).  This is only sligthly different from d1: left_on=relatedLocations,
-# and no left_on='message_4055'
-#
-dr1 = (
-    pd.concat([sf(4055)[['relatedLocations', 'struct_id']], sf(9699)[['relatedLocations', 'struct_id']]])
-    .merge(af('0350'), how="left", left_on='relatedLocations', right_on='array_id', validate="1:m")
-    .drop(columns=['relatedLocations', 'array_id', 'value_index', 'type_at_index'])
-    # 
-    .merge(sf(2683), how="left", left_on='id_or_value_at_index', right_on='struct_id',
-           suffixes=("_4055_9699", "_2683"), validate="1:m")
-    .drop(columns=['struct_id_2683', 'id_or_value_at_index'])
-    # 
-    .merge(sf(4963), how="left", left_on='physicalLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'physicalLocation'])
-    # 
-    .merge(sf(6299), how="left", left_on='region', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'region'])
-    # 
-    .merge(sf(2685), how="left", left_on='artifactLocation', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'artifactLocation'])
-    # 
-    .merge(sf(2774), how="left", left_on='message', right_on='struct_id', validate="1:m")
-    .drop(columns=['struct_id', 'message'])
-)
-
-# Keep columns of interest
-dr2 = (dr1[['struct_id_4055_9699', 'uri', 'startLine', 'startColumn', 'endLine', 'endColumn', 'text']]
-      .rename({'text': 'message', 'struct_id_4055_9699': 'struct_id'}, axis='columns'))
-
-# Remove dummy locations previously injected by signature.fillsig
-dr3 = dr2[dr2.uri != 'scli-dyys dummy value']
-
-
-#
-# Write output
-#
-if args.output_format == 'csv':
-    p = pathlib.Path(args.outdir)
-    p.mkdir(exist_ok=True)
-    with p.joinpath('problem.csv').open(mode='wb') as problem:
-        d2.to_csv(problem, index_label='index')
-    with p.joinpath('path-problem.csv').open(mode='wb') as path_problem:
-        dco3.to_csv(path_problem, index_label='index')
-    with p.joinpath('relatedLocations.csv').open(mode='wb') as relo:
-        dr3.to_csv(relo, index_label='index')
-
-else:
-    sys.stderr.write("unknown output format")
-    sys.exit(1)
-
