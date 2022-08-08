@@ -104,7 +104,8 @@ external_info = ExternalInfo(
     scan_spec["project_id"],
     scan_spec["scan_id"],
     scan_spec["sarif_file_name"],
-    'deadbeef00',               # TODO: Take ql_query_id from where?
+    # TODO: Take ql_query_id from where? (git commit id of the ql query set)
+    'deadbeef00',               
 )
 
 # 

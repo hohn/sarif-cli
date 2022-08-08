@@ -2,8 +2,12 @@
 
 """
 import pandas as pd
+import numpy
 import re
 from . import snowflake_id
+
+class ZeroResults(Exception):
+    pass
 
 #
 # Projects table
@@ -28,13 +32,23 @@ def joins_for_projects(basetables, external_info, scantables):
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
         "project_name"       : project_name,
-        "creation_date"      : pd.NA,    # TODO: external info 
+        "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
         "repo_url"           : repo_url, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0], # TODO: external info
         "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
     },index=[0])
 
-    return res
+    # Force all column types to ensure appropriate formatting
+    res1 = res.astype({
+        "id"                 : pd.UInt64Dtype(),
+        "project_name"       : pd.StringDtype(),
+        "creation_date"      : numpy.datetime64(),
+        "repo_url"           : pd.StringDtype(),
+        "primary_language"   : pd.StringDtype(),
+        "languages_analyzed" : pd.StringDtype(),
+    }).reset_index(drop=True)
+
+    return res1
 
 #
 # Scans table
@@ -66,7 +80,25 @@ def joins_for_scans(basetables, external_info, scantables):
         "results_count"        : scantables.results.shape[0],
         "rules_count"          : len(b.rules['id'].unique()),
     },index=[0])
-    return res
+
+    # Force all column types to ensure correct writing and type checks on reading.
+    res1 = res.astype({
+        "id"                   : pd.UInt64Dtype(),
+        "commit_id"            : pd.StringDtype(),
+        "project_id"           : pd.UInt64Dtype(),
+        "db_create_start"      : numpy.datetime64(),
+        "db_create_stop"       : numpy.datetime64(),
+        "scan_start_date"      : numpy.datetime64(),
+        "scan_stop_date"       : numpy.datetime64(),
+        "tool_name"            : pd.StringDtype(),
+        "tool_version"         : pd.StringDtype(),
+        "tool_query_commit_id" : pd.StringDtype(),
+        "sarif_file_name"      : pd.StringDtype(),
+        "results_count"        : pd.Int64Dtype(),
+        "rules_count"          : pd.Int64Dtype(),
+    }).reset_index(drop=True)
+
+    return res1
 
 # 
 # Results table
@@ -89,9 +121,42 @@ def joins_for_results(basetables, external_info):
     if len(stack) > 0:
         res = pd.concat(stack)
     else:
+        if stack == []:
+            # Sanity check: The case of zero results must be handled at
+            # sarif read time and should never reach here.
+            raise ZeroResults("Zero problem/path_problem results found in sarif "
+                              "file but processing anyway.  Internal error.")
         res = tables[0]
         
-    return res
+    # Force all column types to ensure appropriate formatting
+    res1 = res.astype({
+        'id'               : pd.UInt64Dtype(),
+        'scan_id'          : pd.UInt64Dtype(),
+        'query_id'         : pd.StringDtype(),
+        
+        'result_type'      : pd.StringDtype(),
+        'codeFlow_id'      : pd.UInt64Dtype(),
+        
+        'message'          : pd.StringDtype(),
+        'message_object'   : numpy.dtype('O'),
+        'location'         : pd.StringDtype(),
+        
+        'source_startLine' : pd.Int64Dtype(),
+        'source_startCol'  : pd.Int64Dtype(),
+        'source_endLine'   : pd.Int64Dtype(),
+        'source_endCol'    : pd.Int64Dtype(),
+        
+        'sink_startLine'   : pd.Int64Dtype(),
+        'sink_startCol'    : pd.Int64Dtype(),
+        'sink_endLine'     : pd.Int64Dtype(),
+        'sink_endCol'      : pd.Int64Dtype(),
+        
+        # TODO Find high-level info from query name or tags?
+        'source_object'    : numpy.dtype('O'),
+        'sink_object'      : numpy.dtype('O'),
+    }).reset_index(drop=True)
+
+    return res1
 
 def _results_from_kind_problem(basetables, external_info):
     b = basetables; e = external_info
@@ -126,7 +191,6 @@ def _results_from_kind_problem(basetables, external_info):
         })
     # Force column type(s) to avoid floats in output.
     res1 = res.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
-
     return res1
 
 
