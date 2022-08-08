@@ -9,6 +9,22 @@ import pandas as pd
 import re
 from .typegraph import tagged_array_columns, tagged_struct_columns
 
+class BaseTablesTypes:
+    codeflows = {
+        "codeflow_id" : pd.UInt64Dtype(),
+        "codeflow_index" : pd.Int64Dtype(),
+        "threadflow_index" : pd.Int64Dtype(),
+        "location_index" : pd.Int64Dtype(),
+        "endColumn" : pd.Int64Dtype(),
+        "endLine" : pd.Int64Dtype(),
+        "startColumn" : pd.Int64Dtype(),
+        "startLine" : pd.Int64Dtype(),
+        "artifact_index" : pd.Int64Dtype(),
+        "uri" : pd.StringDtype(),
+        "uriBaseId" : pd.StringDtype(),
+        "message" : pd.StringDtype(),
+    }
+
 def joins_for_af_0350_location(tgraph):
     """ 
     Join all the tables used by 0350's right side into one.
@@ -198,7 +214,8 @@ def joins_for_codeflows(tgraph, sf_2683):
             'message_text_2683': 'message',
         }, axis='columns')
     )
-    return codeflows_1
+    codeflows_2 = codeflows_1.astype(BaseTablesTypes.codeflows).reset_index(drop=True)
+    return codeflows_2
 
 def joins_for_path_problem(tgraph, af_0350_location):
     """ 
