@@ -1,0 +1,196 @@
+#!/usr/bin/env python3
+"""Run `sarif-extract-scans` over a directory hierarchy of the form
+
+    organization/project-sarif.json
+    org2/proj2.sarif
+    ...
+
+mirroring the github org/project structure.  The list of sarif files to ingest is
+in the file given by the sarif-files argument, a list of paths of the form
+
+    <organization>/<project-sarif>
+
+sarif-extract-scans-runner creates these files:
+
+- successful_runs -- optional, one file.  Track saved file status and only re-run
+  failed attempts
+
+- org*/project*.scanspec -- one scanspec file per org/project listed in
+  sarif-files.  Required by `sarif-extract-scans`
+
+- org*/project*.scanlog -- failures from 'sarif-extract-scans' are logged here
+
+It also creates the directories
+
+- org*/project*.scantables -- one directory per org/project, each holding the
+  tables produced by `sarif-extract-scans`:
+    ├── codeflows.csv
+    ├── projects.csv
+    ├── results.csv
+    └── scans.csv
+
+As example:
+    cd ../data/treeio
+    sarif-extract-scans-runner -i1 -s successful-runs - <<EOF
+2021-12-09/results.sarif
+2022-02-25/results.sarif
+EOF
+
+writes out
+    DATE   2022-08-08T14:32:41.962219
+    OK     2021-12-09/results.sarif
+    DATE   2022-08-08T14:32:42.970712
+    OK     2022-02-25/results.sarif
+
+and produces the files
+    2021-12-09/
+    ├── results.sarif.scanspec
+    ├── results.sarif.scantables
+        ├── codeflows.csv
+        ├── projects.csv
+        ├── results.csv
+        └── scans.csv
+
+    2022-02-25/
+    ├── results.sarif.scanspec
+    ├── results.sarif.scantables
+        ├── codeflows.csv
+        ├── projects.csv
+        ├── results.csv
+        └── scans.csv
+
+on the first run; repeating
+      sarif-extract-scans-runner -i1 -s successful-runs - <<EOF
+2021-12-09/results.sarif
+2022-02-25/results.sarif
+EOF
+
+will produce no output but run much faster.
+
+Typical use for larger sarif file collections:
+    cd /path/to/scans/root
+    create sarif-files.txt
+    nohup sarif-extract-scans-runner -s ses-successful-runs sarif-files.txt &
+
+"""
+import argparse
+import subprocess
+import json
+import os
+import sys
+import pickle
+from datetime import datetime
+
+#
+# Handle arguments
+#
+parser = argparse.ArgumentParser(description='Run sarif-extract-scans over a directory hierarchy')
+
+parser.add_argument('sarif_files', metavar='sarif-files', type=str, help='File containing list of sarif files, use - for stdin')
+
+parser.add_argument('-m', '--max-files', metavar='number', type=int, default=100,
+                    help='Maximum number of files to process.'
+                    '  Default: %(default)d')
+
+parser.add_argument('-i', '--update-interval', metavar='N', type=int, default=10,
+                    help='Update status and save state after processing N files.'
+                    '  Default: %(default)d')
+
+parser.add_argument('-s', '--successful-runs', metavar='filename', type=str,
+                    default="",
+                    help='Incremental running support: Track successful runs and only (re)run '
+                    'new/failed entries from sarif-files.'
+                    '  Default: "%(default)s"')
+
+
+parser.add_argument('--doc', dest='fulldoc', default=False,
+                    action='store_true', 
+                    help='Print full documentation for this script')
+
+# Avoid argparse error when only --doc is given
+if len(sys.argv) == 2 and sys.argv[1] == '--doc':
+    print(__doc__)
+    sys.exit(0)
+
+args = parser.parse_args()
+
+#
+# Collect sarif file information
+# 
+with open(args.sarif_files, 'r') if args.sarif_files != '-' else sys.stdin as fp:
+    paths = fp.readlines()
+
+# Use saved status, only re-run failed attempts
+use_successful_runs = args.successful_runs != ""
+if use_successful_runs:
+    if  os.path.exists(args.successful_runs):
+        with open(args.successful_runs, "rb") as infile:
+            successful_runs = pickle.load(infile)
+    else:
+        successful_runs = set()
+
+count = -1
+for path in paths:
+    count += 1
+    if count > args.max_files: break
+    # 
+    # Paths and components
+    # 
+    path = path.rstrip()
+    project, component = path.split('/')
+    # 
+    # Scan specification
+    # 
+    scan_spec = {
+        "project_id": abs(hash(project + component)), # pd.UInt64Dtype()
+        "scan_id": int(os.path.getmtime(path)),       # pd.Int64Dtype()
+        "sarif_file_name": path,                      # pd.StringDtype()
+    }
+    scan_spec_file = os.path.join(project, component + ".scanspec")
+    with open(scan_spec_file, 'w') as fp:
+        json.dump(scan_spec, fp)
+    # 
+    # Table output directory
+    # 
+    output_dir = os.path.join(project, component + ".scantables")
+    try: os.mkdir(output_dir, mode=0o755)
+    except FileExistsError: pass
+    #
+    # Run sarif-extract-scans
+    # 
+    if use_successful_runs:
+        if path in successful_runs:
+            # Don't rerun
+            continue
+
+    # Some timing information
+    if count % args.update_interval == 0:
+        print("{:6} {}".format("DATE", datetime.now().isoformat()))
+    
+    # Save occasionally
+    if count % args.update_interval == 0:
+        if use_successful_runs:
+            with open(args.successful_runs, 'wb') as outfile:
+                pickle.dump(successful_runs, outfile)
+
+    scan_log_file = os.path.join(project, component + ".scanlog")
+    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir],
+                              capture_output=True, text=True)
+    if runstats.returncode == 0:
+        print("{:6} {}".format("OK", path))
+        if use_successful_runs:
+            successful_runs.add(path)
+    else:
+        print("{:6} {} {}".format("FAIL", path, scan_log_file))
+        # log error
+        with open(scan_log_file, 'w') as fp:
+            fp.write(runstats.stderr)
+        # report only tail
+        print("{:6} {}".format("", "Error tail: "))
+        for t1 in runstats.stderr.split('\n')[-6:-1]:
+            print("{:6} {}".format("", t1))    
+
+if use_successful_runs:
+    with open(args.successful_runs, 'wb') as outfile:
+        pickle.dump(successful_runs, outfile)
+            
