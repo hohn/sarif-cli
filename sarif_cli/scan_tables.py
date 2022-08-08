@@ -10,6 +10,60 @@ class ZeroResults(Exception):
     pass
 
 #
+# Column types for scan-related pandas tables
+# 
+class ScanTablesTypes:
+    scans = {
+        "id"                   : pd.UInt64Dtype(),
+        "commit_id"            : pd.StringDtype(),
+        "project_id"           : pd.UInt64Dtype(),
+        "db_create_start"      : numpy.datetime64(),
+        "db_create_stop"       : numpy.datetime64(),
+        "scan_start_date"      : numpy.datetime64(),
+        "scan_stop_date"       : numpy.datetime64(),
+        "tool_name"            : pd.StringDtype(),
+        "tool_version"         : pd.StringDtype(),
+        "tool_query_commit_id" : pd.StringDtype(),
+        "sarif_file_name"      : pd.StringDtype(),
+        "results_count"        : pd.Int64Dtype(),
+        "rules_count"          : pd.Int64Dtype(),
+    }
+    results = {
+        'id'               : pd.UInt64Dtype(),
+        'scan_id'          : pd.UInt64Dtype(),
+        'query_id'         : pd.StringDtype(),
+        
+        'result_type'      : pd.StringDtype(),
+        'codeFlow_id'      : pd.UInt64Dtype(),
+        
+        'message'          : pd.StringDtype(),
+        'message_object'   : numpy.dtype('O'),
+        'location'         : pd.StringDtype(),
+        
+        'source_startLine' : pd.Int64Dtype(),
+        'source_startCol'  : pd.Int64Dtype(),
+        'source_endLine'   : pd.Int64Dtype(),
+        'source_endCol'    : pd.Int64Dtype(),
+        
+        'sink_startLine'   : pd.Int64Dtype(),
+        'sink_startCol'    : pd.Int64Dtype(),
+        'sink_endLine'     : pd.Int64Dtype(),
+        'sink_endCol'      : pd.Int64Dtype(),
+        
+        # TODO Find high-level info from query name or tags?
+        'source_object'    : numpy.dtype('O'),
+        'sink_object'      : numpy.dtype('O'),
+    }
+    projects = {
+        "id"                 : pd.UInt64Dtype(),
+        "project_name"       : pd.StringDtype(),
+        "creation_date"      : numpy.datetime64(),
+        "repo_url"           : pd.StringDtype(),
+        "primary_language"   : pd.StringDtype(),
+        "languages_analyzed" : pd.StringDtype(),
+    }
+
+#
 # Projects table
 # 
 def joins_for_projects(basetables, external_info, scantables):
@@ -36,18 +90,10 @@ def joins_for_projects(basetables, external_info, scantables):
         "repo_url"           : repo_url, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0], # TODO: external info
         "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
-    },index=[0])
+    }, index=[0])
 
     # Force all column types to ensure appropriate formatting
-    res1 = res.astype({
-        "id"                 : pd.UInt64Dtype(),
-        "project_name"       : pd.StringDtype(),
-        "creation_date"      : numpy.datetime64(),
-        "repo_url"           : pd.StringDtype(),
-        "primary_language"   : pd.StringDtype(),
-        "languages_analyzed" : pd.StringDtype(),
-    }).reset_index(drop=True)
-
+    res1 = res.astype(ScanTablesTypes.projects).reset_index(drop=True)
     return res1
 
 #
@@ -82,22 +128,7 @@ def joins_for_scans(basetables, external_info, scantables):
     },index=[0])
 
     # Force all column types to ensure correct writing and type checks on reading.
-    res1 = res.astype({
-        "id"                   : pd.UInt64Dtype(),
-        "commit_id"            : pd.StringDtype(),
-        "project_id"           : pd.UInt64Dtype(),
-        "db_create_start"      : numpy.datetime64(),
-        "db_create_stop"       : numpy.datetime64(),
-        "scan_start_date"      : numpy.datetime64(),
-        "scan_stop_date"       : numpy.datetime64(),
-        "tool_name"            : pd.StringDtype(),
-        "tool_version"         : pd.StringDtype(),
-        "tool_query_commit_id" : pd.StringDtype(),
-        "sarif_file_name"      : pd.StringDtype(),
-        "results_count"        : pd.Int64Dtype(),
-        "rules_count"          : pd.Int64Dtype(),
-    }).reset_index(drop=True)
-
+    res1 = res.astype(ScanTablesTypes.scans).reset_index(drop=True)
     return res1
 
 # 
@@ -129,33 +160,7 @@ def joins_for_results(basetables, external_info):
         res = tables[0]
         
     # Force all column types to ensure appropriate formatting
-    res1 = res.astype({
-        'id'               : pd.UInt64Dtype(),
-        'scan_id'          : pd.UInt64Dtype(),
-        'query_id'         : pd.StringDtype(),
-        
-        'result_type'      : pd.StringDtype(),
-        'codeFlow_id'      : pd.UInt64Dtype(),
-        
-        'message'          : pd.StringDtype(),
-        'message_object'   : numpy.dtype('O'),
-        'location'         : pd.StringDtype(),
-        
-        'source_startLine' : pd.Int64Dtype(),
-        'source_startCol'  : pd.Int64Dtype(),
-        'source_endLine'   : pd.Int64Dtype(),
-        'source_endCol'    : pd.Int64Dtype(),
-        
-        'sink_startLine'   : pd.Int64Dtype(),
-        'sink_startCol'    : pd.Int64Dtype(),
-        'sink_endLine'     : pd.Int64Dtype(),
-        'sink_endCol'      : pd.Int64Dtype(),
-        
-        # TODO Find high-level info from query name or tags?
-        'source_object'    : numpy.dtype('O'),
-        'sink_object'      : numpy.dtype('O'),
-    }).reset_index(drop=True)
-
+    res1 = res.astype(ScanTablesTypes.results).reset_index(drop=True)
     return res1
 
 def _results_from_kind_problem(basetables, external_info):
