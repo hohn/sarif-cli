@@ -28,3 +28,14 @@ EOF
 2022-02-25/results.sarif
 EOF
 )
+
+# Aggregate multiple results
+( cd ../data/treeio/
+  cat > test-sas-files <<EOF
+2021-12-09/results.sarif
+2022-02-25/results.sarif
+EOF
+      
+  sarif-extract-scans-runner test-sas-files
+  sarif-aggregate-scans -i1 test-sas-files aggregated.scantables 
+)
