@@ -172,7 +172,7 @@ def _results_from_kind_problem(basetables, external_info):
             'id': [flakegen.next() for _ in range(len(b.kind_problem))],
             
             'scan_id' : e.scan_id,
-            'query_id' : e.ql_query_id,
+            'query_id' : b.kind_problem.rule_id,
             
             'result_type' : "kind_problem",
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
@@ -195,6 +195,7 @@ def _results_from_kind_problem(basetables, external_info):
             'source_object' : pd.NA, # TODO: find high-level info from query name or tags?
             'sink_object' : pd.NA,
         })
+
     # Force column type(s) to avoid floats in output.
     res1 = res.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
     return res1
@@ -257,7 +258,7 @@ def _results_from_kind_pathproblem(basetables, external_info):
                 # is done, below.
                 res = {
                     'scan_id' : e.scan_id,
-                    'query_id' : e.ql_query_id,
+                    'query_id' : cfid0ppt0.rule_id.values[0],
                     # 
                     'result_type' : "kind_pathproblem",
                     'codeFlow_id' : cfid0,

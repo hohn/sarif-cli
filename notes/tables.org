@@ -299,7 +299,7 @@
     ==> results.csv <==
     id INT,                  -- primary key
     scan_id INT,             -- scans.id
-    query_id STRING,         -- git commit id of the ql query set
+    query_id STRING,         -- @id from the CodeQL query
     location STRING,
     message STRING,
     message_object OBJ,
