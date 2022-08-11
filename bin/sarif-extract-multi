@@ -6,6 +6,7 @@ from sarif_cli import signature, signature_multi
 from sarif_cli import typegraph
 from sarif_cli import snowflake_id
 import argparse
+import csv
 import dataclasses as dc
 import json
 import pandas as pd
@@ -148,7 +149,7 @@ p = pathlib.Path(args.outdir)
 p.mkdir(exist_ok=True)
 def write(path, frame):
     with p.joinpath(path + ".csv").open(mode='wb') as fh:
-        frame.to_csv(fh, index=False)
+        frame.to_csv(fh, index=False, quoting=csv.QUOTE_NONNUMERIC)
 for field in dc.fields(bt):
     table = getattr(bt, field.name)
     write(field.name, table)
