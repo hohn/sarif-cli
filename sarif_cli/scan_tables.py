@@ -1,10 +1,12 @@
 """ Collection of joins for the derived tables
 
 """
-import pandas as pd
-import numpy
-import re
 from . import snowflake_id
+
+import logging
+import numpy
+import pandas as pd
+import re
 
 class ZeroResults(Exception):
     pass
@@ -153,10 +155,9 @@ def joins_for_results(basetables, external_info):
         res = pd.concat(stack)
     else:
         if stack == []:
-            # Sanity check: The case of zero results must be handled at
-            # sarif read time and should never reach here.
-            raise ZeroResults("Zero problem/path_problem results found in sarif "
-                              "file but processing anyway.  Internal error.")
+            # TODO: The case of zero results should be handled at sarif read time
+            logging.warning("Zero problem/path_problem results found in sarif "
+                            "file but processing anyway.")
         res = tables[0]
         
     # Force all column types to ensure appropriate formatting
