@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+
+from copy import deepcopy
+from datetime import datetime
+import argparse
+import csv
+import numpy
+import os
+import pandas as pd
+import random
+
+from sarif_cli import scan_tables
+from sarif_cli import table_joins
+
+#
+# Handle arguments
+#
+parser = argparse.ArgumentParser(
+    description="Fill the scans table's db_create_start/stop and "
+    "scan_start/stop_date columns with realistic random values" )
+
+parser.add_argument('aggregate_dir', metavar='aggregate-dir', type=str,
+                    help='Directory containing combined scan tables') 
+
+parser.add_argument('output_dir', metavar='output-dir', type=str,
+                    help='Directory for writing the combined and padded scan tables') 
+
+args = parser.parse_args()
+
+#
+# Prepare output directory
+# 
+try: os.mkdir(args.output_dir, mode=0o755)
+except FileExistsError: pass
+
+#
+# TODO: factor out code in common with ./sarif-aggregate-scans
+#
+
+#
+# Utilities
+# 
+_extract_scans_tables = { 
+    "scans" : [],
+    "results" : [],
+    "projects" : [], 
+    "codeflows" : [],
+}
+_table_output_dtypes = {
+    "scans" : scan_tables.ScanTablesTypes.scans,
+    "results" : scan_tables.ScanTablesTypes.results,
+    "projects" : scan_tables.ScanTablesTypes.projects, 
+    "codeflows" : table_joins.BaseTablesTypes.codeflows,
+}    
+
+# Accomodate special dtype cases for parsing to avoid
+# 
+#       TypeError: the dtype datetime64 is not supported for parsing, pass this
+#       column using parse_dates instead
+# 
+_parse_dates = {
+    "scans" : [],
+    "results" : [],
+    "projects" : [],
+    "codeflows" : [],
+}
+
+# Prep for in-place modification, use copies of original module values
+_table_input_dtypes = { key: deepcopy(val) for key, val in _table_output_dtypes.items()}
+
+# Replace datetime64 with str and track the affected columns
+for tab_name, tab_dtypes in _table_input_dtypes.items():
+    for col_key, col_dtype in tab_dtypes.items():
+        # Let pandas parse datetime64 as str, then convert to date
+        if col_dtype == numpy.dtype('M'):
+            # Note: pd.StringDtype() here will cause parsing failure later
+            tab_dtypes[col_key] = str 
+            _parse_dates[tab_name].append(col_key)
+
+def _all_csv_files_exist(output_dir):
+    for file_prefix in _extract_scans_tables.keys():
+        csv_fname = os.path.join(output_dir, file_prefix + ".csv")
+        if not os.path.exists(csv_fname):
+            return False
+    return True
+
+# 
+# Read the combined dataframes
+# 
+for file_prefix in _extract_scans_tables.keys():
+    csv_fname = os.path.join(args.aggregate_dir, file_prefix + ".csv")
+    data = pd.read_csv(csv_fname, dtype = _table_input_dtypes[file_prefix],
+                       parse_dates = _parse_dates[file_prefix])
+    _extract_scans_tables[file_prefix].append(data)
+
+#
+# Pad the dataframes
+# 
+# ---- placeholder dates ----
+# - Across scans, these should spread over one year to avoid massive jumps
+#   in display.
+# - For indivdual scans, the scan duration should be between a few minutes and
+#   several hours 
+# - db creation times can be between a few minutes and several hours
+# - scans follow db creation
+# 
+scans = _extract_scans_tables["scans"][0]
+rows = len(scans)
+rng = numpy.random.default_rng(seed=7)
+
+def rcol():
+    return rng.uniform(0, 1, rows)
+
+def day():
+    return numpy.timedelta64(1, 'D')
+
+def minute():
+    return numpy.timedelta64(1, 'm')
+
+scans.db_create_start = (numpy.datetime64('today', 's') + 23*59*rcol()*minute() -
+                         365 * rcol() * day())
+scans.db_create_stop = scans.db_create_start + (5 + 3 * 60 * rcol()) * minute()
+scans.scan_start_date = scans.db_create_stop + (1 + 13 * rcol()) * minute()
+scans.scan_stop_date = scans.scan_start_date + (5 + 3*60 * rcol()) * minute()
+
+_extract_scans_tables["scans"][0] = scans
+
+#
+# Write all dataframes
+# 
+for file_prefix in _extract_scans_tables.keys():
+    csv_fname = os.path.join(args.output_dir, file_prefix + ".csv")
+    frame = (_extract_scans_tables[file_prefix][0]
+             .astype(_table_output_dtypes[file_prefix]))
+    with open(csv_fname, 'w') as fh:
+        frame.to_csv(fh, index=False, quoting=csv.QUOTE_NONNUMERIC)

@@ -38,4 +38,5 @@ EOF
       
   sarif-extract-scans-runner test-sas-files
   sarif-aggregate-scans -i1 test-sas-files aggregated.scantables 
+  sarif-pad-aggregate aggregated.scantables aggregated.scantables.padded
 )
