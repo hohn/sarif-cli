@@ -168,8 +168,13 @@ def joins_for_results(basetables, external_info):
     return res1
 
 #id as primary key
-def _populate_from_other_tables(column_name, basetable, i):
+def _populate_from_rule_table(column_name, basetable, i):
     val = basetable.kind_problem.rule_id[i]
+    return basetable.rules.query("id == @val")[column_name].head(1).item()
+
+#id as primary key
+def _populate_from_rule_table_code_flow(column_name, basetable, flowtable):
+    val = flowtable.rule_id.values[0]
     return basetable.rules.query("id == @val")[column_name].head(1).item()
 
 def _results_from_kind_problem(basetables, external_info):
@@ -182,8 +187,8 @@ def _results_from_kind_problem(basetables, external_info):
             'scan_id' : e.scan_id,
             'query_id' : b.kind_problem.rule_id,
             'query_kind'       :  "problem",
-            'query_precision'  :  [_populate_from_other_tables("precision", b, i) for i in range(len(b.kind_problem))],
-            'query_severity'   :  [_populate_from_other_tables("severity", b, i) for i in range(len(b.kind_problem))],
+            'query_precision'  :  [_populate_from_rule_table("precision", b, i) for i in range(len(b.kind_problem))],
+            'query_severity'   :  [_populate_from_rule_table("severity", b, i) for i in range(len(b.kind_problem))],
             
             'result_type' : "kind_problem",
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
@@ -271,8 +276,8 @@ def _results_from_kind_pathproblem(basetables, external_info):
                     'scan_id' : e.scan_id,
                     'query_id' : cfid0ppt0.rule_id.values[0],
                     'query_kind'       : "path-problem",
-                    'query_precision'  : "",
-                    'query_severity'   : "",
+                    'query_precision'  : _populate_from_rule_table_code_flow("precision", b, cfid0ppt0),
+                    'query_severity'   : _populate_from_rule_table_code_flow("severity", b, cfid0ppt0),
                     # 
                     'result_type' : "kind_pathproblem",
                     'codeFlow_id' : cfid0,
