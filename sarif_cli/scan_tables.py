@@ -34,6 +34,9 @@ class ScanTablesTypes:
         'id'               : pd.UInt64Dtype(),
         'scan_id'          : pd.UInt64Dtype(),
         'query_id'         : pd.StringDtype(),
+        'query_kind'       : pd.StringDtype(),
+        'query_precision'  : pd.StringDtype(),
+        'query_severity'   : pd.StringDtype(),
         
         'result_type'      : pd.StringDtype(),
         'codeFlow_id'      : pd.UInt64Dtype(),
@@ -164,6 +167,11 @@ def joins_for_results(basetables, external_info):
     res1 = res.astype(ScanTablesTypes.results).reset_index(drop=True)
     return res1
 
+#id as primary key
+def _populate_from_other_tables(column_name, basetable, i):
+    val = basetable.kind_problem.rule_id[i]
+    return basetable.rules.query("id == @val")[column_name].head(1).item()
+
 def _results_from_kind_problem(basetables, external_info):
     b = basetables; e = external_info
     flakegen = snowflake_id.Snowflake(2)
@@ -173,6 +181,9 @@ def _results_from_kind_problem(basetables, external_info):
             
             'scan_id' : e.scan_id,
             'query_id' : b.kind_problem.rule_id,
+            'query_kind'       :  "problem",
+            'query_precision'  :  [_populate_from_other_tables("precision", b, i) for i in range(len(b.kind_problem))],
+            'query_severity'   :  [_populate_from_other_tables("severity", b, i) for i in range(len(b.kind_problem))],
             
             'result_type' : "kind_problem",
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
@@ -259,6 +270,9 @@ def _results_from_kind_pathproblem(basetables, external_info):
                 res = {
                     'scan_id' : e.scan_id,
                     'query_id' : cfid0ppt0.rule_id.values[0],
+                    'query_kind'       : "path-problem",
+                    'query_precision'  : "",
+                    'query_severity'   : "",
                     # 
                     'result_type' : "kind_pathproblem",
                     'codeFlow_id' : cfid0,
