@@ -97,7 +97,7 @@ scantabs = ScanTables()
 @dataclass
 class ExternalInfo:
     project_id : int
-    scan_id : int
+    scan_id : pd.UInt64Dtype()
     sarif_file_name : str
     ql_query_id : str
 
@@ -108,6 +108,10 @@ external_info = ExternalInfo(
     # TODO: Take ql_query_id from where? (git commit id of the ql query set)
     'deadbeef00',               
 )
+
+# Replace scan id to guarantee unique - do not rely on external gen
+flakegen1 = snowflake_id.Snowflake(1)
+external_info.scan_id = flakegen1.next()
 
 # 
 # Add dataframes for base tables 
