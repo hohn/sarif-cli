@@ -80,6 +80,7 @@ import os
 import sys
 import pickle
 from datetime import datetime
+from sarif_cli import snowflake_id
 
 #
 # Handle arguments
@@ -129,6 +130,9 @@ if use_successful_runs:
     else:
         successful_runs = set()
 
+# Scan id guaranteed unique - do not rely on external info
+flakegen1 = snowflake_id.Snowflake(0)
+
 count = -1
 for path in paths:
     count += 1
@@ -143,7 +147,7 @@ for path in paths:
     # 
     scan_spec = {
         "project_id": abs(hash(project + component)), # pd.UInt64Dtype()
-        "scan_id": int(os.path.getmtime(path)),       # pd.Int64Dtype()
+        "scan_id": flakegen1.next(),                  # pd.Int64Dtype()
         "sarif_file_name": path,                      # pd.StringDtype()
     }
     scan_spec_file = os.path.join(project, component + ".scanspec")

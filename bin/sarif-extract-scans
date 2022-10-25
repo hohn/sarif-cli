@@ -109,10 +109,6 @@ external_info = ExternalInfo(
     'deadbeef00',               
 )
 
-# Replace scan id to guarantee unique - do not rely on external gen
-flakegen1 = snowflake_id.Snowflake(1)
-external_info.scan_id = flakegen1.next()
-
 # 
 # Add dataframes for base tables 
 # 
