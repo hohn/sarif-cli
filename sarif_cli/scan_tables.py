@@ -118,11 +118,11 @@ def joins_for_scans(basetables, external_info, scantables):
         "id"                   : e.scan_id,
         "commit_id"            : b.project.revisionId[0],
         "project_id"           : e.project_id,
-        # 
-        "db_create_start"      : pd.NA,
-        "db_create_stop"       : pd.NA,
-        "scan_start_date"      : pd.NA,
-        "scan_stop_date"       : pd.NA,
+        # TODO extract real date information from somewhere
+        "db_create_start"      : pd.Timestamp(0.0, unit='s'),
+        "db_create_stop"       : pd.Timestamp(0.0, unit='s'),
+        "scan_start_date"      : pd.Timestamp(0.0, unit='s'),
+        "scan_stop_date"       : pd.Timestamp(0.0, unit='s'),
         # 
         "tool_name"            : driver_name[0],
         "tool_version"         : driver_version[0],
