@@ -38,6 +38,7 @@ def load(fname):
         try:
             content = json.load(fp)
         except json.decoder.JSONDecodeError as err:
+            # TODO knewbury error handling
             logging.error('Error reading from {}: {}: line {}, column {}'
                           .format(args.file, err.msg, err.lineno, err.colno))
             sys.exit(1)
@@ -61,8 +62,16 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 #
 # Use reference type graph (signature) to traverse sarif and attach values to tables
 #
+# try:
+#     tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
+#     typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+# except json.decoder.JSONDecodeError as err:
+#     logging.error('Error reading from {}: {}: line {}, column {}'
+#                           .format(args.file, err.msg, err.lineno, err.colno))
+#     sys.exit(1)
 tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
 typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+
 #
 # Form output tables
 # 
@@ -125,9 +134,11 @@ bt.rules = tj.joins_for_rules(tgraph)
 #
 # Form scan tables
 #
+# joins for projects has to happen first as it backfills the guess about the project_id
+scantabs.projects = st.joins_for_projects(bt, external_info, scantabs)
 scantabs.results = st.joins_for_results(bt, external_info)
 scantabs.scans = st.joins_for_scans(bt, external_info, scantabs)
-scantabs.projects = st.joins_for_projects(bt, external_info, scantabs)
+
 
 
 #

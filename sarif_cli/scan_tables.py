@@ -7,6 +7,8 @@ import logging
 import numpy
 import pandas as pd
 import re
+import sys
+from sarif_cli import hash
 
 class ZeroResults(Exception):
     pass
@@ -81,10 +83,16 @@ def joins_for_projects(basetables, external_info, scantables):
     #   (git|https)://*/org/project.*
     # use the org/project part as the project_name.
     # 
+    # TODO knewbury error handling for if the signature is slotted out?
     repo_url = b.project.repositoryUri[0]
     url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/([^/.]+).*', repo_url)
     if url_parts:
-        project_name = f"{url_parts.group(2)}/{url_parts.group(3)}"
+        project_name = f"{url_parts.group(2)}-{url_parts.group(3)}"
+        project, component = e.sarif_file_name.rstrip().split('/')
+        # if the runners guess from the filename was bad, replace with real info
+        # and continue to use that scanspec to pass that around
+        if project_name != project+"-"+component:
+            e.project_id = hash.hash_unique(project_name.encode())
     else:
         project_name = pd.NA
     
@@ -131,7 +139,6 @@ def joins_for_scans(basetables, external_info, scantables):
         "results_count"        : scantables.results.shape[0],
         "rules_count"          : len(b.rules['id'].unique()),
     },index=[0])
-
     # Force all column types to ensure correct writing and type checks on reading.
     res1 = res.astype(ScanTablesTypes.scans).reset_index(drop=True)
     return res1
@@ -158,7 +165,7 @@ def joins_for_results(basetables, external_info):
         res = pd.concat(stack)
     else:
         if stack == []:
-            # TODO: The case of zero results should be handled at sarif read time
+            # TODO knewbury to error handling
             logging.warning("Zero problem/path_problem results found in sarif "
                             "file but processing anyway.")
         res = tables[0]

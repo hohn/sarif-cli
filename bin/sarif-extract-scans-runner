@@ -80,13 +80,7 @@ import os
 import sys
 import pickle
 from datetime import datetime
-from hashlib import blake2b
-
-def hash_unique(item_to_hash, size):
-    h = blake2b(digest_size = size)
-    h.update(item_to_hash.encode())
-    return abs(int.from_bytes(h.digest(), byteorder='big'))
-
+from sarif_cli import hash
 #
 # Handle arguments
 #
@@ -147,12 +141,21 @@ for path in paths:
     # 
     # Scan specification
     # 
+    # scan id as hash of sarif file contents
+    with open(path, 'rb') as f:
+        data = f.read()
+        scan_id = hash.hash_unique(data)
+
     scan_spec = {
-        "project_id": hash_unique(project, 8),     # pd.UInt64Dtype()
-        "scan_id": hash_unique(path, 8),           # pd.Int64Dtype()
+        # assuming sarif file names are like <org>/<repo>
+        # however this will be replaced down the line with the repoURI if possible
+        # still, leaving here in case later versions of this tool do not rely on that property being there
+        # in that case this will be the best guess
+        "project_id": hash.hash_unique((project+"-"+component).encode()),  # pd.UInt64Dtype()
+        "scan_id": scan_id,                        # pd.Int64Dtype()
         "sarif_file_name": path,                   # pd.StringDtype()
     }
-
+    
     scan_spec_file = os.path.join(project, component + ".scanspec")
     with open(scan_spec_file, 'w') as fp:
         json.dump(scan_spec, fp)
