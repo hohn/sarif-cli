@@ -85,7 +85,7 @@ def joins_for_projects(basetables, external_info, scantables):
     # 
     # TODO knewbury error handling for if the signature is slotted out?
     repo_url = b.project.repositoryUri[0]
-    url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/([^/.]+).*', repo_url)
+    url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/(.*).git', repo_url)
     if url_parts:
         project_name = f"{url_parts.group(2)}-{url_parts.group(3)}"
         project, component = e.sarif_file_name.rstrip().split('/')
