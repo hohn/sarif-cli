@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from sarif_cli import signature, signature_single
 from sarif_cli import typegraph
 from sarif_cli import snowflake_id
+from sarif_cli import status_writer
 import argparse
 import csv
 import dataclasses as dc
@@ -28,9 +29,13 @@ parser = argparse.ArgumentParser(description='Read a collection of sarif files a
 parser.add_argument('file', metavar='scan-spec.json', type=str,
                     help="json file containing required external scan information.")
 parser.add_argument('outdir', metavar='output-dir', type=str, help='output directory')
+parser.add_argument('csvout', metavar='csv-outfile', type=str, help='processing status csv output file name to use')
 parser.add_argument('-r', '--write-raw-tables', action="store_true",
                     help='Write the raw sarif tables to the output directory')
 args = parser.parse_args()
+
+# Setup csv error writer
+status_writer.setup_csv_writer(args.csvout)
 
 # Load meta info
 def load(fname):
@@ -40,12 +45,15 @@ def load(fname):
         except json.decoder.JSONDecodeError as err:
             # TODO knewbury error handling
             logging.error('Error reading from {}: {}: line {}, column {}'
-                          .format(args.file, err.msg, err.lineno, err.colno))
+                          .format(fname, err.msg, err.lineno, err.colno))
+            status_writer.file_load_error["file"] = fname
+            status_writer.csv_write(status_writer.file_load_error)
             sys.exit(1)
         return content
 
 scan_spec = load(args.file)
 sarif_struct = load(scan_spec['sarif_file_name'])
+status_writer.setup_status_filenames(scan_spec['sarif_file_name'])
 
 #
 # Preprocess raw SARIF to get smaller signature
@@ -71,6 +79,8 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 #     sys.exit(1)
 tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
 typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+# may have gathered warnings below, if not does nothing
+status_writer.csv_write_warnings()
 
 #
 # Form output tables
@@ -237,3 +247,5 @@ if args.write_raw_tables:
 _write_dataframes_of(scantabs)
 
 write('codeflows', bt.codeflows)
+status_writer.warning_set["success"]+=1
+status_writer.csv_write_warnings()

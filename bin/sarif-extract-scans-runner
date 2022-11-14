@@ -185,7 +185,8 @@ for path in paths:
                 pickle.dump(successful_runs, outfile)
 
     scan_log_file = os.path.join(project, component + ".scanlog")
-    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir],
+    csv_outfile = os.path.join(project, component)
+    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile],
                               capture_output=True, text=True)
     if runstats.returncode == 0:
         print("{:6} {}".format("OK", path))

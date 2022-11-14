@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any, Dict, List, Tuple, Union
 import pandas as pd
+from sarif_cli import status_writer
 
 #
 # Utility classes
@@ -112,6 +113,7 @@ def destructure(typegraph: Typegraph, node: NodeId, tree: Tree):
     elif t in [str, int, bool]:
         pass
     else:
+        # TODO knewbury error handling
         raise Exception("Unhandled type: %s" % t)
 
 def _destructure_dict_1(typegraph, node, tree):
@@ -137,6 +139,7 @@ def _destructure_dict_1(typegraph, node, tree):
     # Sanity check
     sig = typegraph.signature_graph[node]
     if type(sig) != tuple:
+        # TODO knewbury error handling
         raise SignatureMismatch()
 
     # Destructure this dictionary
@@ -157,7 +160,7 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
     type_fields = typegraph.fields[node]
     if tree_fields == type_fields:
         _destructure_dict_1(typegraph, node, tree)
-        
+        # TODO knewbury error handling here
     elif set(tree_fields).issuperset(set(type_fields)):
         # Log a warning
         # log.warning("XX: Tree has unrecognized fields")
@@ -165,9 +168,15 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
                         'known entries: {}'.format(tree))
         logging.warning('tree fields: {}'.format(sorted(tree_fields)))
         logging.warning('type fields: {}'.format(sorted(type_fields)))
+        status_writer.csv_write(status_writer.input_sarif_extra)
         _destructure_dict_1(typegraph, node, tree)
 
     elif set(tree_fields).issubset(set(type_fields)):
+        # create a string list of the missing expected properties from the sarif
+        specific_missing = f"{set(type_fields) - set(tree_fields)}, "
+        if specific_missing not in status_writer.input_sarif_missing["extra_info"]:
+            status_writer.input_sarif_missing["extra_info"] += specific_missing
+        status_writer.warning_set["input_sarif_missing"]+=1
         raise MissingFieldException(
             f"(Sub)tree is missing fields required by typedef.\n"
             f"Expected {type_fields}, found {tree_fields}.\n"
@@ -177,6 +186,9 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
         )
 
     else:
+        # TODO knewbury error handling
+        status_writer.unknown_sarif_parsing_shape["extra_info"] = "type fields {} do not match tree fields {}.".format(type_fields, tree_fields)
+        status_writer.csv_write(status_writer.unknown_sarif_parsing_shape)
         raise Exception("typegraph: unhandled case reached: cannot match type "
                         "fields {} to tree fields {}.  Data is invalid."
                         .format(type_fields, tree_fields))
@@ -243,6 +255,7 @@ def _destructure_list(typegraph, node: str, tree: List):
                          id(value)))
                     # Next `value` on success
                     break           
+                # status reporting under this handled already in each case
                 except MissingFieldException:
                     # Re-raise if last available signature failed, otherwise try
                     # next `signature`

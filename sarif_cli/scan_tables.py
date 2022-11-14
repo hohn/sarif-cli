@@ -7,8 +7,8 @@ import logging
 import numpy
 import pandas as pd
 import re
-import sys
 from sarif_cli import hash
+from sarif_cli import status_writer
 
 class ZeroResults(Exception):
     pass
@@ -168,6 +168,7 @@ def joins_for_results(basetables, external_info):
             # TODO knewbury to error handling
             logging.warning("Zero problem/path_problem results found in sarif "
                             "file but processing anyway.")
+            status_writer.csv_write(status_writer.zero_results)
         res = tables[0]
         
     # Force all column types to ensure appropriate formatting
