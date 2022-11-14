@@ -87,8 +87,9 @@ from sarif_cli import hash
 parser = argparse.ArgumentParser(description='Run sarif-extract-scans over a directory hierarchy')
 
 parser.add_argument('sarif_files', metavar='sarif-files', type=str, help='File containing list of sarif files, use - for stdin')
+parser.add_argument('-o','--outdir', metavar='output-dir', type=str, default="", help='output directory')
 
-parser.add_argument('-m', '--max-files', metavar='number', type=int, default=100,
+parser.add_argument('-m', '--max-files', metavar='number', type=int, default=100000,
                     help='Maximum number of files to process.'
                     '  Default: %(default)d')
 
@@ -113,6 +114,17 @@ if len(sys.argv) == 2 and sys.argv[1] == '--doc':
     sys.exit(0)
 
 args = parser.parse_args()
+
+# 
+# Create outermost output directory (like <outer_dir>/*/*.scantables)
+# 
+outer_dir = args.outdir
+if outer_dir != "":
+    outer_dir+="/"
+    try: 
+        os.mkdir(outer_dir, mode=0o755)
+    except FileExistsError: 
+        pass
 
 #
 # Collect sarif file information
@@ -156,14 +168,21 @@ for path in paths:
         "sarif_file_name": path,                   # pd.StringDtype()
     }
     
-    scan_spec_file = os.path.join(project, component + ".scanspec")
+    # 
+    # If using outermost output directory, create project directory:
+    # (like <outer_dir>/<project>/*.scantables)
+    # 
+    try: os.mkdir(outer_dir+ project, mode=0o755)
+    except FileExistsError: pass
+
+    scan_spec_file = os.path.join(outer_dir+ project, component + ".scanspec")
     with open(scan_spec_file, 'w') as fp:
         json.dump(scan_spec, fp)
 
     # 
     # Table output directory
     # 
-    output_dir = os.path.join(project, component + ".scantables")
+    output_dir = os.path.join(outer_dir+ project, component + ".scantables")
     try: os.mkdir(output_dir, mode=0o755)
     except FileExistsError: pass
     #
@@ -184,8 +203,8 @@ for path in paths:
             with open(args.successful_runs, 'wb') as outfile:
                 pickle.dump(successful_runs, outfile)
 
-    scan_log_file = os.path.join(project, component + ".scanlog")
-    csv_outfile = os.path.join(project, component)
+    scan_log_file = os.path.join(outer_dir+ project, component + ".scanlog")
+    csv_outfile = os.path.join(outer_dir+ project, component)
     runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile],
                               capture_output=True, text=True)
     if runstats.returncode == 0:

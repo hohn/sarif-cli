@@ -33,7 +33,10 @@ parser.add_argument('sarif_files', metavar='sarif-files', type=str,
 parser.add_argument('aggregate_dir', metavar='aggregate-dir', type=str,
                     help='Directory for writing the combined scan tables') 
 
-parser.add_argument('-m', '--max-files', metavar='M', type=int, default=100,
+parser.add_argument('-in', '--in-dir', metavar='input-dir', type=str, default="",
+                    help='Directory containing input set of results (corresponds to --outdir on the runner if supplied')
+
+parser.add_argument('-m', '--max-files', metavar='M', type=int, default=100000,
                     help='Maximum number of files to process.'
                     '  Default: %(default)d')
 
@@ -106,6 +109,12 @@ try: os.mkdir(args.aggregate_dir, mode=0o755)
 except FileExistsError: pass
 
 #
+# If specific input dir specified - format that
+# 
+if args.in_dir != "":
+    args.in_dir+="/"
+
+#
 # Collect sarif file information
 # 
 with open(args.sarif_files, 'r') if args.sarif_files != '-' else sys.stdin as fp: 
@@ -126,7 +135,7 @@ for path in paths:
     #
     # Validate input data directory and content
     #
-    output_dir = os.path.join(project, component + ".scantables")
+    output_dir = os.path.join(args.in_dir+project, component + ".scantables")
     if not os.path.exists(output_dir):
         continue
     if not _all_csv_files_exist(output_dir):
