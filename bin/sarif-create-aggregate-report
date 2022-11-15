@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+"""Run `sarif-create-aggregate-report` over csvs in the directories produced by
+   ./sarif-extract-scans-(runner)
+    ...
+
+    and creates the summary file as named by the arg
+"""
+
+import argparse
+import os
+import sys
+import pandas as pd
+import csv
+from sarif_cli import status_writer
+
+#
+# Handle arguments
+#
+parser = argparse.ArgumentParser(description='Run sarif-extract-scans over a directory hierarchy')
+
+parser.add_argument('sarif_files', metavar='sarif-files', type=str,
+                    help='File containing list of sarif files that were processed, use - for stdin') 
+
+parser.add_argument('-s','--summary_filename', metavar='summary-filename', type=str, default="summary-report.csv",
+                    help='Filename for final summary report') 
+
+parser.add_argument('-in', '--in-dir', metavar='input-dir', type=str, default="",
+                    help='Directory containing input set of results (corresponds to --outdir on the runner if supplied')
+
+args = parser.parse_args()
+
+#
+# only warn if specified outfile exists, still use
+#
+if os.path.exists(args.summary_filename):
+    print("Summary file provided exists, warning, overwriting.")
+      
+#
+# Collect sarif file information
+# 
+with open(args.sarif_files, 'r') if args.sarif_files != '-' else sys.stdin as fp: 
+    paths = fp.readlines()
+
+#
+# If specific input dir specified - format that
+# 
+if args.in_dir != "":
+    args.in_dir+="/"
+
+#
+# Traverse all possible individual summary csv containing directory
+# 
+number_processed= 0
+data = []
+
+for path in paths:
+    path = path.rstrip()
+    project, component = path.split('/')
+    #
+    # Validate input data directory and content
+    #
+    csv_infile = os.path.join(args.in_dir+project, component + ".csv")
+    if not os.path.exists(csv_infile):
+        continue
+    else:
+        number_processed+=1
+        data.append(pd.read_csv(csv_infile))
+        
+all = pd.concat(data)
+
+final_counts = [0]*(status_writer.STATUS_NUM+1)
+
+for i in range(status_writer.STATUS_NUM+1):
+    try:
+        final_counts[i]=all['levelcode'].value_counts()[i]
+    except KeyError: pass
+
+header = ['number_processed', 'number_successfully_created', 'number_zero_results', 
+"number_input_sarif_missing", "number_file_load_error", "number_input_sarif_extra", "number_unknown_sarif_parsing_shape",
+"number_unknown" ]
+
+final_counts.insert(0, number_processed)
+
+with open(args.summary_filename, 'w') as f:
+    csv_writer = csv.writer(f)
+    csv_writer.writerow(header)
+    csv_writer.writerow(final_counts)
+

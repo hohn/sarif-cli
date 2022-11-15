@@ -1,7 +1,9 @@
  # csv status reporting
 import csv
 
-fieldnames = ['sarif_file', 'level', 'message', "extra_info"]
+STATUS_NUM = 6
+
+fieldnames = ['sarif_file', 'level', 'levelcode', 'message', "extra_info"]
 
 warning_set = {
   "success" : 0,
@@ -55,18 +57,21 @@ def setup_status_filenames(sarif_file_name):
 success = {
   "sarif_file": "",
   "level": "SUCCESS",
+  "levelcode": 0,
   "message": "File successfully processed."
 }
 
 zero_results = {
   "sarif_file": "",
   "level": "WARNING",
+  "levelcode": 1,
   "message": "Zero results seen in sarif file."
 }
 
 input_sarif_missing = {
   "sarif_file": "",
   "level": "WARNING",
+  "levelcode": 2,
   "message": "Input sarif is missing neccesary properties.",
   "extra_info" : "Missing: "
 }
@@ -75,18 +80,21 @@ input_sarif_missing = {
 file_load_error = {
   "file": "",
   "level": "ERROR",
+  "levelcode": 3,
   "message": "Could not load file."
 }
 
 input_sarif_extra  = {
   "sarif_file": "",
   "level": "ERROR",
+  "levelcode": 4,
   "message": "Input sarif contains extra unneccesary properties."
 }
 
 unknown_sarif_parsing_shape = {
   "sarif_file": "",
   "level": "ERROR",
+  "levelcode": 5,
   "message": "Error matching expected sarif format to actual input sarif shape.",
   "extra_info" : ""
 }
@@ -94,5 +102,6 @@ unknown_sarif_parsing_shape = {
 unknown = {
   "sarif_file": "",
   "level": "ERROR",
+  "levelcode": 6,
   "message": "Error details currently undiagnosed. Assess log file for more information."
 }
