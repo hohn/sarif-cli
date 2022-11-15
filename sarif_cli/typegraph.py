@@ -168,7 +168,10 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
                         'known entries: {}'.format(tree))
         logging.warning('tree fields: {}'.format(sorted(tree_fields)))
         logging.warning('type fields: {}'.format(sorted(type_fields)))
-        status_writer.csv_write(status_writer.input_sarif_extra)
+        specific_extra = 'type fields: {}'.format(sorted(tree_fields))
+        if specific_extra not in status_writer.input_sarif_extra["extra_info"]:
+            status_writer.input_sarif_extra["extra_info"] += specific_extra
+        status_writer.warning_set["input_sarif_extra"]+=1
         _destructure_dict_1(typegraph, node, tree)
 
     elif set(tree_fields).issubset(set(type_fields)):

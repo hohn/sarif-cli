@@ -8,7 +8,8 @@ fieldnames = ['sarif_file', 'level', 'levelcode', 'message', "extra_info"]
 warning_set = {
   "success" : 0,
   "zero_results" : 0,
-  "input_sarif_missing" : 0
+  "input_sarif_missing" : 0,
+  "input_sarif_extra" : 0
 }
 
 #
@@ -43,6 +44,11 @@ def csv_write_warnings():
         #reset in case later different types of warnings can be accumulated
         input_sarif_missing["extra_info"] = "Missing: "
         warning_set["input_sarif_missing"] = 0
+      if warning_set["input_sarif_extra"] != 0:
+        csv_writer.writerow(input_sarif_extra)
+        #reset in case later different types of warnings can be accumulated
+        input_sarif_extra["extra_info"] = "Extra properties: "
+        warning_set["input_sarif_extra"] = 0
       if warning_set["success"] != 0:
         csv_writer.writerow(success)
 
@@ -86,9 +92,10 @@ file_load_error = {
 
 input_sarif_extra  = {
   "sarif_file": "",
-  "level": "ERROR",
+  "level": "WARNING",
   "levelcode": 4,
-  "message": "Input sarif contains extra unneccesary properties."
+  "message": "Input sarif contains extra unneccesary properties.",
+  "extra_info" : "Extra properties: "
 }
 
 unknown_sarif_parsing_shape = {
