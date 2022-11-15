@@ -31,18 +31,22 @@
     git lfs install
   #+END_SRC
 
-  Set up the virtual environment and install the packages:
+  (For development) Set up the virtual environment and install the packages:
+  # pip freeze > requirements.txt
+  #+BEGIN_SRC sh
+    # Using requirementsDEV.txt 
+    python3.9 -m venv .venv
+    . .venv/bin/activate
+    python3.9 -m pip install -r requirementsDEV.txt
+  #+END_SRC
+
+  OR (For distribution) Set up the virtual environment and install the packages:
   # pip freeze > requirements.txt
   #+BEGIN_SRC sh
     # Using requirements.txt 
-    python3 -m venv .venv
+    python3.9 -m venv .venv
     . .venv/bin/activate
-    python3 -m pip install -r requirements.txt
-    # Or separately, for development:
-    pip install --upgrade pip
-    pip install ipython pyyaml pandas jupyter pyflakes
-    # Or separately, for running:
-    pip install pandas
+    python3.9 -m pip install -r requirements.txt
   #+END_SRC
 
   "Install" for local development:
