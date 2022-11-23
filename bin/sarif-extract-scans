@@ -43,7 +43,6 @@ def load(fname):
         try:
             content = json.load(fp)
         except json.decoder.JSONDecodeError as err:
-            # TODO knewbury error handling
             logging.error('Error reading from {}: {}: line {}, column {}'
                           .format(fname, err.msg, err.lineno, err.colno))
             status_writer.file_load_error["file"] = fname
@@ -69,18 +68,14 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 
 #
 # Use reference type graph (signature) to traverse sarif and attach values to tables
-#
-# try:
-#     tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
-#     typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
-# except json.decoder.JSONDecodeError as err:
-#     logging.error('Error reading from {}: {}: line {}, column {}'
-#                           .format(args.file, err.msg, err.lineno, err.colno))
-#     sys.exit(1)
-tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
-typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
-# may have gathered warnings below, if not does nothing
-status_writer.csv_write_warnings()
+try:
+    tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
+    typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+except Exception:
+    # will have gathered errors/warnings
+    status_writer.csv_write_warnings()
+    #pass the exception up to be put into log by runner
+    raise(Exception)
 
 #
 # Form output tables

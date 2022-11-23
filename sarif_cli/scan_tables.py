@@ -126,7 +126,7 @@ def joins_for_scans(basetables, external_info, scantables):
         "id"                   : e.scan_id,
         "commit_id"            : b.project.revisionId[0],
         "project_id"           : e.project_id,
-        # TODO extract real date information from somewhere
+        # TODO extract real date information from somewhere external
         "db_create_start"      : pd.Timestamp(0.0, unit='s'),
         "db_create_stop"       : pd.Timestamp(0.0, unit='s'),
         "scan_start_date"      : pd.Timestamp(0.0, unit='s'),
@@ -165,7 +165,6 @@ def joins_for_results(basetables, external_info):
         res = pd.concat(stack)
     else:
         if stack == []:
-            # TODO knewbury to error handling
             logging.warning("Zero problem/path_problem results found in sarif "
                             "file but processing anyway.")
             status_writer.csv_write(status_writer.zero_results)

@@ -113,7 +113,8 @@ def destructure(typegraph: Typegraph, node: NodeId, tree: Tree):
     elif t in [str, int, bool]:
         pass
     else:
-        # TODO knewbury error handling
+        status_writer.unknown_sarif_parsing_shape["extra_info"] = "Unhandled type: %s" % t
+        status_writer.csv_write(status_writer.unknown_sarif_parsing_shape)
         raise Exception("Unhandled type: %s" % t)
 
 def _destructure_dict_1(typegraph, node, tree):
@@ -139,7 +140,7 @@ def _destructure_dict_1(typegraph, node, tree):
     # Sanity check
     sig = typegraph.signature_graph[node]
     if type(sig) != tuple:
-        # TODO knewbury error handling
+        # TODO add error handling?
         raise SignatureMismatch()
 
     # Destructure this dictionary
@@ -160,10 +161,8 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
     type_fields = typegraph.fields[node]
     if tree_fields == type_fields:
         _destructure_dict_1(typegraph, node, tree)
-        # TODO knewbury error handling here
     elif set(tree_fields).issuperset(set(type_fields)):
         # Log a warning
-        # log.warning("XX: Tree has unrecognized fields")
         logging.warning('Input tree has unrecognized fields, collecting only '
                         'known entries: {}'.format(tree))
         logging.warning('tree fields: {}'.format(sorted(tree_fields)))
@@ -189,7 +188,6 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
         )
 
     else:
-        # TODO knewbury error handling
         status_writer.unknown_sarif_parsing_shape["extra_info"] = "type fields {} do not match tree fields {}.".format(type_fields, tree_fields)
         status_writer.csv_write(status_writer.unknown_sarif_parsing_shape)
         raise Exception("typegraph: unhandled case reached: cannot match type "
