@@ -81,7 +81,7 @@ bt = BaseTables()
 # 
 # Add dataframes
 # 
-sf_2683 = tj.joins_for_sf_2683(tgraph)
+sf_2683 = tj.joins_for_location_info(tgraph)
 af_0350_location = tj.joins_for_af_0350_location(tgraph)
 bt.artifacts = tj.joins_for_artifacts(tgraph)
 bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)

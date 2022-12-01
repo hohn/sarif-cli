@@ -115,15 +115,13 @@ def joins_for_problem(tgraph, af_0350_location):
     # 
     # Form the message dataframe (@kind problem) via joins
     # 
-    import IPython
-    IPython.embed(header="spot 1")
 
     kind_problem_1 = (
-        aft(6343)
+        aft(1768)
         .merge(sft(4055), how="inner",
-               left_on='t6343_id_or_value_at_index', right_on='t4055_struct_id', 
+               left_on='t1768_id_or_value_at_index', right_on='t4055_struct_id', 
                validate="1:m")
-        .drop(columns=['t6343_type_at_index', 't6343_id_or_value_at_index',
+        .drop(columns=['t1768_type_at_index', 't1768_id_or_value_at_index',
                        't4055_struct_id']) 
         #
         .merge(af_0350_location, how="left", left_on='t4055_locations',
@@ -153,8 +151,8 @@ def joins_for_problem(tgraph, af_0350_location):
     kind_problem_2 = (
         kind_problem_1
         .rename({
-            't6343_array_id'     : 'results_array_id',
-            't6343_value_index'  : 'results_array_index',
+            't1768_array_id'     : 'results_array_id',
+            't1768_value_index'  : 'results_array_index',
             't4055_ruleId'       : 'ruleId',
             't4055_ruleIndex'    : 'ruleIndex',
             't4055_message_text' : 'message_text',
@@ -164,10 +162,7 @@ def joins_for_problem(tgraph, af_0350_location):
         # Strip type prefix for the rest
         .rename(columns = lambda x: re.sub('m0350_|t4199_', '', x))
     )
-    # # TODO potential cleanup
-    # # Remove dummy locations previously injected by signature.fillsig
-    # kind_problem_2 = kind_problem_1[kind_problem_1.uri != 'scli-dyys dummy value']
-    # #
+
     return kind_problem_2
 
 
@@ -229,10 +224,10 @@ def joins_for_path_problem(tgraph, af_0350_location):
     aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
 
     kind_pathproblem_1 = (
-        aft(6343)
-        .merge(sft(9699), how="inner", left_on='t6343_id_or_value_at_index', right_on='t9699_struct_id',
+        aft(1768)
+        .merge(sft(9699), how="inner", left_on='t1768_id_or_value_at_index', right_on='t9699_struct_id',
                validate="1:m")
-        .drop(columns=['t6343_id_or_value_at_index', 't9699_struct_id', 't6343_type_at_index'])
+        .drop(columns=['t1768_id_or_value_at_index', 't9699_struct_id', 't1768_type_at_index'])
         #
         .merge(af_0350_location, how="left", left_on='t9699_locations',
                right_on='m0350_location_array_id', validate="1:m")
@@ -260,8 +255,8 @@ def joins_for_path_problem(tgraph, af_0350_location):
     strip_colums = lambda x: re.sub('t9699_|m0350_|t4199_', '', x)
     kind_pathproblem_2 = (kind_pathproblem_1
                           .rename({
-                              't6343_array_id'     : 'results_array_id',
-                              't6343_value_index'  : 'results_array_index',
+                              't1768_array_id'     : 'results_array_id',
+                              't1768_value_index'  : 'results_array_index',
                               't9699_codeFlows'    : 'codeFlows_id',
                               't9699_ruleId'       : 'ruleId',
                               't9699_ruleIndex'    : 'ruleIndex',
@@ -272,10 +267,6 @@ def joins_for_path_problem(tgraph, af_0350_location):
                           # Strip type prefix for the rest
                           .rename(columns = strip_colums))
 
-    # # TODO potential cleanup
-    # # Remove dummy locations previously injected by signature.fillsig
-    # kind_pathproblem_2 = kind_pathproblem_1[kind_pathproblem_1.uri != 'scli-dyys dummy value']
-    # #
     return kind_pathproblem_2
 
 def joins_for_relatedLocations(tgraph, sf_2683):
@@ -321,71 +312,6 @@ def joins_for_relatedLocations(tgraph, sf_2683):
 
     return related_locations_3
 
-def joins_for_project(tgraph):
-    """ 
-    Return table providing the `project` information for sarif-extract-multi.
-    """
-    # Access convenience functions
-    sf = lambda num: tgraph.dataframes['Struct' + str(num)]
-    af = lambda num: tgraph.dataframes['Array' + str(num)]
-    # 
-    project_df = (
-        af(7481)
-        #
-        .merge(sf(3452), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id', 'array_id', 'type_at_index'])
-        #
-        .merge(sf(6787), how="left", left_on='sarif_content', right_on='struct_id', validate="1:m")
-        .drop(columns=['sarif_content', 'struct_id'])
-        .rename(columns={"version": "version_6787"})
-        #
-        .merge(af('0177'), how="left", left_on='runs', right_on='array_id',
-               suffixes=("_7481", "_0177"), validate="1:m")
-        .drop(columns=['runs', 'array_id', 'type_at_index'])
-        #
-        .merge(sf(3388), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id'])
-        # 
-        # .merge(af(7069), how="left", left_on='newlineSequences', right_on='array_id',
-        #        validate="1:m")
-        # .drop(columns=['newlineSequences', 'array_id', 'type_at_index'])
-        .drop(columns=['newlineSequences'])
-        #
-        .merge(sf(9543), how="left", left_on='properties', right_on='struct_id', validate="1:m")
-        .drop(columns=['properties', 'struct_id'])
-        #
-        # tool - driver - rules - defaultConfiguration - ( properties - tags )
-        # 
-        .merge(sf(8972), how="left", left_on='tool', right_on='struct_id', validate="1:m")
-        .drop(columns=['tool', 'struct_id'])
-        # 
-        .merge(sf(7820), how="left", left_on='driver', right_on='struct_id', validate="1:m")
-        .drop(columns=['driver', 'struct_id'])
-        .rename(columns={"version": "driver_version_7820", "name": "driver_name_7820"})
-        # 
-        # versionControlProvenance - repositoryUri
-        # The merge with af(8754) replicates versionControlProvenance, no 1:m validation
-        .merge(af(5511), how="left", left_on='versionControlProvenance', right_on='array_id')
-        .drop(columns=['versionControlProvenance', 'array_id', 'type_at_index'])
-        .rename(columns={"value_index": "versionControl_value_index_5511"})
-        # 
-        .merge(sf(3081), how="left", left_on='id_or_value_at_index', right_on='struct_id')
-        .drop(columns=['id_or_value_at_index', 'struct_id'])
-        #
-    )
-    # Keep columns of interest
-    project_df_1 = (
-        project_df
-        .drop(columns=['value_index_7481', 'versionControl_value_index_5511'])
-        .rename({
-            'version_6787': 'sarif_version',
-            'value_index_0177': 'run_index',
-            'driver_name_7820': 'driver_name',
-            'driver_version_7820': 'driver_version',
-        }, axis='columns')
-    )
-    return project_df_1
-
 def joins_for_project_single(tgraph):
     """ 
     Return table providing the `project` information for sarif-extract-scans
@@ -394,52 +320,56 @@ def joins_for_project_single(tgraph):
     sf = lambda num: tgraph.dataframes['Struct' + str(num)]
     af = lambda num: tgraph.dataframes['Array' + str(num)]
     # 
-    project_df = (
-        sf(6787)
-        .rename(columns={"version": "version_6787", "struct_id": "struct_id_6787"})
+    project_df_temp1 = (
+        sf(5521)
+        .rename(columns={"version": "version_5521", "struct_id": "struct_id_5521"})
         #
-        .merge(af('0177'), how="left", left_on='runs', right_on='array_id',
+        .merge(af('1273'), how="left", left_on='runs', right_on='array_id',
                validate="1:m")
         .drop(columns=['runs', 'array_id', 'type_at_index'])
-        .rename(columns={"value_index": "value_index_0177"})
+        .rename(columns={"value_index": "value_index_1273"})
         #
-        .merge(sf(3388), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id'])
+        .merge(sf(9786), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
+        .drop(columns=['id_or_value_at_index', 'struct_id']))
         # 
-        # .merge(af(7069), how="left", left_on='newlineSequences', right_on='array_id',
-        #        validate="1:m")
-        # .drop(columns=['newlineSequences', 'array_id', 'type_at_index'])
-        .drop(columns=['newlineSequences'])
+    #newlines there or not - handle
+    if 'newlineSequences' in project_df_temp1:
+        project_df_temp2 = project_df_temp1.drop(columns=['newlineSequences'])
+
+    project_df_temp2 = (
+        project_df_temp1
         #
-        .merge(sf(9543), how="left", left_on='properties', right_on='struct_id', validate="1:m")
+        .merge(sf(1509), how="left", left_on='properties', right_on='struct_id', validate="1:m")
         .drop(columns=['properties', 'struct_id'])
         #
         # tool - driver - rules - defaultConfiguration - ( properties - tags )
         # 
-        .merge(sf(8972), how="left", left_on='tool', right_on='struct_id', validate="1:m")
+        .merge(sf('0032'), how="left", left_on='tool', right_on='struct_id', validate="1:m")
         .drop(columns=['tool', 'struct_id'])
         # 
-        .merge(sf(7820), how="left", left_on='driver', right_on='struct_id', validate="1:m")
+        .merge(sf(7828), how="left", left_on='driver', right_on='struct_id', validate="1:m")
         .drop(columns=['driver', 'struct_id'])
-        .rename(columns={"version": "driver_version_7820", "name": "driver_name_7820"})
+        .rename(columns={"semanticVersion": "driver_version_7828", "name": "driver_name_7828"})
         # 
+        #assumet to be there
         .merge(af(5511), how="left", left_on='versionControlProvenance', right_on='array_id')
         .drop(columns=['versionControlProvenance', 'array_id', 'type_at_index'])
         .rename(columns={"value_index": "versionControl_value_index_5511"})
         # 
         .merge(sf(3081), how="left", left_on='id_or_value_at_index', right_on='struct_id')
         .drop(columns=['id_or_value_at_index', 'struct_id'])
+        )
         #
-    )
+    
     # Keep columns of interest
     project_df_1 = (
-        project_df
-        .drop(columns=['struct_id_6787', 'versionControl_value_index_5511'])
+        project_df_temp2
+        .drop(columns=['struct_id_5521', 'versionControl_value_index_5511'])
         .rename({
-            'version_6787': 'sarif_version',
-            'value_index_0177': 'run_index',
-            'driver_name_7820': 'driver_name',
-            'driver_version_7820': 'driver_version',
+            'version_5521': 'sarif_version',
+            'value_index_1273': 'run_index',
+            'driver_name_7828': 'driver_name',
+            'driver_version_7828': 'driver_version',
         }, axis='columns')
     )
     return project_df_1
@@ -455,47 +385,47 @@ def joins_for_rules(tgraph):
     aft = lambda id: af(id).rename(columns = tagged_array_columns(tgraph, id))
     # 
     rules_df = (
-        aft(8754)
+        aft('0147')
         # 
-        .drop(columns=['t8754_type_at_index'])
+        .drop(columns=['t0147_type_at_index'])
         # 
-        .merge(sft(6818), how="left", left_on='t8754_id_or_value_at_index',
-               right_on='t6818_struct_id',
+        .merge(sft(7100), how="left", left_on='t0147_id_or_value_at_index',
+               right_on='t7100_struct_id',
                validate="1:m")
-        .drop(columns=['t8754_id_or_value_at_index', 't6818_struct_id'])
+        .drop(columns=['t0147_id_or_value_at_index', 't7100_struct_id'])
         # 
-        .merge(sft(8581), how="left", left_on='t6818_defaultConfiguration',
+        .merge(sft(8581), how="left", left_on='t7100_defaultConfiguration',
                right_on='t8581_struct_id', validate="1:m") 
-        .drop(columns=['t6818_defaultConfiguration', 't8581_struct_id'])
+        .drop(columns=['t7100_defaultConfiguration', 't8581_struct_id'])
         # 
-        .merge(sft(2774), how="left", left_on='t6818_fullDescription',
+        .merge(sft(2774), how="left", left_on='t7100_fullDescription',
                right_on='t2774_struct_id', validate="1:m") 
-        .drop(columns=['t6818_fullDescription', 't2774_struct_id'])
-        .rename(columns={'t2774_text': "t6818_t2774_fullDescription"})
+        .drop(columns=['t7100_fullDescription', 't2774_struct_id'])
+        .rename(columns={'t2774_text': "t7100_t2774_fullDescription"})
         # 
-        .merge(sft(2774), how="left", left_on='t6818_shortDescription',
+        .merge(sft(2774), how="left", left_on='t7100_shortDescription',
                right_on='t2774_struct_id', validate="1:m") 
-        .drop(columns=['t6818_shortDescription', 't2774_struct_id'])
-        .rename(columns={"t2774_text": 't6818_t2774_shortDescription'})
+        .drop(columns=['t7100_shortDescription', 't2774_struct_id'])
+        .rename(columns={"t2774_text": 't7100_t2774_shortDescription'})
         # 
-        .merge(sft(7849), how="left", left_on='t6818_properties',
-               right_on='t7849_struct_id', validate="1:m") 
-        .drop(columns=['t6818_properties', 't7849_struct_id'])
+        .merge(sft(6853), how="left", left_on='t7100_properties',
+               right_on='t6853_struct_id', validate="1:m") 
+        .drop(columns=['t7100_properties', 't6853_struct_id', 't6853_id'])
         # 
-        .merge(aft(7069), how="left", left_on='t7849_tags',
+        .merge(aft(7069), how="left", left_on='t6853_tags',
                right_on='t7069_array_id', validate="1:m")  
-        .drop(columns=['t7849_tags', 't7069_array_id', 't7069_type_at_index'])
+        .drop(columns=['t6853_tags', 't7069_array_id', 't7069_type_at_index'])
     )
     rules_2 = (
         rules_df
         .rename({
-            't8754_array_id'             : 'rules_array_id',
-            't8754_value_index'          : 'rules_array_index',
+            't0147_array_id'             : 'rules_array_id',
+            't0147_value_index'          : 'rules_array_index',
             't7069_value_index'          : 'tag_index',
             't7069_id_or_value_at_index' : 'tag_text',
         }, axis='columns')
         # Strip type prefix for the rest
-        .rename(columns = lambda x: re.sub('t6818_t2774_|t6818_|t8581_|t7849_', '', x))
+        .rename(columns = lambda x: re.sub('t7100_t2774_|t7100_|t8581_|t6853_', '', x))
     )
     return rules_2
 
@@ -508,11 +438,11 @@ def joins_for_artifacts(tgraph):
     af = lambda num: tgraph.dataframes['Array' + str(num)]
     # 
     artifacts_df = (
-        af(4640)
+        af(6920)
         #
         .merge(sf(5277), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
         .drop(columns=['id_or_value_at_index', 'struct_id', 'type_at_index'])
-        .rename(columns={"value_index": "artifact_index_4640"})
+        .rename(columns={"value_index": "artifact_index_6920"})
         #
         .merge(sf(2685), how="left", left_on='location', right_on='struct_id', validate="1:m")
         .drop(columns=['location', 'struct_id'])
@@ -522,7 +452,7 @@ def joins_for_artifacts(tgraph):
         artifacts_df
         .rename({
             'array_id': 'artifacts_id',
-            'artifact_index_4640': 'artifacts_array_index',
+            'artifact_index_6920': 'artifacts_array_index',
         }, axis='columns')
     )
 

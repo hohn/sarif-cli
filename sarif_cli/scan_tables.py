@@ -73,36 +73,49 @@ class ScanTablesTypes:
 #
 # Projects table
 # 
-def joins_for_projects(basetables, external_info, scantables):
+def joins_for_projects(basetables, external_info):
     """ 
     Form the 'projects' table for the ScanTables dataclass
     """
     b = basetables; e = external_info
-
-    # For a repository url of the form
-    #   (git|https)://*/org/project.*
-    # use the org/project part as the project_name.
-    # 
-    # TODO knewbury error handling for if the signature is slotted out?
-    repo_url = b.project.repositoryUri[0]
-    url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/(.*).git', repo_url)
-    if url_parts:
-        project_name = f"{url_parts.group(2)}-{url_parts.group(3)}"
-        project, component = e.sarif_file_name.rstrip().split('/')
-        # if the runners guess from the filename was bad, replace with real info
-        # and continue to use that scanspec to pass that around
-        if project_name != project+"-"+component:
-            e.project_id = hash.hash_unique(project_name.encode())
+   
+    # if the sarif does not have versionControlProvenance, semmle.sourceLanguage ect
+    # there is no reliable way to know the project name 
+    # and will still need to use a guess about the project id
+    if "repositoryUri" in b.project:
+        repo_url = b.project.repositoryUri[0]
+         # For a repository url of the form
+        #   (git|https)://*/org/project.*
+        # use the org/project part as the project_name.
+        # 
+        url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/(.*).git', repo_url)
+        if url_parts:
+            project_name = f"{url_parts.group(2)}-{url_parts.group(3)}"
+            project, component = e.sarif_file_name.rstrip().split('/')
+            # if the runners guess from the filename was bad, replace with real info
+            # and continue to use that scanspec to pass that around
+            if project_name != project+"-"+component:
+                e.project_id = hash.hash_unique(project_name.encode())
+        else:
+            project_name = pd.NA
     else:
+        repo_url = "unknown"
         project_name = pd.NA
+
+    if 'semmle.sourceLanguage' in b.project:
+        srcLang = b.project['semmle.sourceLanguage'][0]
+        allLang = ",".join(list(b.project['semmle.sourceLanguage']))
+    else: 
+        srcLang = "unknown"
+        allLang = "unknown"
     
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
         "project_name"       : project_name,
         "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
         "repo_url"           : repo_url, 
-        "primary_language"   : b.project['semmle.sourceLanguage'][0], # TODO: external info
-        "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
+        "primary_language"   : srcLang, # TODO: external info if CLI sarif
+        "languages_analyzed" : allLang  # TODO: external info if CLI sarif
     }, index=[0])
 
     # Force all column types to ensure appropriate formatting
@@ -112,7 +125,7 @@ def joins_for_projects(basetables, external_info, scantables):
 #
 # Scans table
 # 
-def joins_for_scans(basetables, external_info, scantables):
+def joins_for_scans(basetables, external_info, scantables, sarif_type):
     """ 
     Form the `scans` table for the ScanTables dataclass
     """
@@ -122,9 +135,14 @@ def joins_for_scans(basetables, external_info, scantables):
     driver_version = b.project.driver_version.unique()
     assert len(driver_version) == 1, \
         "More than one driver version found for single sarif file."
+    # TODO if commit id exists in external info for CLI gen'd sarif, add?
+    if sarif_type == "LGTM":
+        commit_id = b.project.revisionId[0]
+    else:
+        commit_id = "unknown"
     res = pd.DataFrame(data={
         "id"                   : e.scan_id,
-        "commit_id"            : b.project.revisionId[0],
+        "commit_id"            : commit_id,
         "project_id"           : e.project_id,
         # TODO extract real date information from somewhere external
         "db_create_start"      : pd.Timestamp(0.0, unit='s'),
@@ -159,7 +177,7 @@ def joins_for_results(basetables, external_info):
     tables = [_results_from_kind_problem(basetables, external_info),
               _results_from_kind_pathproblem(basetables, external_info)]
     stack = [table for table in tables if len(table) > 0]
-
+    
     # Concatenation fails without at least one table, so avoid that.
     if len(stack) > 0:
         res = pd.concat(stack)
@@ -195,7 +213,7 @@ def _results_from_kind_problem(basetables, external_info):
             'query_id' : b.kind_problem.rule_id,
             'query_kind'       :  "problem",
             'query_precision'  :  [_populate_from_rule_table("precision", b, i) for i in range(len(b.kind_problem))],
-            'query_severity'   :  [_populate_from_rule_table("severity", b, i) for i in range(len(b.kind_problem))],
+            'query_severity'   :  [_populate_from_rule_table("problem.severity", b, i) for i in range(len(b.kind_problem))],
             
             'result_type' : "kind_problem",
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
@@ -239,6 +257,7 @@ def _results_from_kind_pathproblem(basetables, external_info):
     # 
     # The `result` table has no entry to distinguish these, so we use a simplified
     # version of `kind_pathproblem`.
+
 
     reduced_kind_pathp = b.kind_pathproblem.drop(
         columns=[
@@ -284,7 +303,7 @@ def _results_from_kind_pathproblem(basetables, external_info):
                     'query_id' : cfid0ppt0.rule_id.values[0],
                     'query_kind'       : "path-problem",
                     'query_precision'  : _populate_from_rule_table_code_flow("precision", b, cfid0ppt0),
-                    'query_severity'   : _populate_from_rule_table_code_flow("severity", b, cfid0ppt0),
+                    'query_severity'   : _populate_from_rule_table_code_flow("problem.severity", b, cfid0ppt0),
                     # 
                     'result_type' : "kind_pathproblem",
                     'codeFlow_id' : cfid0,

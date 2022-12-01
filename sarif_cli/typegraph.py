@@ -179,13 +179,21 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
         if specific_missing not in status_writer.input_sarif_missing["extra_info"]:
             status_writer.input_sarif_missing["extra_info"] += specific_missing
         status_writer.warning_set["input_sarif_missing"]+=1
-        raise MissingFieldException(
-            f"(Sub)tree is missing fields required by typedef.\n"
-            f"Expected {type_fields}, found {tree_fields}.\n"
-            f"Missing {set(type_fields) - set(tree_fields)}\n"
-            f"Note: these fields are post-signature fill and may be more extensive than the orginal. \n"
-            f"Check input file for the original signature."
-        )
+        
+        #special case of no longer trying other signatures
+        #else exception here triggers a retry - mainly needed for Struct9699 or Struct4055
+        difference = set(type_fields) - set(tree_fields)
+        if "uriBaseId" in difference:
+                tree["uriBaseId"] = "default"
+                _destructure_dict_1(typegraph, node, tree)
+        else:
+            raise MissingFieldException(
+                f"(Sub)tree is missing fields required by typedef.\n"
+                f"Expected {type_fields}, found {tree_fields}.\n"
+                f"Missing {set(type_fields) - set(tree_fields)}\n"
+                f"Note: these fields are post-signature fill and may be more extensive than the orginal. \n"
+                f"Check input file for the original signature."
+            )
 
     else:
         status_writer.unknown_sarif_parsing_shape["extra_info"] = "type fields {} do not match tree fields {}.".format(type_fields, tree_fields)
