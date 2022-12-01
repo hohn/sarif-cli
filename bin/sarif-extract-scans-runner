@@ -87,7 +87,14 @@ from sarif_cli import hash
 parser = argparse.ArgumentParser(description='Run sarif-extract-scans over a directory hierarchy')
 
 parser.add_argument('sarif_files', metavar='sarif-files', type=str, help='File containing list of sarif files, use - for stdin')
-parser.add_argument('-o','--outdir', metavar='output-dir', type=str, default="", help='output directory')
+
+parser.add_argument('-f','--input-signature', metavar='input-signature', type=str, default="LGTM", 
+                    help='Signature of the sarif, as in, where it was generated it may affect the signature.'
+                    'Options: LGTM, CLI'
+                    'If current represented signatures are not sufficient, view signature_single.py for how to support further signatures.'
+                    '  Default: "%(default)s"')
+
+parser.add_argument('-o','--outdir', metavar='output-dir', type=str, default="", help='Output directory')
 
 parser.add_argument('-m', '--max-files', metavar='number', type=int, default=100000,
                     help='Maximum number of files to process.'
@@ -125,6 +132,11 @@ if outer_dir != "":
         os.mkdir(outer_dir, mode=0o755)
     except FileExistsError: 
         pass
+
+if args.input_signature not in ["LGTM","CLI"]:
+    print("Unsupported sarif signature requested.")
+    print("Use one of [LGTM, CLI].")
+    sys.exit(0)
 
 #
 # Collect sarif file information
@@ -205,7 +217,7 @@ for path in paths:
 
     scan_log_file = os.path.join(outer_dir+ project, component + ".scanlog")
     csv_outfile = os.path.join(outer_dir+ project, component)
-    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile],
+    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile, "-f", args.input_signature],
                               capture_output=True, text=True)
     if runstats.returncode == 0:
         print("{:6} {}".format("OK", path))

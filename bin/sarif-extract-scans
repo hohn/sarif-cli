@@ -2,7 +2,7 @@
 """ Extract scan data from multiple sarif files in table form.
 """
 from dataclasses import dataclass
-from sarif_cli import signature, signature_single
+from sarif_cli import signature, signature_single, signature_single_CLI
 from sarif_cli import typegraph
 from sarif_cli import snowflake_id
 from sarif_cli import status_writer
@@ -14,6 +14,7 @@ import logging
 import pandas as pd
 import pathlib
 import sarif_cli.table_joins as tj
+import sarif_cli.table_joins_CLI as tj_CLI
 import sarif_cli.scan_tables as st
 import sys
 
@@ -32,7 +33,17 @@ parser.add_argument('outdir', metavar='output-dir', type=str, help='output direc
 parser.add_argument('csvout', metavar='csv-outfile', type=str, help='processing status csv output file name to use')
 parser.add_argument('-r', '--write-raw-tables', action="store_true",
                     help='Write the raw sarif tables to the output directory')
+parser.add_argument('-f','--input-signature', metavar='input-signature', type=str, default="LGTM", 
+                    help='Signature of the sarif, as in, where it was generated it may affect the signature.'
+                    'Options: LGTM, CLI'
+                    'If current represented signatures are not sufficient, view signature_single.py for how to support further signatures.'
+                    '  Default: "%(default)s"')
 args = parser.parse_args()
+
+if args.input_signature not in ["LGTM","CLI"]:
+    print("Unsupported sarif signature requested.")
+    print("Use one of [LGTM, CLI].")
+    sys.exit(0)
 
 # Setup csv error writer
 status_writer.setup_csv_writer(args.csvout)
@@ -67,10 +78,19 @@ context = signature.Context(
 sarif_struct = signature.fillsig(args, sarif_struct, context)
 
 #
+# Setup which signature to use
+if args.input_signature == "LGTM":
+    signature_to_use = signature_single.struct_graph_LGTM
+    start_node = signature_single.start_node_LGTM
+else:
+    #signature_to_use = signature_single.struct_graph_CLI
+    signature_to_use = signature_single_CLI.struct_graph_CLI
+    start_node = signature_single_CLI.start_node_CLI
+#
 # Use reference type graph (signature) to traverse sarif and attach values to tables
 try:
-    tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
-    typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+    tgraph = typegraph.Typegraph(signature_to_use)
+    typegraph.destructure(tgraph, start_node, sarif_struct)
 except Exception:
     # will have gathered errors/warnings
     status_writer.csv_write_warnings()
@@ -126,31 +146,29 @@ external_info = ExternalInfo(
 # 
 # Add dataframes for base tables 
 # 
-sf_2683 = tj.joins_for_sf_2683(tgraph)
-af_0350_location = tj.joins_for_af_0350_location(tgraph)
-bt.artifacts = tj.joins_for_artifacts(tgraph)
-bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
-bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, af_0350_location)
-bt.kind_problem = tj.joins_for_problem(tgraph, af_0350_location)
-bt.project = tj.joins_for_project_single(tgraph)
-bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, sf_2683)
-bt.rules = tj.joins_for_rules(tgraph)
+# (relies on some specifics of the sigature type)
+if args.input_signature == "LGTM":
+    tj = tj
+else:
+    tj = tj_CLI
+try:
+    location_info = tj.joins_for_location_info(tgraph)
+    af_0350_location = tj.joins_for_af_0350_location(tgraph)
+    bt.artifacts = tj.joins_for_artifacts(tgraph)
+    bt.codeflows = tj.joins_for_codeflows(tgraph, location_info)
+    bt.kind_pathproblem = tj.joins_for_path_problem(tgraph, af_0350_location)
+    bt.kind_problem = tj.joins_for_problem(tgraph, af_0350_location)
+    bt.project = tj.joins_for_project_single(tgraph)
+    bt.relatedLocations = tj.joins_for_relatedLocations(tgraph, location_info)
+    bt.rules = tj.joins_for_rules(tgraph)
+except Exception:
+    #possible warnings accumulated
+    status_writer.csv_write_warnings()
+    raise Exception
 
 #
-# Form scan tables
+# Setup rest of basetables
 #
-# joins for projects has to happen first as it backfills the guess about the project_id
-scantabs.projects = st.joins_for_projects(bt, external_info, scantabs)
-scantabs.results = st.joins_for_results(bt, external_info)
-scantabs.scans = st.joins_for_scans(bt, external_info, scantabs)
-
-
-
-#
-# Replace the remaining internal ids with snowflake ids
-# 
-flakegen = snowflake_id.Snowflake(0)
-
 bt.columns_to_reindex = {
     # template from {field.name : [''] for field in dc.fields(bt)}
     'artifacts': ['artifacts_id'],
@@ -166,6 +184,19 @@ scantabs.columns_to_reindex = {
     'projects' : [],
     'results': ['codeFlow_id'],
     }
+
+#
+# Form scan tables
+#
+# joins for projects has to happen first as it backfills the guess about the project_id
+scantabs.projects = st.joins_for_projects(bt, external_info)
+scantabs.results = st.joins_for_results(bt, external_info)
+scantabs.scans = st.joins_for_scans(bt, external_info, scantabs, args.input_signature)
+
+#
+# Replace the remaining internal ids with snowflake ids
+# 
+flakegen = snowflake_id.Snowflake(0)
 
 _id_to_flake = {}
 def _get_flake(id):

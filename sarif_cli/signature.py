@@ -225,7 +225,7 @@ dummy_newlineSequences = ['\r\n', '\n', '\u2028', '\u2029']
 dummy_relatedLocations_entry = [
     {'id': -1,
      'physicalLocation': {'artifactLocation': {'uri': 'scli-dyys dummy value',
-                                               'uriBaseId': 'scli-dyys dummy value',
+                                               'uriBaseId': 'scli-dyys uriBaseId',
                                                'index': -1},
                           'region': {'startLine': -1, 
                                      'startColumn': -1,
