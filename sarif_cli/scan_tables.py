@@ -39,8 +39,7 @@ class ScanTablesTypes:
         'query_kind'       : pd.StringDtype(),
         'query_precision'  : pd.StringDtype(),
         'query_severity'   : pd.StringDtype(),
-        
-        'result_type'      : pd.StringDtype(),
+
         'codeFlow_id'      : pd.UInt64Dtype(),
         
         'message'          : pd.StringDtype(),
@@ -150,9 +149,9 @@ def joins_for_results(basetables, external_info):
     """ 
     Form and return the `results` table
     """
-    # Get one table per result_type, then stack them, 
-    #   kind_problem
-    #   kind_pathproblem
+    # Get one table per query_kind, then stack them, 
+    #   problem
+    #   path-problem
     #
     # Concatenation with an empty table triggers type conversion to float, so don't
     # include empty tables.
@@ -195,9 +194,8 @@ def _results_from_kind_problem(basetables, external_info):
             'query_id' : b.kind_problem.rule_id,
             'query_kind'       :  "problem",
             'query_precision'  :  [_populate_from_rule_table("precision", b, i) for i in range(len(b.kind_problem))],
-            'query_severity'   :  [_populate_from_rule_table("severity", b, i) for i in range(len(b.kind_problem))],
-            
-            'result_type' : "kind_problem",
+            'query_severity'   :  [_populate_from_rule_table("problem.severity", b, i) for i in range(len(b.kind_problem))],
+
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
             
             'message': b.kind_problem.message_text,
@@ -284,9 +282,8 @@ def _results_from_kind_pathproblem(basetables, external_info):
                     'query_id' : cfid0ppt0.rule_id.values[0],
                     'query_kind'       : "path-problem",
                     'query_precision'  : _populate_from_rule_table_code_flow("precision", b, cfid0ppt0),
-                    'query_severity'   : _populate_from_rule_table_code_flow("severity", b, cfid0ppt0),
-                    # 
-                    'result_type' : "kind_pathproblem",
+                    'query_severity'   : _populate_from_rule_table_code_flow("problem.severity", b, cfid0ppt0),
+
                     'codeFlow_id' : cfid0,
                     # 
                     'message': cfid0ppt0.message_text.values[0],

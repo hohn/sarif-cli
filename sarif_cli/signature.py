@@ -209,7 +209,7 @@ properties_keys = set([first for first, _ in
 dummy_properties = { 'kind' : 'scli-dyys dummy value',
                      'precision' : 'scli-dyys dummy value',
                      'security-severity' : 'scli-dyys dummy value',
-                     'severity' : 'scli-dyys dummy value',
+                     'problem.severity' : 'scli-dyys dummy value',
                      'sub-severity' : 'scli-dyys dummy value',
                      'tags' : ['scli-dyys dummy value'],
                     }

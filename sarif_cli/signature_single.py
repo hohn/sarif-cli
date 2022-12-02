@@ -84,7 +84,7 @@ struct_graph_2022_02_01 = (
             ('kind', 'String'),
             ('precision', 'String'),
             ('security-severity', 'String'),
-            ('severity', 'String'),
+            ('problem.severity', 'String'),
             ('sub-severity', 'String'),
             ('tags', 'Array7069'))),
     (   'Struct6818',
