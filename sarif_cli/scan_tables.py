@@ -39,6 +39,7 @@ class ScanTablesTypes:
         'query_kind'       : pd.StringDtype(),
         'query_precision'  : pd.StringDtype(),
         'query_severity'   : pd.StringDtype(),
+        'query_tags'       : pd.StringDtype(),
 
         'codeFlow_id'      : pd.UInt64Dtype(),
         
@@ -174,6 +175,16 @@ def joins_for_results(basetables, external_info):
     return res1
 
 #id as primary key
+def _populate_from_rule_table_code_flow_tag_text(basetable, flowtable):
+    val = flowtable.rule_id.values[0]
+    return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+
+#id as primary key
+def _populate_from_rule_table_tag_text(basetable, i):
+    val = basetable.kind_problem.rule_id[i]
+    return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+
+#id as primary key
 def _populate_from_rule_table(column_name, basetable, i):
     val = basetable.kind_problem.rule_id[i]
     return basetable.rules.query("id == @val")[column_name].head(1).item()
@@ -195,6 +206,7 @@ def _results_from_kind_problem(basetables, external_info):
             'query_kind'       :  "problem",
             'query_precision'  :  [_populate_from_rule_table("precision", b, i) for i in range(len(b.kind_problem))],
             'query_severity'   :  [_populate_from_rule_table("problem.severity", b, i) for i in range(len(b.kind_problem))],
+            'query_tags'   : [_populate_from_rule_table_tag_text(b, i) for i in range(len(b.kind_problem))],
 
             'codeFlow_id' : 0,      # link to codeflows (kind_pathproblem only, NULL here)
             
@@ -216,7 +228,6 @@ def _results_from_kind_problem(basetables, external_info):
             'source_object' : pd.NA, # TODO: find high-level info from query name or tags?
             'sink_object' : pd.NA,
         })
-
     # Force column type(s) to avoid floats in output.
     res1 = res.astype({ 'id' : 'uint64', 'scan_id': 'uint64'}).reset_index(drop=True)
     return res1
@@ -283,6 +294,7 @@ def _results_from_kind_pathproblem(basetables, external_info):
                     'query_kind'       : "path-problem",
                     'query_precision'  : _populate_from_rule_table_code_flow("precision", b, cfid0ppt0),
                     'query_severity'   : _populate_from_rule_table_code_flow("problem.severity", b, cfid0ppt0),
+                    'query_tags'   : _populate_from_rule_table_code_flow_tag_text(b, cfid0ppt0),
 
                     'codeFlow_id' : cfid0,
                     # 
