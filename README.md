@@ -75,6 +75,14 @@ Set up the virtual environment and install the packages:
   python bin/sarif-aggregate-scans sarif-files.txt <combined-tables-output directory>
   ```
 
+## sarif-pad-aggregate
+  **Optional** Post-fills the `scans.csv` file with more realisitic (but still fake) values for the following columns: `db_create_start`,`db_create_stop`,`scan_start_date`,`scan_stop_date`. These values are not in the input sarif and it may be beneficial to have date values near the present. Otherwise `sarif-extract-scans-runner` will have populated these columns with the value `1970-01-01`.
+
+  ### sample usage:
+  ```
+  python bin/sarif-pad-aggregate <combined-tables-output directory> <padded-combined-tables-output directory>
+  ```
+
 ## sarif-create-aggregate-report
   Parses the `results-log.csv` files generated for some batch of input sarifs and creates a final summary report in `summary-report.csv` (unless otherwise specified).
 
