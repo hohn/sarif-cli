@@ -84,7 +84,7 @@ input_sarif_missing = {
 
  # file load error can happen on either sarif file or scan-spec.json
 file_load_error = {
-  "file": "",
+  "sarif_file": "",
   "level": "ERROR",
   "levelcode": 3,
   "message": "Could not load file."
