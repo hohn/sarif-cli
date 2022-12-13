@@ -20,6 +20,7 @@
           "repositoryUri": "https://github.com/testorg/testrepo.git",
           "revisionId": "testsha"
         }
+      ]
   ```
 
 # Test Setup
