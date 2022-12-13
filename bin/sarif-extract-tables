@@ -59,8 +59,8 @@ sarif_struct = signature.fillsig(args, sarif_struct, context)
 #
 # Use reference type graph (signature) to traverse sarif and attach values to tables
 #
-tgraph = typegraph.Typegraph(signature_single.struct_graph_2022_02_01)
-typegraph.destructure(tgraph, signature_single.start_node_2022_02_01, sarif_struct)
+tgraph = typegraph.Typegraph(signature_single.struct_graph_LGTM)
+typegraph.destructure(tgraph, signature_single.start_node_LGTM, sarif_struct)
 
 #
 # Form output tables
@@ -84,7 +84,7 @@ bt = BaseTables()
 # 
 # Add dataframes
 # 
-sf_2683 = tj.joins_for_sf_2683(tgraph)
+sf_2683 = tj.joins_for_location_info(tgraph)
 af_0350_location = tj.joins_for_af_0350_location(tgraph)
 bt.artifacts = tj.joins_for_artifacts(tgraph)
 bt.codeflows = tj.joins_for_codeflows(tgraph, sf_2683)
