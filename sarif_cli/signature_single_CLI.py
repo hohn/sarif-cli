@@ -111,7 +111,6 @@ struct_graph_CLI = (
             ('precision', 'String'),
             ('problem.severity', 'String'),
             ('security-severity', 'String'),
-            ('severity', 'String'),
             ('sub-severity', 'String'),
             ('tags', 'Array7069'))),
     (   'Struct7100',
