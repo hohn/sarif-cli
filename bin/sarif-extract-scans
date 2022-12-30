@@ -95,7 +95,7 @@ except Exception:
     # will have gathered errors/warnings
     status_writer.csv_write_warnings()
     #pass the exception up to be put into log by runner
-    raise(Exception)
+    raise
 
 #
 # Form output tables
@@ -164,7 +164,7 @@ try:
 except Exception:
     #possible warnings accumulated
     status_writer.csv_write_warnings()
-    raise Exception
+    raise
 
 #
 # Setup rest of basetables
