@@ -235,6 +235,8 @@ dummy_relatedLocations_entry = [
 
 dummy_message_entry = {'text': 'scli-dyys dummy value'}
 
+dummy_sourceLanguage = 'unknown'
+
 def fillsig_dict(args, elem, context):
     """ Fill in the missing fields in dictionary signatures.
     """
@@ -285,6 +287,10 @@ def fillsig_dict(args, elem, context):
 
     if 'level' in elem.keys():
         full_elem['enabled'] = elem.get('enabled', True)
+
+    if 'semmle.formatSpecifier' in elem.keys():
+        # Ensure semmle.sourceLanguage is present at least in dummy form
+        full_elem['semmle.sourceLanguage'] = elem.get('semmle.sourceLanguage', dummy_sourceLanguage)
 
     if 'versionControlProvenance' in elem.keys():
         # Ensure newlineSequences is present when versionControlProvenance is

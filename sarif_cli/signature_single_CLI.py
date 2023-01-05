@@ -28,7 +28,7 @@ struct_graph_CLI = (
     ('Struct3497', ('struct', ('index', 'Int'), ('uri', 'String'))),
     ('Struct9567', ('struct', ('location', 'Struct3497'))),
     ('Array6920', ('array', (0, 'Struct5277'), (1, 'Struct9567'))),
-    ('Struct1509', ('struct', ('semmle.formatSpecifier', 'String'))),
+    ('Struct1509', ('struct', ('semmle.formatSpecifier', 'String'), ('semmle.sourceLanguage', 'String'))),
     ('Struct2774', ('struct', ('text', 'String'))),
     (   'Struct6299',
         (   'struct',

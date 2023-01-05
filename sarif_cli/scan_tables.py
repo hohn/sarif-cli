@@ -101,21 +101,14 @@ def joins_for_projects(basetables, external_info):
     else:
         repo_url = "unknown"
         project_name = pd.NA
-
-    if 'semmle.sourceLanguage' in b.project:
-        srcLang = b.project['semmle.sourceLanguage'][0]
-        allLang = ",".join(list(b.project['semmle.sourceLanguage']))
-    else: 
-        srcLang = "unknown"
-        allLang = "unknown"
     
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
         "project_name"       : project_name,
         "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
         "repo_url"           : repo_url, 
-        "primary_language"   : srcLang, # TODO: external info if CLI sarif
-        "languages_analyzed" : allLang  # TODO: external info if CLI sarif
+        "primary_language"   : b.project['semmle.sourceLanguage'][0],
+        "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
     }, index=[0])
 
     # Force all column types to ensure appropriate formatting
