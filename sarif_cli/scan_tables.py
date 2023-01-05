@@ -79,34 +79,18 @@ def joins_for_projects(basetables, external_info):
     """
     b = basetables; e = external_info
    
-    # if the sarif does not have versionControlProvenance, semmle.sourceLanguage ect
-    # there is no reliable way to know the project name 
-    # and will still need to use a guess about the project id
+    # if the sarif does have versionControlProvenance
     if "repositoryUri" in b.project:
-        repo_url = b.project.repositoryUri[0]
-         # For a repository url of the form
-        #   (git|https)://*/org/project.*
-        # use the org/project part as the project_name.
-        # 
-        url_parts = re.match(r'(git|https)://[^/]+/([^/]+)/(.*).git', repo_url)
-        if url_parts:
-            project_name = f"{url_parts.group(2)}-{url_parts.group(3)}"
-            project, component = e.sarif_file_name.rstrip().split('/')
-            # if the runners guess from the filename was bad, replace with real info
-            # and continue to use that scanspec to pass that around
-            if project_name != project+"-"+component:
-                e.project_id = hash.hash_unique(project_name.encode())
-        else:
-            project_name = pd.NA
+        repoUri = b.project.repositoryUri[0]
+        e.project_id = hash.hash_unique(repoUri.encode())
     else:
-        repo_url = "unknown"
-        project_name = pd.NA
+        repoUri = "unknown"
     
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
-        "project_name"       : project_name,
+        "project_name"       : repoUri,
         "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
-        "repo_url"           : repo_url, 
+        "repo_url"           : repoUri, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0],
         "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
     }, index=[0])

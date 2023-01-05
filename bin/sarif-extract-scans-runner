@@ -161,7 +161,6 @@ for path in paths:
     # Paths and components
     # 
     path = path.rstrip()
-    project, component = path.split('/')
     # 
     # Scan specification
     # 
@@ -171,30 +170,25 @@ for path in paths:
         scan_id = hash.hash_unique(data)
 
     scan_spec = {
-        # assuming sarif file names are like <org>/<repo>
-        # however this will be replaced down the line with the repoURI if possible
-        # still, leaving here in case later versions of this tool do not rely on that property being there
-        # in that case this will be the best guess
-        "project_id": hash.hash_unique((project+"-"+component).encode()),  # pd.UInt64Dtype()
         "scan_id": scan_id,                        # pd.Int64Dtype()
         "sarif_file_name": path,                   # pd.StringDtype()
     }
     
     # 
     # If using outermost output directory, create project directory:
-    # (like <outer_dir>/<project>/*.scantables)
+    # (like <outer_dir>/<repositoryUri>/*.scantables)
     # 
-    try: os.mkdir(outer_dir+ project, mode=0o755)
+    try: os.mkdir(outer_dir+ path, mode=0o755)
     except FileExistsError: pass
 
-    scan_spec_file = os.path.join(outer_dir+ project, component + ".scanspec")
+    scan_spec_file = os.path.join(outer_dir+ path + ".scanspec")
     with open(scan_spec_file, 'w') as fp:
         json.dump(scan_spec, fp)
 
     # 
     # Table output directory
     # 
-    output_dir = os.path.join(outer_dir+ project, component + ".scantables")
+    output_dir = os.path.join(outer_dir+ path + ".scantables")
     try: os.mkdir(output_dir, mode=0o755)
     except FileExistsError: pass
     #
@@ -215,8 +209,8 @@ for path in paths:
             with open(args.successful_runs, 'wb') as outfile:
                 pickle.dump(successful_runs, outfile)
 
-    scan_log_file = os.path.join(outer_dir+ project, component + ".scanlog")
-    csv_outfile = os.path.join(outer_dir+ project, component)
+    scan_log_file = os.path.join(outer_dir+ path + ".scanlog")
+    csv_outfile = os.path.join(outer_dir+ path)
     runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile, "-f", args.input_signature],
                               capture_output=True, text=True)
     if runstats.returncode == 0:
