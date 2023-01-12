@@ -1,7 +1,9 @@
 # CLI tools for SARIF processing 
 
   Each of these tools present a high-level command-line interface to extract a
-  specific subset of information from a SARIF file. The main tools are: `sarif-extract-scans-runner`,`sarif-aggregate-scans`,`sarif-create-aggregate-report`
+  specific subset of information from a SARIF file. The main tools are: `sarif-extract-scans-runner`,`sarif-aggregate-scans`,`sarif-create-aggregate-report`. 
+  
+  Each tool can print its options and description like: `sarif-extract-scans-runner --help`.
 
   The tool was implemented using Python 3.9.
 

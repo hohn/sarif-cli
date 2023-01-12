@@ -88,9 +88,9 @@ parser = argparse.ArgumentParser(description='Run sarif-extract-scans over a dir
 
 parser.add_argument('sarif_files', metavar='sarif-files', type=str, help='File containing list of sarif files, use - for stdin')
 
-parser.add_argument('-f','--input-signature', metavar='input-signature', type=str, default="LGTM", 
-                    help='Signature of the sarif, as in, where it was generated it may affect the signature.'
-                    'Options: LGTM, CLI'
+parser.add_argument('-f','--input-signature', metavar='input-signature', type=str, default="CLI", 
+                    help='Signature of the sarif, as in, where it was generated it may affect the signature.\n'
+                    'Options: LGTM, CLI.\n'
                     'If current represented signatures are not sufficient, view signature_single.py for how to support further signatures.'
                     '  Default: "%(default)s"')
 
