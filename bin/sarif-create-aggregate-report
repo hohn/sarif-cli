@@ -56,11 +56,10 @@ data = []
 
 for path in paths:
     path = path.rstrip()
-    project, component = path.split('/')
     #
     # Validate input data directory and content
     #
-    csv_infile = os.path.join(args.in_dir+project, component + ".csv")
+    csv_infile = os.path.join(args.in_dir+ path + ".csv")
     if not os.path.exists(csv_infile):
         continue
     else:
