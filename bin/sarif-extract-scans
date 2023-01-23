@@ -130,17 +130,14 @@ scantabs = ScanTables()
 
 @dataclass
 class ExternalInfo:
-    project_id : int
+    project_id: pd.UInt64Dtype()
     scan_id : pd.UInt64Dtype()
     sarif_file_name : str
-    ql_query_id : str
 
 external_info = ExternalInfo(
-    scan_spec["project_id"],
+    pd.NA,
     scan_spec["scan_id"],
-    scan_spec["sarif_file_name"],
-    # TODO: Take ql_query_id from where? (git commit id of the ql query set)
-    'deadbeef00',               
+    scan_spec["sarif_file_name"]           
 )
 
 # 

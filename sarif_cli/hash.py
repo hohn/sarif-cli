@@ -4,4 +4,4 @@ from hashlib import blake2b
 def hash_unique(item_to_hash):
     h = blake2b(digest_size = 8)
     h.update(item_to_hash)
-    return abs(int.from_bytes(h.digest(), byteorder='big'))
+    return int.from_bytes(h.digest(), byteorder='big')

@@ -196,9 +196,14 @@ def _destructure_dict(typegraph: Typegraph, node, tree):
             )
 
     else:
-        status_writer.unknown_sarif_parsing_shape["extra_info"] = "type fields {} do not match tree fields {}.".format(type_fields, tree_fields)
-        status_writer.csv_write(status_writer.unknown_sarif_parsing_shape)
-        raise Exception("typegraph: unhandled case reached: cannot match type "
+        # possibly looks like: (Struct9699)type_fields: [codeflows...] vs tree_fields: [...extra_properties]
+        # in that case we need to also try the Struct4055 signature here
+        if "codeFlows" in type_fields:
+            _destructure_dict(typegraph, "Struct4055", tree)
+        else:
+            status_writer.unknown_sarif_parsing_shape["extra_info"] = "type fields {} do not match tree fields {}.".format(type_fields, tree_fields)
+            status_writer.csv_write(status_writer.unknown_sarif_parsing_shape)
+            raise Exception("typegraph: unhandled case reached: cannot match type "
                         "fields {} to tree fields {}.  Data is invalid."
                         .format(type_fields, tree_fields))
         
