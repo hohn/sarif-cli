@@ -131,11 +131,10 @@ for path in paths:
     # Paths and components
     # 
     path = path.rstrip()
-    project, component = path.split('/')
     #
     # Validate input data directory and content
     #
-    output_dir = os.path.join(args.in_dir+project, component + ".scantables")
+    output_dir = os.path.join(args.in_dir+ path + ".scantables")
     if not os.path.exists(output_dir):
         continue
     if not _all_csv_files_exist(output_dir):
