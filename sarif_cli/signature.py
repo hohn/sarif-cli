@@ -196,7 +196,8 @@ physicalLocation_keys = set([first for first, _ in
                                ('region', 'Struct005')]])
 
 properties_keys = set([first for first, _ in
-                       [ ('kind', 'String'),
+                       [ ('description', 'String'),
+                         ('kind', 'String'),
                          ('precision', 'String'),
                          ('security-severity', 'String'),
                          ('severity', 'String'),
@@ -206,7 +207,8 @@ properties_keys = set([first for first, _ in
 # 
 # scli-dyys is a random id string for later identification of dummy values
 # 
-dummy_properties = { 'kind' : 'scli-dyys dummy value',
+dummy_properties = { 'description' : 'scli-dyys dummy value',
+                     'kind' : 'scli-dyys dummy value',
                      'precision' : 'scli-dyys dummy value',
                      'security-severity' : 'scli-dyys dummy value',
                      'problem.severity' : 'scli-dyys dummy value',
