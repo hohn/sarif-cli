@@ -298,11 +298,21 @@ def fillsig_dict(args, elem, context):
         # Ensure newlineSequences is present when versionControlProvenance is
         full_elem['newlineSequences'] = elem.get('newlineSequences', dummy_newlineSequences)
 
+    if 'primaryLocationLineHash' in elem.keys():
+        # Ensure primaryLocationStartColumnFingerprint is present
+        full_elem['primaryLocationStartColumnFingerprint'] = elem.get('primaryLocationStartColumnFingerprint', "fingerprint_placeholder")
+        
+
+    #this fix depends on optional property defaultConfiguration being presents
+    if 'defaultConfiguration' in elem.keys():
+        # Ensure fullDescription is present
+        full_elem['fullDescription'] = elem.get('fullDescription', "description_placeholder")   
+
     if 'partialFingerprints' in elem.keys():
         # Ensure relatedLocations is present
         full_elem['relatedLocations'] = elem.get('relatedLocations',
                                                  dummy_relatedLocations_entry)
-
+        
     if 'physicalLocation' in elem.keys():
         # Ensure id and message are present
         full_elem['id'] = elem.get('id', -1)
