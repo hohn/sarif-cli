@@ -6,6 +6,7 @@ See sarif-to-dot for options and examples.
 from dataclasses import dataclass
 from . import traverse
 import zlib
+from sarif_cli import snowflake_id
 
 # 
 # These are internal node format samples produced by the _signature* functions, as
@@ -24,6 +25,8 @@ import zlib
 #       ('severity', 'String'),
 #       ('tags', 'Array002'))),
 # ...
+
+flakegen = snowflake_id.Snowflake(0)
 
 #
 # Context for signature functions
@@ -306,7 +309,9 @@ def fillsig_dict(args, elem, context):
     #this fix depends on optional property defaultConfiguration being presents
     if 'defaultConfiguration' in elem.keys():
         # Ensure fullDescription is present
-        full_elem['fullDescription'] = elem.get('fullDescription', "description_placeholder")   
+        # value must be unique because it is used in id gen used in table join later (joins_for_rules)
+        flake = flakegen.next()
+        full_elem['fullDescription'] = elem.get('fullDescription', "description_placeholder"+str(flake))   
 
     if 'partialFingerprints' in elem.keys():
         # Ensure relatedLocations is present
