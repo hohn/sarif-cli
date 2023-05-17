@@ -30,6 +30,8 @@ struct_graph_CLI = (
     ('Array6920', ('array', (0, 'Struct5277'), (1, 'Struct9567'))),
     ('Struct1509', ('struct', ('semmle.formatSpecifier', 'String'), ('semmle.sourceLanguage', 'String'))),
     ('Struct2774', ('struct', ('text', 'String'))),
+    #manually added for optional automationDetails
+    ('Struct1111', ('struct', ('id', 'String'))),
     (   'Struct6299',
         (   'struct',
             ('endColumn', 'Int'),
@@ -146,6 +148,8 @@ struct_graph_CLI = (
     (   'Struct9786',
         (   'struct',
             ('artifacts', 'Array6920'),
+            #manually added for optional automationDetails
+            ('automationDetails', 'Struct1111'),
             ('columnKind', 'String'),
             ('newlineSequences', 'Array7069'),
             ('properties', 'Struct1509'),

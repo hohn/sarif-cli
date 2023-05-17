@@ -79,10 +79,14 @@ def joins_for_projects(basetables, external_info):
     """
     b = basetables; e = external_info
    
+    extra = ""
+    # if the sarif does have automationDetails
+    if "automationDetails" in b.project:
+        extra = b.project.automationDetails[0]
     # if the sarif does have versionControlProvenance
     if "repositoryUri" in b.project:
         repoUri = b.project.repositoryUri[0]
-        e.project_id = hash.hash_unique(repoUri.encode())
+        e.project_id = hash.hash_unique((repoUri+extra).encode())
     else:
         repoUri = "unknown"
     

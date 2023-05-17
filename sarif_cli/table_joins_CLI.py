@@ -330,7 +330,11 @@ def joins_for_project_single(tgraph):
         .rename(columns={"value_index": "value_index_1273"})
         #
         .merge(sf(9786), how="left", left_on='id_or_value_at_index', right_on='struct_id', validate="1:m")
-        .drop(columns=['id_or_value_at_index', 'struct_id']))
+        .drop(columns=['id_or_value_at_index', 'struct_id'])
+        
+        .merge(sf(1111), how="left", left_on='automationDetails', right_on='struct_id', validate="1:m")
+        .drop(columns=['automationDetails', 'struct_id'])
+         .rename(columns={"id": "automationDetails"}))
         # 
     #newlines there or not - handle
     if 'newlineSequences' in project_df_temp1:
