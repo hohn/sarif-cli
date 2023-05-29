@@ -16,6 +16,7 @@ import pathlib
 import sarif_cli.table_joins as tj
 import sarif_cli.table_joins_CLI as tj_CLI
 import sarif_cli.scan_tables as st
+from sarif_cli import columns
 import sys
 
 #
@@ -253,7 +254,7 @@ p.mkdir(exist_ok=True)
 
 def write(path, frame):
     with p.joinpath(path + ".csv").open(mode='wb') as fh:
-        frame.to_csv(fh, index=False, quoting=csv.QUOTE_NONNUMERIC)
+        frame.to_csv(fh, index=False, columns=columns.columns[path] , quoting=csv.QUOTE_NONNUMERIC)
 
 def _write_dataframes_of(tables_dataclass):
     for field in dc.fields(tables_dataclass):

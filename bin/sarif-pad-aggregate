@@ -11,6 +11,7 @@ import random
 
 from sarif_cli import scan_tables
 from sarif_cli import table_joins
+from sarif_cli import columns
 
 #
 # Handle arguments
@@ -133,4 +134,4 @@ for file_prefix in _extract_scans_tables.keys():
     frame = (_extract_scans_tables[file_prefix][0]
              .astype(_table_output_dtypes[file_prefix]))
     with open(csv_fname, 'w') as fh:
-        frame.to_csv(fh, index=False, quoting=csv.QUOTE_NONNUMERIC)
+        frame.to_csv(fh, index=False, columns=columns.columns[file_prefix], quoting=csv.QUOTE_NONNUMERIC)
