@@ -26,6 +26,7 @@ columns = {
         'message'  ,        
         'message_object'  , 
         'location' , 
+        
         'source_startLine', 
         'source_startCol',
         'source_endLine' ,  
@@ -35,7 +36,9 @@ columns = {
         'sink_endLine' ,   
         'sink_endCol' ,
         'source_object' ,  
-        'sink_object'     
+        'sink_object',
+        'source_location',
+        'sink_location'   
 ],
 "projects" : [
         "id"     ,            

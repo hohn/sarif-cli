@@ -47,11 +47,13 @@ class ScanTablesTypes:
         'message_object'   : numpy.dtype('O'),
         'location'         : pd.StringDtype(),
         
+        'source_location'  : pd.StringDtype(),
         'source_startLine' : pd.Int64Dtype(),
         'source_startCol'  : pd.Int64Dtype(),
         'source_endLine'   : pd.Int64Dtype(),
         'source_endCol'    : pd.Int64Dtype(),
         
+        'sink_location'    : pd.StringDtype(),
         'sink_startLine'   : pd.Int64Dtype(),
         'sink_startCol'    : pd.Int64Dtype(),
         'sink_endLine'     : pd.Int64Dtype(),
@@ -213,11 +215,13 @@ def _results_from_kind_problem(basetables, external_info):
             'location': b.kind_problem.location_uri,
             
             # for kind_problem, use the same location for source and sink
+            'source_location' : pd.NA,
             'source_startLine' : b.kind_problem.location_startLine,
             'source_startCol' : b.kind_problem.location_startColumn,
             'source_endLine' : b.kind_problem.location_endLine,
             'source_endCol' : b.kind_problem.location_endColumn,
             
+            'sink_location' : pd.NA,
             'sink_startLine' : b.kind_problem.location_startLine,
             'sink_startCol' : b.kind_problem.location_startColumn,
             'sink_endLine' : b.kind_problem.location_endLine,
