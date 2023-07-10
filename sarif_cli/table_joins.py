@@ -115,6 +115,8 @@ def joins_for_problem(tgraph, af_0350_location):
     # 
     # Form the message dataframe (@kind problem) via joins
     # 
+    import IPython
+    IPython.embed(header="spot 1")
 
     kind_problem_1 = (
         aft(6343)

@@ -91,7 +91,7 @@ def joins_for_projects(basetables, external_info):
         e.project_id = hash.hash_unique((repoUri+extra).encode())
     else:
         repoUri = "unknown"
-    
+
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
         "project_name"       : repoUri,
