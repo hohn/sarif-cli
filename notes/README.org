@@ -4,6 +4,9 @@
 
   Think of it as staging for [[../docs]].
 
+  Short notes start as sections in this README.  They will be moved if separate
+  file make more sense.
+
 ** The typegraphs
    The type graph files are derived from a sarif input file, with various options
    controlling output.
@@ -27,3 +30,64 @@
      ../../../bin/sarif-to-dot -td -nuf results.sarif | dot -Tpdf > typegraph-tdnuf.pdf
 
    #+END_SRC
+
+** The automationDetails.id
+   The =automationDetails.id= entry is produced by CodeQL when using the
+   =--sarif-category= flag.
+
+   Using
+   #+BEGIN_SRC text
+     0:$ codeql --version
+     CodeQL command-line toolchain release 2.12.6.
+   #+END_SRC
+
+   and running
+   #+BEGIN_SRC sh
+     cd ../data/codeql-dataflow-sql-injection/ &&
+           sarif-extract-scans-runner - > /dev/null <<EOF
+     sqlidb-0.sarif
+     EOF
+   #+END_SRC
+
+   results in
+   #+BEGIN_SRC text
+     hohn@gh-hohn ~/local/sarif-cli
+     0:$ cat data/codeql-dataflow-sql-injection/sqlidb-0.sarif.csv
+     sarif_file,level,levelcode,message,extra_info
+     sqlidb-0.sarif,WARNING,2,Input sarif is missing neccesary properties.,"Missing: {'versionControlProvenance', 'newlineSequences'}, "
+   #+END_SRC
+
+   An older version is needed.
+
+   #+BEGIN_SRC sh
+     export GITHUB_TOKEN=...
+
+     gh codeql list-versions
+     gh codeql download v2.12.7
+     gh codeql download v2.11.6
+     gh codeql download v2.10.5
+     gh codeql download v2.9.4
+
+     gh codeql install-stub 
+
+     gh codeql set-version v2.11.6
+   #+END_SRC
+
+   Some hacking around qlpacks is required; see
+   [[../data/build-multiple-sarifs.sh]], Pack compatibility with CLI.
+
+   Using that, I get sarif files to examine:
+   #+BEGIN_SRC text
+     hohn@gh-hohn ~/local/sarif-cli/data/codeql-dataflow-sql-injection
+     0:$ ls -la sqlidb*.sarif
+     -rw-r--r-- 1 hohn staff 6.2K Jul 11 10:39 sqlidb-0.sarif
+     -rw-r--r-- 1 hohn staff 6.3K Jul 11 10:40 sqlidb-1.sarif
+   #+END_SRC
+   and only the second has the additional field:
+   #+BEGIN_SRC sh
+     0:$ grep -A2 automationDetails sqlidb*.sarif
+     sqlidb-1.sarif:    "automationDetails" : {
+     sqlidb-1.sarif-      "id" : "mast-issue/"
+     sqlidb-1.sarif-    },
+   #+END_SRC
+
