@@ -4,6 +4,15 @@
 echo '$0: Interactive use only'
 exit 1
 
+#* What can we use?
+gh codeql list-versions
+
+#* History
+open https://github.com/github/codeql-cli-binaries/blob/HEAD/CHANGELOG.md
+
+#* Choose
+gh codeql set-version v2.9.4
+
 #* Where are we?
 codeql --version 
 
@@ -17,7 +26,6 @@ rm -fR sqlidb
 codeql database create --language=cpp -s . -j 8 -v sqlidb --command='./build.sh'
 ls sqlidb
 
-
 #* Pack compatibility with CLI
 #  Note workaround to avoid using --additional-packs
 function codeql-complib() {
@@ -30,15 +38,15 @@ function codeql-complib() {
 
 : '
 0:$ codeql-complib cpp
-0.4.6
+0.2.3
 
 Put the version into the qlpack:
 ...
 dependencies:
-    codeql/cpp-all: ^0.4.6
+    codeql/cpp-all: ^0.2.3
 ...
 
-Then
+Then follow the rest; that is
     codeql pack install
 followed by
     codeql database analyze 
@@ -111,10 +119,54 @@ codeql database analyze                         \
 
 # Now it's present:
 grep -A2 automationDetails sqlidb-1.sarif
-
 : '
     "automationDetails" : {
       "id" : "mast-issue/"
     },
 '
+
+# Follow the installation in sarif-cli/README.md.
+
+#* Verify versionControlProvenance location 
+jq '.runs | .[] | .versionControlProvenance' \
+   ~/local/sarif-cli/data/treeio/test_set_1.sarif
+
+#* Insert versionControlProvenance
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+sarif-insert-vcp sqlidb-0.sarif > sqlidb-0.1.sarif
+
+#* Get CSV.
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+sarif-extract-scans-runner --input-signature CLI - > /dev/null <<EOF
+sqlidb-0.1.sarif
+EOF
+
+#* Check CSV messages
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+head -4 sqlidb-0.1.sarif.csv 
+
+#* Check CSV output
+ls -la sqlidb-0.1*
+find sqlidb-0.1.sarif.scantables -print
+
+#* And again for the analyze command with options
+#* Insert versionControlProvenance
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+sarif-insert-vcp sqlidb-1.sarif > sqlidb-1.1.sarif
+
+#* Get CSV.
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+sarif-extract-scans-runner --input-signature CLI - > /dev/null <<EOF
+sqlidb-1.1.sarif
+EOF
+
+#* Check CSV messages
+cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+head -4 sqlidb-1.1.sarif.csv 
+
+#* Check CSV output
+ls -la sqlidb-1.1*
+find sqlidb-1.1.sarif.scantables -print
+
+
 
