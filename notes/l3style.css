@@ -1,3 +1,7 @@
+:root {
+    --margin-left: 40%;
+    --body-width: 60%;
+}
 
 /* The sum of width and margin percentages must not exceed 100.*/
 div#toc {
@@ -8,29 +12,32 @@ div#toc {
     /* OR */
     /* use a fixed-position toc */
     position: fixed;
-    top:  80px;
+    top:  8px;
     left: 0px;
 
     /* match toc, org-content, postamble */
-    width: 26%;
+    width: var(--margin-left);
     margin-right: 1%;
     margin-left: 1%;
+
+    overflow-y: scroll;
+    height: calc(100% - 10px);
+
 }
 
 div#org-content {
     float: right;
-    width: 70%;
+    width: var(--body-width);
     /* match toc, org-content, postamble */
-    margin-left: 28%;
+    margin-left: var(--margin-left);
 }
 
 div#postamble {
     float: right;
-    width: 70%;
+    width: var(--body-width);
     /* match toc, org-content, postamble */
-    margin-left: 28%;
+    margin-left: var(--margin-left);
 }
-
 
 p.author {
     clear: both;
@@ -107,9 +114,9 @@ h1 {
    color: #cc8c00;
 /*    padding-top: 5px; */
    border-bottom: 2px solid #aaa;
-   width: 70%;
-    /* match toc, org-content, postamble */
-   margin-left: 28%;            /* Align with div#content */
+   width: var(--body-width);
+   /* match toc, org-content, postamble */
+   width: var(--margin-left);      /* Align with div#content */
 }
 
 h2 {
@@ -167,4 +174,3 @@ td, th {
 	vertical-align: top;
 	border: 1pt solid #ADB9CC;
 }
-
