@@ -1,3 +1,4 @@
+#!/bin/bash -x
 # 
 # The automationDetails.id entry is produced by CodeQL when using the
 # =--sarif-category= flag.
