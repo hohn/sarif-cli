@@ -105,9 +105,6 @@ def joins_for_projects(basetables, external_info):
 
     # Force all column types to ensure appropriate formatting
     res1 = res.astype(ScanTablesTypes.projects).reset_index(drop=True)
-    # XX: automationDetails?
-    import IPython
-    IPython.embed(header="spot 11")
     # 
     return res1
 
