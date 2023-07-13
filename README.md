@@ -25,6 +25,12 @@
       ]
   ```
 
+  The script 
+
+      bin/sarif-insert-vcp
+
+  will add that entry to a SARIF file.
+
 # Test Setup
   This repository includes some test data (in `data`) and uses =git lfs= for storing those test files; installation steps are at
   [[https://git-lfs.github.com][git-lfs]]; on a mac with homebrew, install it via
