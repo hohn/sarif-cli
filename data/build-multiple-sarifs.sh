@@ -167,6 +167,3 @@ head -4 sqlidb-1.1.sarif.csv
 #* Check CSV output
 ls -la sqlidb-1.1*
 find sqlidb-1.1.sarif.scantables -print
-
-
-

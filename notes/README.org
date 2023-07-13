@@ -2,11 +2,11 @@
 #+OPTIONS: org-confirm-babel-evaluate:nil
 #+LANGUAGE:  en
 #+TEXT:      
-#+OPTIONS: ^:{} H:2 num:t \n:nil @:t ::t |:t ^:nil f:t *:t TeX:t LaTeX:t skip:nil p:nil
+#+OPTIONS: ^:{} H:3 num:t \n:nil @:t ::t |:t ^:nil f:t *:t TeX:t LaTeX:t skip:nil p:nil
 #+OPTIONS: toc:nil
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./l3style.css"/>
 #+HTML: <div id="toc">
-#+TOC: headlines 2        insert TOC here, with two headline levels
+#+TOC: headlines 3        insert TOC here, with two headline levels
 #+HTML: </div> 
 # 
 #+HTML: <div id="org-content">
@@ -44,27 +44,258 @@
 
    #+END_SRC
 
-** The automationDetails.id
+** Debugging the absence of automationDetails.id
    The =automationDetails.id= entry is produced by CodeQL when using the
    =--sarif-category= flag.
 
    The prerequisites for tracing its flow through the tools is started in
    [[../data/build-multiple-sarifs.sh]]
 
-   #+BEGIN_SRC sh :session shared :results output 
-     cd ~/local/sarif-cli/ && ag -l automationDetails |cat
+   For testing the following is injected into =sqlidb-1.1.sarif=.
+   #+BEGIN_SRC text
+     : '
+     "automationDetails" : {
+     "id" : "mast-issue/"
+     },
+     '
+
    #+END_SRC
+ 
+*** Add repl as appropriate, then examine.
+    Make sure the input is correct
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection
+      grep -A2 automationDetails sqlidb-1.1.sarif
+    #+END_SRC
 
-   #+RESULTS:
-   : notes/README.org
-   : notes/README.html
-   : scripts/table-tests.sh
-   : sarif_cli/signature_single_CLI.py
-   : sarif_cli/table_joins_CLI.py
-   : sarif_cli/scan_tables.py
-   : sarif_cli/signature.py
-   : 
-   : [32mhohn@gh-hohn [33m~/local/sarif-cli[0m
+    #+RESULTS:
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    : "automationDetails" : {
+    :       "id" : "mast-issue/"
+    :     },
+    : 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+   
+*** Create the CSV
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      source ~/local/sarif-cli/.venv/bin/activate
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+      sarif-extract-scans-runner --input-signature CLI - > /dev/null <<EOF
+      sqlidb-1.1.sarif
+      EOF
+    #+END_SRC
 
-#+HTML: </div> 
+    #+RESULTS:
+    #+begin_example
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/notes[0m
+    (.venv) 
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/notes[0m
+    (.venv) 
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    > > (.venv) 
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    #+end_example
+
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+      ls -la sqlidb-1.1*
+      find sqlidb-1.1.sarif.scantables -print
+    #+END_SRC
+
+    #+RESULTS:
+    #+begin_example
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    -rw-r--r-- 1 hohn staff 8.2K Jul 11 19:25 [0m[0msqlidb-1.1.sarif[0m
+    -rw-r--r-- 1 hohn staff  326 Jul 12 16:39 [0msqlidb-1.1.sarif.csv[0m
+    -rw-r--r-- 1 hohn staff   72 Jul 12 16:39 [0msqlidb-1.1.sarif.scanspec[0m
+
+    sqlidb-1.1.sarif.scantables:
+    total 16K
+    drwxr-xr-x  6 hohn staff  192 Jul 12 16:39 [1;34m.[0m/
+    drwxr-xr-x 43 hohn staff 1.4K Jul 12 16:39 [1;34m..[0m/
+    -rw-r--r--  1 hohn staff  622 Jul 12 16:39 [0mcodeflows.csv[0m
+    -rw-r--r--  1 hohn staff  165 Jul 12 16:39 [0mprojects.csv[0m
+    -rw-r--r--  1 hohn staff  589 Jul 12 16:39 [0mresults.csv[0m
+    -rw-r--r--  1 hohn staff  343 Jul 12 16:39 [0mscans.csv[0m
+    (.venv) 
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    sqlidb-1.1.sarif.scantables
+    sqlidb-1.1.sarif.scantables/codeflows.csv
+    sqlidb-1.1.sarif.scantables/scans.csv
+    sqlidb-1.1.sarif.scantables/results.csv
+    sqlidb-1.1.sarif.scantables/projects.csv
+    (.venv) 
+    [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
+    #+end_example
+
+*** Check if =automationDetails= or its value is in output
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables
+      ag automationDetails | cat
+    #+END_SRC
+
+    #+RESULTS:
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+    : projects.csv:1:"id","project_name","creation_date","repo_url","primary_language","languages_analyzed","automationDetails"
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+
+    #+RESULTS:
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+
+    #+RESULTS:
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+
+    See if the magic value is present
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables
+      ag mast-issue |cat
+    #+END_SRC
+
+    #+RESULTS:
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+    : projects.csv:2:490227419655596076,"vcp-no-uri","1970-01-01","vcp-no-uri","unknown","unknown","mast-issue/"
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+
+    #+RESULTS:
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables[0m
+
+*** Nothing is in the output, so trace execution to see where it's dropped
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/notes && ag -l automationDetails ../sarif_cli  |cat
+    #+END_SRC
+
+    #+RESULTS:
+    : ../sarif_cli/scan_tables.py
+    : ../sarif_cli/signature_single_CLI.py
+    : ../sarif_cli/table_joins_CLI.py
+    : ../sarif_cli/signature.py
+    : (.venv) 
+    : [32mhohn@gh-hohn [33m~/local/sarif-cli/notes[0m
+
+*** Trace the call chain
+    Trace the call chain to one of 
+    : ../sarif_cli/scan_tables.py
+    : ../sarif_cli/table_joins_CLI.py
+    : ../sarif_cli/signature.py
+
+    Entry is
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      sarif-extract-scans-runner --input-signature CLI - > /dev/null <<EOF
+      sqlidb-1.1.sarif
+      EOF
+    #+END_SRC
+
+    1. sarif-extract-scans-runner 
+       1. calls [[file:~/local/sarif-cli/bin/sarif-extract-scans-runner::runstats = subprocess.run(\['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile, "-f", args.input_signature\],]]
+
+          The following will drop into the inserted repls:
+          #+BEGIN_SRC sh :session shared :results output :eval never-export
+            cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+            sarif-extract-scans \
+                sqlidb-1.1.sarif.scanspec \
+                sqlidb-1.1.sarif.scantables \
+                sqlidb-1.1.sarif.csv \
+                -f CLI
+          #+END_SRC
+
+          1. calls [[file:~/local/sarif-cli/bin/sarif-extract-scans::sarif_struct = load(scan_spec\['sarif_file_name'\])]]
+          2. uses [[file:~/local/sarif-cli/bin/sarif-extract-scans::location_info = tj.joins_for_location_info(tgraph)]]
+   
+*** Run using embedded repls
+    The following will drop into the inserted repls:
+    #+BEGIN_SRC sh :session shared :results output :eval never-export
+      cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
+      sarif-extract-scans \
+          sqlidb-1.1.sarif.scanspec \
+          sqlidb-1.1.sarif.scantables \
+          sqlidb-1.1.sarif.csv \
+          -f CLI
+    #+END_SRC
+
+    The line
+    : .rename(columns={"id": "automationDetails"})
+    has the right effect:
+    #+BEGIN_SRC text
+      In [3]: project_df_temp1.T
+      Out[3]: 
+                                                                            0
+      struct_id_5521                                               4796854592
+      $schema                   https://json.schemastore.org/sarif-2.1.0.json
+      version_5521                                                      2.1.0
+      value_index_1273                                                      0
+      artifacts                                                    4797197888
+      columnKind                                               utf16CodeUnits
+      newlineSequences                                             4797197568
+      properties                                                   4797244480
+      results                                                      4797198208
+      tool                                                         4797244672
+      versionControlProvenance                                     4797218944
+      automationDetails                                           mast-issue/
+    #+END_SRC
+
+    The line
+    :         extra = b.project.automationDetails[0]
+    also works:
+    #+BEGIN_SRC text
+In [1]: extra
+Out[1]: 'mast-issue/'
+    #+END_SRC
+    but
+    : extra
+    is only used in
+    :         e.project_id = hash.hash_unique((repoUri+extra).encode())
+    when
+    #+BEGIN_SRC text
+In [5]: "repositoryUri" in b.project
+Out[5]: True
+    #+END_SRC
+    For reference:
+    #+BEGIN_SRC text
+In [8]: b.project.automationDetails
+Out[8]: 
+0    mast-issue/
+Name: automationDetails, dtype: object
+    #+END_SRC
+
+    This is in joins_for_projects, called from 
+    : scantabs.projects = st.joins_for_projects(bt, external_info)
+
+    Add
+    :         "automationDetails"  : extra,
+    to the
+    : # Projects table
+
+    And repeat the [[*Check if =automationDetails= or its value is in output][Check if =automationDetails= or its value is in output]]
+    Still missing.  Must be dropped between dataframe creation and output.
+
+    Use project_name to search.
+
+    : class ScanTablesTypes:
+    has no entry for
+    : automationDetails
+
+    Add
+    : "automationDetails"  : pd.StringDtype(),
+
+    Similar for
+    : File: sarif_cli/columns.py
+
+    And repeat [[*Run using embedded repls][Run using embedded repls]], then
+    [[*Check if =automationDetails= or its value is in output][Check if =automationDetails= or its value is in output]]
+
+* Footnotes
+   #+HTML: </div> 
    

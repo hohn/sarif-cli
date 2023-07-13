@@ -336,6 +336,10 @@ def joins_for_project_single(tgraph):
         .drop(columns=['automationDetails', 'struct_id'])
          .rename(columns={"id": "automationDetails"}))
         # 
+    # XX: automationDetails?
+    import IPython
+    IPython.embed(header="spot 3")
+    # 
     #newlines there or not - handle
     if 'newlineSequences' in project_df_temp1:
         project_df_temp2 = project_df_temp1.drop(columns=['newlineSequences'])

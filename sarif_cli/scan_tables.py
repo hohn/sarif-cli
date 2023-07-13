@@ -70,6 +70,7 @@ class ScanTablesTypes:
         "repo_url"           : pd.StringDtype(),
         "primary_language"   : pd.StringDtype(),
         "languages_analyzed" : pd.StringDtype(),
+        "automationDetails"  : pd.StringDtype(),
     }
 
 #
@@ -98,11 +99,16 @@ def joins_for_projects(basetables, external_info):
         "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
         "repo_url"           : repoUri, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0],
-        "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage']))
+        "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage'])),
+        "automationDetails"  : extra,
     }, index=[0])
 
     # Force all column types to ensure appropriate formatting
     res1 = res.astype(ScanTablesTypes.projects).reset_index(drop=True)
+    # XX: automationDetails?
+    import IPython
+    IPython.embed(header="spot 11")
+    # 
     return res1
 
 #

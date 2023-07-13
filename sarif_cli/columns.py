@@ -46,7 +46,8 @@ columns = {
         "creation_date",     
         "repo_url" ,          
         "primary_language"  , 
-        "languages_analyzed" 
+        "languages_analyzed",
+        "automationDetails",
 ],
 "codeflows" : [
 "codeflow_id",

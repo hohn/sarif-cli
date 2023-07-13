@@ -256,7 +256,11 @@ def fillsig_dict(args, elem, context):
 
     if 'results' in elem.keys() and not 'automationDetails' in elem.keys():
         #want this to be blank if not present- ie no submodule info added/no sarif-category used
-        full_elem['automationDetails'] = {'id' : ""}
+        full_elem['automationDetails'] = {'id' : "no-value-for-ad"}
+        # XX: automationDetails?
+        import IPython
+        IPython.embed(header="spot 2")
+        # 
 
     if {'locations', 'message', 'partialFingerprints', 'ruleId',
         'ruleIndex'}.issubset(elem.keys()):
