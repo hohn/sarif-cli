@@ -4,7 +4,10 @@
 # =--sarif-category= flag.
 #
 # This is a simple end-to-end test to ensure it appears after CSV conversion.
+# Run via
+#     ./test-vcp.sh > test-vcp.out 2>&1
 #
+# An output sample -- not suitable for automatic testing yet -- is in test-vcp.sample
 
 #* Two databases, one with and one without
 #        --sarif-category mast-issue 

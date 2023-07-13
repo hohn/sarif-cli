@@ -1,0 +1,97 @@
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ ls -la sqlidb-0.sarif sqlidb-1.sarif
+-rw-r--r--  1 hohn  staff  8098 Jul 11 17:15 sqlidb-0.sarif
+-rw-r--r--  1 hohn  staff  6392 Jul 13 15:54 sqlidb-1.sarif
++ grep -A2 automationDetails sqlidb-0.sarif sqlidb-1.sarif
+sqlidb-1.sarif:    "automationDetails" : {
+sqlidb-1.sarif-      "id" : "mast-issue"
+sqlidb-1.sarif-    },
++ source /Users/hohn/local/sarif-cli/.venv/bin/activate
+++ deactivate nondestructive
+++ '[' -n '' ']'
+++ '[' -n '' ']'
+++ '[' -n /bin/bash -o -n '' ']'
+++ hash -r
+++ '[' -n '' ']'
+++ unset VIRTUAL_ENV
+++ '[' '!' nondestructive = nondestructive ']'
+++ VIRTUAL_ENV=/Users/hohn/local/sarif-cli/.venv
+++ export VIRTUAL_ENV
+++ '[' -n /bin/bash -o -n '' ']'
+++ hash -r
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ get-csv sqlidb-0
++ sarif-insert-vcp sqlidb-0.sarif
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ sarif-extract-scans-runner --input-signature CLI -
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ head -4 sqlidb-0.1.sarif.csv
+sarif_file,level,levelcode,message,extra_info
+sqlidb-0.1.sarif,WARNING,4,Input sarif contains extra unneccesary properties.,"Extra properties: type fields: ['description', 'kind', 'precision', 'problem.severity', 'security-severity', 'sub-severity', 'tags', 'uri']"
+sqlidb-0.1.sarif,SUCCESS,0,File successfully processed.,
++ ls -la sqlidb-0.1.sarif sqlidb-0.1.sarif.csv sqlidb-0.1.sarif.scanspec sqlidb-0.1.sarif.scantables
+-rw-r--r--  1 hohn  staff  8243 Jul 13 16:42 sqlidb-0.1.sarif
+-rw-r--r--  1 hohn  staff   326 Jul 13 16:42 sqlidb-0.1.sarif.csv
+-rw-r--r--  1 hohn  staff    72 Jul 13 16:42 sqlidb-0.1.sarif.scanspec
+
+sqlidb-0.1.sarif.scantables:
+total 32
+drwxr-xr-x   6 hohn  staff  192 Jul 13 16:31 .
+drwxr-xr-x  12 hohn  staff  384 Jul 13 16:31 ..
+-rw-r--r--   1 hohn  staff  622 Jul 13 16:42 codeflows.csv
+-rw-r--r--   1 hohn  staff  205 Jul 13 16:42 projects.csv
+-rw-r--r--   1 hohn  staff  589 Jul 13 16:42 results.csv
+-rw-r--r--   1 hohn  staff  345 Jul 13 16:42 scans.csv
++ find sqlidb-0.1.sarif.scantables -print
+sqlidb-0.1.sarif.scantables
+sqlidb-0.1.sarif.scantables/codeflows.csv
+sqlidb-0.1.sarif.scantables/scans.csv
+sqlidb-0.1.sarif.scantables/results.csv
+sqlidb-0.1.sarif.scantables/projects.csv
++ get-csv sqlidb-1
++ sarif-insert-vcp sqlidb-1.sarif
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ sarif-extract-scans-runner --input-signature CLI -
++ cd /Users/hohn/local/sarif-cli/data/codeql-dataflow-sql-injection
++ head -4 sqlidb-1.1.sarif.csv
+sarif_file,level,levelcode,message,extra_info
+sqlidb-1.1.sarif,WARNING,4,Input sarif contains extra unneccesary properties.,"Extra properties: type fields: ['description', 'kind', 'precision', 'problem.severity', 'security-severity', 'sub-severity', 'tags', 'uri']"
+sqlidb-1.1.sarif,SUCCESS,0,File successfully processed.,
++ ls -la sqlidb-1.1.sarif sqlidb-1.1.sarif.csv sqlidb-1.1.sarif.scanspec sqlidb-1.1.sarif.scantables
+-rw-r--r--  1 hohn  staff  8308 Jul 13 16:42 sqlidb-1.1.sarif
+-rw-r--r--  1 hohn  staff   326 Jul 13 16:42 sqlidb-1.1.sarif.csv
+-rw-r--r--  1 hohn  staff    72 Jul 13 16:42 sqlidb-1.1.sarif.scanspec
+
+sqlidb-1.1.sarif.scantables:
+total 32
+drwxr-xr-x   6 hohn  staff  192 Jul 13 16:31 .
+drwxr-xr-x  12 hohn  staff  384 Jul 13 16:31 ..
+-rw-r--r--   1 hohn  staff  622 Jul 13 16:42 codeflows.csv
+-rw-r--r--   1 hohn  staff  200 Jul 13 16:42 projects.csv
+-rw-r--r--   1 hohn  staff  589 Jul 13 16:42 results.csv
+-rw-r--r--   1 hohn  staff  345 Jul 13 16:42 scans.csv
++ find sqlidb-1.1.sarif.scantables -print
+sqlidb-1.1.sarif.scantables
+sqlidb-1.1.sarif.scantables/codeflows.csv
+sqlidb-1.1.sarif.scantables/scans.csv
+sqlidb-1.1.sarif.scantables/results.csv
+sqlidb-1.1.sarif.scantables/projects.csv
++ check-flag 'sqlidb-0*'
++ ag -C1 mast-issue sqlidb-0.1.sarif sqlidb-0.1.sarif.csv sqlidb-0.1.sarif.scanspec sqlidb-0.1.sarif.scantables sqlidb-0.sarif
++ ag -C1 automationDetails sqlidb-0.1.sarif sqlidb-0.1.sarif.csv sqlidb-0.1.sarif.scanspec sqlidb-0.1.sarif.scantables sqlidb-0.sarif
+sqlidb-0.1.sarif.scantables/projects.csv:1:"id","project_name","creation_date","repo_url","primary_language","languages_analyzed","automationDetails"
+sqlidb-0.1.sarif.scantables/projects.csv:2-10761451173100907203,"vcp-no-uri","1970-01-01","vcp-no-uri","unknown","unknown","no-value-for-ad"
++ check-flag 'sqlidb-1.1*'
++ ag -C1 mast-issue sqlidb-1.1.sarif sqlidb-1.1.sarif.csv sqlidb-1.1.sarif.scanspec sqlidb-1.1.sarif.scantables
+sqlidb-1.1.sarif:240-      "automationDetails": {
+sqlidb-1.1.sarif:241:        "id": "mast-issue"
+sqlidb-1.1.sarif:242-      },
+sqlidb-1.1.sarif.scantables/projects.csv:1-"id","project_name","creation_date","repo_url","primary_language","languages_analyzed","automationDetails"
+sqlidb-1.1.sarif.scantables/projects.csv:2:16460100493790735471,"vcp-no-uri","1970-01-01","vcp-no-uri","unknown","unknown","mast-issue"
+sqlidb-1.1.sarif.scantables/projects.csv:3-
++ ag -C1 automationDetails sqlidb-1.1.sarif sqlidb-1.1.sarif.csv sqlidb-1.1.sarif.scanspec sqlidb-1.1.sarif.scantables
+sqlidb-1.1.sarif:239-      ],
+sqlidb-1.1.sarif:240:      "automationDetails": {
+sqlidb-1.1.sarif:241-        "id": "mast-issue"
+sqlidb-1.1.sarif.scantables/projects.csv:1:"id","project_name","creation_date","repo_url","primary_language","languages_analyzed","automationDetails"
+sqlidb-1.1.sarif.scantables/projects.csv:2-16460100493790735471,"vcp-no-uri","1970-01-01","vcp-no-uri","unknown","unknown","mast-issue"
