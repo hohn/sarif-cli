@@ -70,7 +70,7 @@ class ScanTablesTypes:
         "repo_url"           : pd.StringDtype(),
         "primary_language"   : pd.StringDtype(),
         "languages_analyzed" : pd.StringDtype(),
-        "automationDetails"  : pd.StringDtype(),
+        # "automationDetails"  : pd.StringDtype(),
     }
 
 #
