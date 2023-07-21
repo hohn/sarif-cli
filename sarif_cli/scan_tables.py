@@ -89,13 +89,14 @@ def joins_for_projects(basetables, external_info):
     # if the sarif does have versionControlProvenance
     if "repositoryUri" in b.project:
         repoUri = b.project.repositoryUri[0]
+        project_name = b.project.repositoryUri[0] + "-" + extra
         e.project_id = hash.hash_unique((repoUri+extra).encode())
     else:
         repoUri = "unknown"
 
     res = pd.DataFrame(data={
         "id"                 : e.project_id,
-        "project_name"       : repoUri,
+        "project_name"       : project_name,
         "creation_date"      : pd.Timestamp(0.0, unit='s'), # TODO: external info 
         "repo_url"           : repoUri, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0],
