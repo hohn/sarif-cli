@@ -1,0 +1,3 @@
+sarif_file,level,levelcode,message,extra_info
+sqlidb-v2.9.4-1.sarif,WARNING,4,Input sarif contains extra unneccesary properties.,"Extra properties: type fields: ['description', 'kind', 'precision', 'problem.severity', 'security-severity', 'sub-severity', 'tags', 'uri']"
+sqlidb-v2.9.4-1.sarif,SUCCESS,0,File successfully processed.,

@@ -2,6 +2,8 @@
 #* Following are the steps needed to build a codeql db using different versions of
 # the codeql cli
 # 
+# Some files from prior runs are found in ./data/codeql-dataflow-sql-injection/
+# 
 echo '$0: Interactive use only'
 exit 1
 
@@ -35,6 +37,7 @@ v2.9.4
 CLI_VERSION=v2.9.4
 CLI_VERSION=v2.12.7
 CLI_VERSION=v2.13.5
+CLI_VERSION=v2.14.0
 gh codeql set-version $CLI_VERSION
 
 #* Build vanilla DB
@@ -60,6 +63,7 @@ codeql pack init codeql-dataflow-sql-injection
 cp -f dataflow-sql-injection/qlpack.yml codeql-dataflow-sql-injection/
 # Add correct library dependency
 codeql pack add --dir=codeql-dataflow-sql-injection codeql/cpp-all@"$(codeql-complib cpp)"
+cat codeql-dataflow-sql-injection/qlpack.yml 
 
 #* Install packs
 cd ~/local/sarif-cli/codeql-dataflow-sql-injection
@@ -82,7 +86,7 @@ codeql database analyze                         \
 
 # Verify cli version in SARIF output
 SAVER=`jq -r '.runs |.[] |.tool.driver.semanticVersion ' sqlidb-$CLI_VERSION.sarif`
-echo $SAVER
+printf "db   %s\ncli %s\n" $SAVER $CLI_VERSION
 if [ v$SAVER != $CLI_VERSION ] ;
 then
     echo "---: codeql version inconsistency"
