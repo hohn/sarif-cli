@@ -34,6 +34,7 @@ v2.9.4
 
 CLI_VERSION=v2.9.4
 CLI_VERSION=v2.12.7
+CLI_VERSION=v2.13.5
 gh codeql set-version $CLI_VERSION
 
 #* Build vanilla DB
@@ -53,7 +54,7 @@ function codeql-complib() {
 
 # Create the qlpack file using commands:
 cd ~/local/sarif-cli
-#: Bug: drops the codeql- prefix
+# Bug: drops the codeql- prefix
 rm -fR dataflow-sql-injection
 codeql pack init codeql-dataflow-sql-injection
 cp -f dataflow-sql-injection/qlpack.yml codeql-dataflow-sql-injection/
@@ -81,6 +82,7 @@ codeql database analyze                         \
 
 # Verify cli version in SARIF output
 SAVER=`jq -r '.runs |.[] |.tool.driver.semanticVersion ' sqlidb-$CLI_VERSION.sarif`
+echo $SAVER
 if [ v$SAVER != $CLI_VERSION ] ;
 then
     echo "---: codeql version inconsistency"
@@ -101,7 +103,7 @@ EOF
 
 #* Check CSV messages for success
 cd ~/local/sarif-cli/codeql-dataflow-sql-injection 
-# head -4 sqlidb-$CLI_VERSION-1.sarif.csv 
+head -4 sqlidb-$CLI_VERSION-1.sarif.csv 
 grep -qi success sqlidb-$CLI_VERSION-1.sarif.csv || {
     echo "---: sarif-cli failure: sqlidb-$CLI_VERSION-1.sarif*"
 }
@@ -109,3 +111,11 @@ grep -qi success sqlidb-$CLI_VERSION-1.sarif.csv || {
 #* CSV output
 # ls -la sqlidb-$CLI_VERSION-1*
 # find sqlidb-$CLI_VERSION-1*.scantables -print
+
+#* Summary
+cd ~/local/sarif-cli/codeql-dataflow-sql-injection
+#** SARIF files
+ls sqlidb-v*.sarif
+#** CSV conversion info
+ls sqlidb-v2.*.sarif.csv*
+tail -2 sqlidb-v2.*.sarif.csv*
