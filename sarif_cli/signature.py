@@ -56,8 +56,6 @@ def _signature_dict(args, elem, context: Context):
     if args.typedef_signatures:
         # Give every unique struct a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
-            #cannot have leading 0 hashes later in table joins so replace now
-            #context.sig_to_typedef[signature] = str("Struct%04d" % shorthash(signature)).replace("0", "1")
             context.sig_to_typedef[signature] = "Struct%04d" % shorthash(signature)
         typedef = context.sig_to_typedef[signature]
         return typedef
