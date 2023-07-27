@@ -1,10 +1,21 @@
-#
+#!/bin/bash -e
 #* Following are the steps needed to build a codeql db using different versions of
-# the codeql cli
+# the codeql cli.
 # 
 # Some files from prior runs are found in ./data/codeql-dataflow-sql-injection/
 # 
-echo '$0: Interactive use only'
+usage="
+This script's purpose is to run the sarif-cli against SARIF files
+produced by different versions of the codeql cli.
+
+This script is intended for interactive use only.  Take one block at a time,
+run it, and check results as you go.
+
+A (subset) of this script may be automated in the future.
+"
+
+echo "$0: Interactive use only"
+echo "$usage"
 exit 1
 
 #* Use virtual environment.  See README for setup.
