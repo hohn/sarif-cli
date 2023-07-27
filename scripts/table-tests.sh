@@ -40,3 +40,12 @@ EOF
   sarif-aggregate-scans -i1 test-sas-files aggregated.scantables 
   sarif-pad-aggregate aggregated.scantables aggregated.scantables.padded
 )
+
+#* Tests for the automationDetails flag
+#** Simple run
+# This requires the tool setup, [[file:~/local/sarif-cli/README.md::Tool Setup]]
+( cd ../data/codeql-dataflow-sql-injection/ &&
+      sarif-extract-scans-runner - > /dev/null <<EOF
+sqlidb-0.sarif
+EOF
+)

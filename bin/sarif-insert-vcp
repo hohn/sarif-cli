@@ -1,0 +1,19 @@
+#!/bin/sh
+# Add the versionControlProvenance key to a SARIF file
+# usage: $0 file
+uri=vcp-no-uri
+revid=vcp-no-revid
+jq ' {"$schema" : ."$schema",
+   "version" : .version,
+   "runs" : [ .runs | .[] 
+| ( .versionControlProvenance |=
+[
+  {
+    "repositoryUri": "'$uri'",
+    "revisionId": "'$revid'"
+  }
+]
+) ]
+}
+' $1
+

@@ -82,6 +82,8 @@ def _signature_list(args, elem, context):
     if args.typedef_signatures:
         # Give every unique array a name and use a reference to it as value.
         if signature not in context.sig_to_typedef:
+            #cannot have leading 0 hashes later in table joins so replace now
+            #context.sig_to_typedef[signature] = str("Array%04d" % shorthash(signature)).replace("0", "1")
             context.sig_to_typedef[signature] = "Array%04d" % shorthash(signature)
         typedef = context.sig_to_typedef[signature]
         return typedef
@@ -252,7 +254,7 @@ def fillsig_dict(args, elem, context):
 
     if 'results' in elem.keys() and not 'automationDetails' in elem.keys():
         #want this to be blank if not present- ie no submodule info added/no sarif-category used
-        full_elem['automationDetails'] = {'id' : ""}
+        full_elem['automationDetails'] = {'id' : "no-value-for-ad"}
 
     if {'locations', 'message', 'partialFingerprints', 'ruleId',
         'ruleIndex'}.issubset(elem.keys()):

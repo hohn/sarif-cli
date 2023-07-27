@@ -115,7 +115,6 @@ def joins_for_problem(tgraph, af_0350_location):
     # 
     # Form the message dataframe (@kind problem) via joins
     # 
-
     kind_problem_1 = (
         aft(6343)
         .merge(sft(4055), how="inner",

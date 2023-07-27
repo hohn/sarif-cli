@@ -15,6 +15,10 @@
 
   The CLI versions used against development of the CLI support were: 2.6.3, 2.9.4, and 2.11.4.
 
+  Minimal tests are also run against the versions in
+  [this build script](./build-multiple-codeql-versions.sh).  Currently, those are
+  2.9.4, 2.12.7, 2.13.5, 2.14.0.
+
   The CLI sarif **MUST** contain one additional property `versionControlProvenance` - which needs to look like:
   ```
   "versionControlProvenance": [
@@ -24,6 +28,12 @@
         }
       ]
   ```
+
+  The script 
+
+      bin/sarif-insert-vcp
+
+  will add that entry to a SARIF file.
 
 # Test Setup
   This repository includes some test data (in `data`) and uses =git lfs= for storing those test files; installation steps are at
