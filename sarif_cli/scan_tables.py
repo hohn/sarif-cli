@@ -82,15 +82,19 @@ def joins_for_projects(basetables, external_info):
     """
     b = basetables; e = external_info
    
-    extra = ""
+    automationDetails = ""
     # if the sarif does have automationDetails
     if "automationDetails" in b.project:
-        extra = b.project.automationDetails[0]
+        automationDetails = b.project.automationDetails[0]
     # if the sarif does have versionControlProvenance
     if "repositoryUri" in b.project:
         repoUri = b.project.repositoryUri[0]
-        project_name = b.project.repositoryUri[0] + "-" + extra
-        e.project_id = hash.hash_unique((repoUri+extra).encode())
+        if automationDetails == "no-value-for-ad":
+            project_name = b.project.repositoryUri[0]
+        else:
+            project_name = b.project.repositoryUri[0] + "-" + automationDetails
+            
+        e.project_id = hash.hash_unique((repoUri+automationDetails).encode())
     else:
         repoUri = "unknown"
 
@@ -101,7 +105,7 @@ def joins_for_projects(basetables, external_info):
         "repo_url"           : repoUri, 
         "primary_language"   : b.project['semmle.sourceLanguage'][0],
         "languages_analyzed" : ",".join(list(b.project['semmle.sourceLanguage'])),
-        "automationDetails"  : extra,
+        "automationDetails"  : automationDetails,
     }, index=[0])
 
     # Force all column types to ensure appropriate formatting
