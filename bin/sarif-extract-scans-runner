@@ -110,6 +110,16 @@ parser.add_argument('-s', '--successful-runs', metavar='filename', type=str,
                     'new/failed entries from sarif-files.'
                     '  Default: "%(default)s"')
 
+parser.add_argument('-t', '--with-timestamps', action='store_true',
+                    help='Read names of files containing timestamp information '
+                    'following the name of the sarif source file.'
+                    'E.g., '
+                    'sarif-extract-scans-runner --with-timestamps - << EOF '
+                    'foo.sarif,timestamps.json '
+                    'EOF '
+                    'Note: spaces are NOT stripped, so foo.sarif,timestamps.json '
+                    'and foo.sarif, timestamps.json are different.'
+                    )
 
 parser.add_argument('--doc', dest='fulldoc', default=False,
                     action='store_true', 
@@ -154,7 +164,13 @@ if use_successful_runs:
         successful_runs = set()
 
 count = -1
-for path in paths:
+for path_timestamp in paths:
+    if args.with_timestamps:
+        path, t1 = path_timestamp.split(',')
+        timestamp_fname = t1.strip()
+    else:
+        path = path_timestamp
+
     count += 1
     if count > args.max_files: break
     # 
@@ -169,11 +185,17 @@ for path in paths:
         data = f.read()
         scan_id = hash.hash_unique(data)
 
-    scan_spec = {
-        "scan_id": scan_id,                        # pd.Int64Dtype()
-        "sarif_file_name": path,                   # pd.StringDtype()
-    }
-    
+    if args.with_timestamps:
+        scan_spec = {
+            "scan_id": scan_id,                        # pd.Int64Dtype()
+            "sarif_file_name": path,                   # pd.StringDtype()
+            "timestamp_file_name": timestamp_fname
+        }
+    else:
+        scan_spec = {
+            "scan_id": scan_id,                        # pd.Int64Dtype()
+            "sarif_file_name": path,                   # pd.StringDtype()
+        }
     # 
     # If using outermost output directory, create project directory:
     # (like <outer_dir>/<repositoryUri>/*.scantables)
@@ -211,7 +233,13 @@ for path in paths:
 
     scan_log_file = os.path.join(outer_dir+ path + ".scanlog")
     csv_outfile = os.path.join(outer_dir+ path)
-    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir, csv_outfile, "-f", args.input_signature],
+    if args.with_timestamps:
+        timestamp_options = ['--with-timestamps']
+    else:
+        timestamp_options = []
+    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir,
+                               csv_outfile, "-f", args.input_signature,
+                               *timestamp_options],
                               capture_output=True, text=True)
     if runstats.returncode == 0:
         print("{:6} {}".format("OK", path))

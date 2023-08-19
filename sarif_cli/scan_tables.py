@@ -116,7 +116,7 @@ def joins_for_projects(basetables, external_info):
 #
 # Scans table
 # 
-def joins_for_scans(basetables, external_info, scantables, sarif_type):
+def joins_for_scans(basetables, external_info, scantables, sarif_type, timestamps : dict):
     """ 
     Form the `scans` table for the ScanTables dataclass
     """
@@ -135,12 +135,7 @@ def joins_for_scans(basetables, external_info, scantables, sarif_type):
         "id"                   : e.scan_id,
         "commit_id"            : commit_id,
         "project_id"           : e.project_id,
-        # TODO extract real date information from somewhere external
-        "db_create_start"      : pd.Timestamp(0.0, unit='s'),
-        "db_create_stop"       : pd.Timestamp(0.0, unit='s'),
-        "scan_start_date"      : pd.Timestamp(0.0, unit='s'),
-        "scan_stop_date"       : pd.Timestamp(0.0, unit='s'),
-        # 
+        **timestamps, 
         "tool_name"            : driver_name[0],
         "tool_version"         : driver_version[0],
         "tool_query_commit_id" : pd.NA,

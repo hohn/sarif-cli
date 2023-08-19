@@ -34,6 +34,17 @@ parser.add_argument('outdir', metavar='output-dir', type=str, help='output direc
 parser.add_argument('csvout', metavar='csv-outfile', type=str, help='processing status csv output file name to use')
 parser.add_argument('-r', '--write-raw-tables', action="store_true",
                     help='Write the raw sarif tables to the output directory')
+
+parser.add_argument('-t', '--with-timestamps', action='store_true',
+                    help='Read name of files containing timestamp information '
+                    'from the scan-spec.json file.  '
+                    'The file format changes from '
+                    'e.g., '
+                    '{"scan_id": 15092319597255524458, "sarif_file_name": "sqlidb-0.1.sarif"} '
+                    'to '
+                    '{"scan_id": 15092319597255524458, "sarif_file_name": "sqlidb-0.1.sarif", timestamp_file_name: "sqlidb-0.1.timestamps"}'                    
+                    )
+
 parser.add_argument('-f','--input-signature', metavar='input-signature', type=str, default="CLI", 
                     help='Signature of the sarif, as in, where it was generated it may affect the signature.\n'
                     'Options: LGTM, CLI\n'
@@ -64,6 +75,22 @@ def load(fname):
 
 scan_spec = load(args.file)
 sarif_struct = load(scan_spec['sarif_file_name'])
+if args.with_timestamps:
+    t1 = load(scan_spec['timestamp_file_name'])
+    # TODO Remove this kludge for wrong keywords.
+    timestamps = {
+        **t1,
+        "scan_start_date" : t1["scan_start"],
+        "scan_stop_date"  : t1["scan_stop"],
+    }
+else:
+    timestamps = {
+        "db_create_start"      : pd.Timestamp(0.0, unit='s'),
+        "db_create_stop"       : pd.Timestamp(0.0, unit='s'),
+        "scan_start_date"      : pd.Timestamp(0.0, unit='s'),
+        "scan_stop_date"       : pd.Timestamp(0.0, unit='s'),
+    }
+    
 status_writer.setup_status_filenames(scan_spec['sarif_file_name'])
 
 #
@@ -189,7 +216,9 @@ scantabs.columns_to_reindex = {
 # joins for projects has to happen first as it backfills the guess about the project_id
 scantabs.projects = st.joins_for_projects(bt, external_info)
 scantabs.results = st.joins_for_results(bt, external_info)
-scantabs.scans = st.joins_for_scans(bt, external_info, scantabs, args.input_signature)
+scantabs.scans = \
+    st.joins_for_scans(bt, external_info, scantabs,
+                       args.input_signature, timestamps)
 
 #
 # Replace the remaining internal ids with snowflake ids
