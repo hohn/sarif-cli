@@ -86,7 +86,7 @@ Set up the virtual environment and install the packages:
   
   `results-log.scanlog` contains a raw log of any errors encountered while parsing the sarif and `results-log.csv` contains a summary of the scanlog contents.
 
-  ### sample usage:
+### Sample usage 1 -- no separate timestamps file
   ```
   python bin/sarif-extract-scans-runner sarif-files.txt -o <outer-level-results-directory>
   ```
@@ -96,6 +96,39 @@ Set up the virtual environment and install the packages:
   data/wxWidgets_wxWidgets__2021-11-21_16_06_30__export.sarif
   data/torvalds_linux__2021-10-21_10_07_00__export.sarif
   ```
+
+
+   When called this way, `sarif-pad-aggregate` *should* be used because it
+   will overwrite single-date timestamps with a random 1-year range.
+
+### Sample usage 2 -- with separate timestamps file
+When a separate `timestamps.json` file is available and has the form
+    
+        timestamps = {
+            "db_create_start"      : "2023-07-03T00:56:15.576222",
+            "db_create_stop"       : ...,
+            "scan_start_date"      : ...,
+            "scan_stop_date"       : ..., 
+        }
+        
+or
+
+        {
+          "db_create_start": ...,
+          "db_create_stop": ...,
+          "scan_start": ...
+          "scan_stop": ...
+        }
+   
+the runner can be called via e.g.,
+
+```sh
+sarif-extract-scans-runner --input-signature CLI --with-timestamps - <<EOF
+foo.sarif,timestamps.json
+EOF
+```
+   When called this way, `sarif-pad-aggregate` should *not* be used because it
+   will overwrite those timestamps.
 
 ## sarif-aggregate-scans
   Parses the `codeflows.csv`,`projects.csv`, `results.csv`, `scans.csv` files generated for some batch of input sarifs and creates a final set of `codeflows.csv`,`projects.csv`, `results.csv`, `scans.csv` files aggregating all of the contents across those sarif files.
@@ -108,7 +141,7 @@ Set up the virtual environment and install the packages:
 ## sarif-pad-aggregate
   **Optional** Post-fills the `scans.csv` file with more realisitic (but still fake) values for the following columns: `db_create_start`,`db_create_stop`,`scan_start_date`,`scan_stop_date`. These values are not in the input sarif and it may be beneficial to have date values near the present. Otherwise `sarif-extract-scans-runner` will have populated these columns with the value `1970-01-01`.
 
-  ### sample usage:
+### sample usage:
   ```
   python bin/sarif-pad-aggregate <combined-tables-output directory> <padded-combined-tables-output directory>
   ```
