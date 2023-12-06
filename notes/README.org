@@ -296,6 +296,24 @@ Name: automationDetails, dtype: object
     And repeat [[*Run using embedded repls][Run using embedded repls]], then
     [[*Check if =automationDetails= or its value is in output][Check if =automationDetails= or its value is in output]]
 
+* SARIF and Signatures
+
+  ‘signature’ here is e.g., struct_graph_LGTM in ./sarif_cli/signature_single.py
+
+  The signatures are those produced by codeql in the past.  They are not meant to
+  be updated frequently; they arose and are used as follows.
+  1. The SARIF standard is quite loose, with many optional fields.
+  2. For producing CSV tabular output (and for internal table processing), the
+     sarif-cli tool needed an exact signature.  Using existing SARIF files was a
+     straightforward way to get a signature.
+  3. When a SARIF file contains extra keys, a warning is issued but processing
+     continues.
+  4. When a sarif file is missing an entry that’s in the signature, a fatal error
+     is issued.
+
+  The only time you need to update the signature is when you get fatal errors —
+  there will be a detailed message about expected vs. found fields.
+
 * Footnotes
    #+HTML: </div> 
    
