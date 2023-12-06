@@ -128,7 +128,7 @@
     [32mhohn@gh-hohn [33m~/local/sarif-cli/data/codeql-dataflow-sql-injection[0m
     #+end_example
 
-*** Check if =automationDetails= or its value is in output
+*** Check if automationDetails or its value is in output
     #+BEGIN_SRC sh :session shared :results output :eval never-export
       cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection/sqlidb-1.1.sarif.scantables
       ag automationDetails | cat
@@ -278,7 +278,7 @@ Name: automationDetails, dtype: object
     to the
     : # Projects table
 
-    And repeat the [[*Check if =automationDetails= or its value is in output][Check if =automationDetails= or its value is in output]]
+    And repeat the [[*Check if automationDetails or its value is in output][Check if automationDetails or its value is in output]]
     Still missing.  Must be dropped between dataframe creation and output.
 
     Use project_name to search.
@@ -294,7 +294,7 @@ Name: automationDetails, dtype: object
     : File: sarif_cli/columns.py
 
     And repeat [[*Run using embedded repls][Run using embedded repls]], then
-    [[*Check if =automationDetails= or its value is in output][Check if =automationDetails= or its value is in output]]
+    [[*Check if automationDetails or its value is in output][Check if automationDetails or its value is in output]]
 
 * SARIF and Signatures
 
