@@ -362,8 +362,8 @@ def fillsig(args, elem, context):
         return fillsig_dict(args, elem, context)
     elif t == list:
         return fillsig_list(args, elem, context)
-    elif t in [str, int, bool]:
+    elif t in [str, int, bool, float]:
         return elem
     else:
-        raise Exception("Unknown element type")
+        raise Exception("Unknown element type", t, elem)
 
