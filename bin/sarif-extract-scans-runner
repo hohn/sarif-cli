@@ -237,10 +237,12 @@ for path_timestamp in paths:
         timestamp_options = ['--with-timestamps']
     else:
         timestamp_options = []
-    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file, output_dir,
-                               csv_outfile, "-f", args.input_signature,
-                               *timestamp_options],
+    # XX:
+    runstats = subprocess.run(['sarif-extract-scans', scan_spec_file,
+                               output_dir, csv_outfile, "-f",
+                               args.input_signature],
                               capture_output=True, text=True)
+
     if runstats.returncode == 0:
         print("{:6} {}".format("OK", path))
         if use_successful_runs:
@@ -250,10 +252,25 @@ for path_timestamp in paths:
         # log error
         with open(scan_log_file, 'w') as fp:
             fp.write(runstats.stderr)
-        # report only tail
-        print("{:6} {}".format("", "Error tail: "))
-        for t1 in runstats.stderr.split('\n')[-6:-1]:
-            print("{:6} {}".format("", t1))    
+
+        # show command for manual re-run
+        cmd = [
+            "sarif-extract-scans",
+            scan_spec_file,
+            output_dir,
+            csv_outfile,
+            "-f", args.input_signature,
+        ]
+        print("{:6} {}".format("", "Command was:"))
+        print("{:6} {}".format("", " ".join(cmd)))
+
+
+        # report only tail of stderr
+        print("{:6} {}".format("", "Error tail:"))
+        if runstats.stderr:
+            for line in runstats.stderr.splitlines()[-6:]:
+                print("{:6} {}".format("", line))
+
 
 if use_successful_runs:
     with open(args.successful_runs, 'wb') as outfile:

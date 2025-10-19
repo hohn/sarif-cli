@@ -205,9 +205,9 @@
           #+BEGIN_SRC sh :session shared :results output :eval never-export
             cd ~/local/sarif-cli/data/codeql-dataflow-sql-injection 
             sarif-extract-scans \
-                sqlidb-1.1.sarif.scanspec \
-                sqlidb-1.1.sarif.scantables \
-                sqlidb-1.1.sarif.csv \
+                sqlidb-1.sarif.scanspec \
+                sqlidb-1.sarif.scantables \
+                sqlidb-1.sarif.csv \
                 -f CLI
           #+END_SRC
 

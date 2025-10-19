@@ -1,0 +1,76 @@
+
+* issues <2025-10-18 Sat>
+** DONE 
+   CLOSED: [2025-10-18 Sat 22:34]
+
+   - State "DONE"       from "NEXT"       [2025-10-18 Sat 22:34]
+  #+BEGIN_SRC text
+    ~/work-gh/sarif-cli/data/codeql-dataflow-sql-injection]$
+    1:$ bat                 sqlidb-1.sarif.scanspec                 sqlidb-1.sarif.scantables                 sqlidb-1.sarif.csv
+    ───────┬──────────────────────────────────────────────────────────────────────────────────────────────────
+           │ File: sqlidb-1.sarif.scanspec
+    ───────┼──────────────────────────────────────────────────────────────────────────────────────────────────
+       1   │ {"scan_id": 12314655876769447717, "sarif_file_name": "sqlidb-1.sarif"}
+    ───────┴──────────────────────────────────────────────────────────────────────────────────────────────────
+    [bat error]: 'sqlidb-1.sarif.scantables' is a directory.
+    ───────┬──────────────────────────────────────────────────────────────────────────────────────────────────
+           │ File: sqlidb-1.sarif.csv
+    ───────┼──────────────────────────────────────────────────────────────────────────────────────────────────
+       1   │ sarif_file,level,levelcode,message,extra_info
+       2   │ sqlidb-1.sarif,WARNING,2,Input sarif is missing neccesary properties.,"Missing: {'newlineSequence
+           │ s', 'versionControlProvenance'}, "
+    ───────┴──────────────────────────────────────────────────────────────────────────────────────────────────
+    (.venv-m325) (base) [hohn@m325 ~/work-gh/sarif-cli/data/codeql-dataflow-sql-injection]$
+  #+END_SRC
+
+  sarif_file,level,levelcode,message,extra_info
+  sqlidb-1.sarif,WARNING,2,Input sarif is missing neccesary properties.,"Missing:
+  {'newlineSequences', 'versionControlProvenance'}
+
+  see
+
+  File: ./bin/sarif-insert-vcp
+   2  11 # Add the versionControlProvenance key to a SARIF file
+   9   6 | ( .versionControlProvenance |=
+
+  File: ./scripts/test-vcp.sh
+  21  15     #* Insert versionControlProvenance
+
+
+  o  The CLI sarif **MUST** contain one additional property `versionControlProvenance` - which needs to look like:
+  ```
+  "versionControlProvenance": [
+        {
+          "repositoryUri": "https://github.com/testorg/testrepo.git",
+          "revisionId": "testsha"
+        }
+      ]
+  ```
+
+  The script 
+
+      bin/sarif-insert-vcp
+      [[file:~/work-gh/sarif-cli/bin/sarif-insert-vcp::uri=vcp-no-uri]]
+
+  will add that entry to a SARIF file.
+
+
+  Also,
+    ./sarif_cli/signature.py:308:        # Ensure newlineSequences is present when versionControlProvenance is
+    ./sarif_cli/signature.py:309:        full_elem['newlineSequences'] = elem.get('newlineSequences', dummy_newlineSequences)
+  
+  So:
+  - adding versionControlProvenance first will add newlineSequences later also
+
+  
+** TODO sarif-cli type error
+   #+BEGIN_SRC text
+     ~/work-gh/sarif-cli/data/codeql-dataflow-sql-injection]$
+     0:$ less sqlidb-1.1.sarif.scanlog
+
+       ...
+       File "/Users/hohn/work-gh/sarif-cli/.venv-m325/lib/python3.11/site-packages/pandas/core/arrays/datetimes.py", line 734, in astype
+         raise TypeError(
+     TypeError: Casting to unit-less dtype 'datetime64' is not supported. Pass e.g. 'datetime64[ns]' instead.
+
+   #+END_SRC

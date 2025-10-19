@@ -1,0 +1,67 @@
+* sarif-cli quickstart
+  Set up the virtual environment and install the packages:
+  #+BEGIN_SRC sh 
+    cd ~/work-gh/sarif-cli/
+
+    # set up virtual environment
+    python3 -m venv .venv
+    . .venv/bin/activate
+
+    # Use requirementsDEV.txt 
+    python -m pip install -r requirementsDEV.txt
+
+    # install scripts
+    pip install -e .
+
+    # force symlinks for development
+    rm -f "$VIRTUAL_ENV/bin/sarif-"*
+    ln -sf "$PWD/bin/sarif-"* "$VIRTUAL_ENV/bin/"
+
+  #+END_SRC
+
+  Run SARIF extraction for one test file and inspect results.
+  This assumes you are in the above virtual environment where all =sarif-*= tools
+  are on =$PATH=.
+
+  #+BEGIN_SRC sh 
+    cd ~/work-gh/sarif-cli/data/codeql-dataflow-sql-injection
+
+    # ---------------------------------------------------------------------
+    # 1. Set base name of the original SARIF file (without extension)
+    # ---------------------------------------------------------------------
+    orig="sqlidb-1"
+
+    # ---------------------------------------------------------------------
+    # 2. Remove any stale output from previous runs
+    # ---------------------------------------------------------------------
+    rm -fR -- "${orig}.1.sarif."*
+
+    # ---------------------------------------------------------------------
+    # 3. Ensure versionControlProvenance field is present
+    # ---------------------------------------------------------------------
+    sarif-insert-vcp "${orig}.sarif" > "${orig}.1.sarif"
+
+    # ---------------------------------------------------------------------
+    # 4. Run the converter (CLI input signature)
+    #     - Logs are written only if errors occur.
+    # ---------------------------------------------------------------------
+    sarif-extract-scans-runner --input-signature CLI - > /dev/null <<EOF
+    ${orig}.1.sarif
+    EOF
+
+    # ---------------------------------------------------------------------
+    # 5. If errors occurred, show the scan log.
+    #    The log lists the exact commands that can be re-run manually under pdb.
+    # ---------------------------------------------------------------------
+    if [[ -f "${orig}.1.sarif.scanlog" ]]; then
+        echo "Conversion errors logged in ${orig}.1.sarif.scanlog"
+        cat "${orig}.1.sarif.scanlog"
+    fi
+
+    # ---------------------------------------------------------------------
+    # 6. Examine results (converted SARIF, logs, etc.)
+    # ---------------------------------------------------------------------
+    ls -l "${orig}.1.sarif"*
+  #+END_SRC
+  For interactive examination / debugging, see [[file:README.org::*Run using embedded repls][Run using embedded repls]]
+  

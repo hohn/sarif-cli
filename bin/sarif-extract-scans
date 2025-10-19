@@ -50,7 +50,24 @@ parser.add_argument('-f','--input-signature', metavar='input-signature', type=st
                     'Options: LGTM, CLI\n'
                     'If current represented signatures are not sufficient, view signature_single.py for how to support further signatures.'
                     '  Default: "%(default)s"')
+
+parser.add_argument("-d", "--debug", action="store_true",
+                    help="Run inside IPython with --pdb for post-mortem debugging")
+
 args = parser.parse_args()
+
+
+import sys, pdb, traceback
+
+def debug_excepthook(type, value, tb):
+    traceback.print_exception(type, value, tb)
+    print("\nEntering post-mortem debugger...\n")
+    pdb.post_mortem(tb)
+
+# XX:
+if args.debug:
+    sys.excepthook = debug_excepthook
+
 
 if args.input_signature not in ["LGTM","CLI"]:
     print("Unsupported sarif signature requested.")

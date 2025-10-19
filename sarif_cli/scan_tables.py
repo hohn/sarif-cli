@@ -5,6 +5,7 @@ from . import snowflake_id
 
 import logging
 import numpy
+import numpy as np
 import pandas as pd
 import re
 from sarif_cli import hash
@@ -108,8 +109,10 @@ def joins_for_projects(basetables, external_info):
         "automationDetails"  : automationDetails,
     }, index=[0])
 
-    # Force all column types to ensure appropriate formatting
-    res1 = res.astype(ScanTablesTypes.projects).reset_index(drop=True)
+    # 
+    # - Now (not before), "creation_date" needs type numpy.dtype('datetime64[ns]')
+    # - Force all column types to ensure appropriate formatting
+    res1 = normalize_dataframe_types(res, ScanTablesTypes.projects)
     # 
     return res1
 
@@ -144,8 +147,32 @@ def joins_for_scans(basetables, external_info, scantables, sarif_type, timestamp
         "rules_count"          : len(b.rules['id'].unique()),
     },index=[0])
     # Force all column types to ensure correct writing and type checks on reading.
-    res1 = res.astype(ScanTablesTypes.scans).reset_index(drop=True)
+    res1 = normalize_dataframe_types(res, ScanTablesTypes.scans)
     return res1
+
+
+def normalize_dataframe_types(df: pd.DataFrame, type_map: dict) -> pd.DataFrame:
+    """
+    Normalize dtypes in a DataFrame according to a given type map.
+
+    - Converts any ambiguous datetime64 types (e.g. 'M', '<M8') to 'datetime64[ns]'
+    - Coerces corresponding columns with pd.to_datetime()
+    - Returns a new DataFrame with types enforced and index reset
+    """
+    fixed_types = dict(type_map)  # shallow copy to avoid mutating globals
+
+    for col, dtype in fixed_types.items():
+        dtype_str = str(dtype)
+
+        # Normalize datetime-like dtypes
+        if dtype_str.startswith("datetime64") or dtype_str.startswith("<M8") or dtype_str == "M8":
+            fixed_types[col] = np.dtype("datetime64[ns]")
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors="coerce", utc=False)
+
+    # Enforce all column types consistently
+    df1 = df.astype(fixed_types).reset_index(drop=True)
+    return df1
 
 # 
 # Results table
@@ -175,28 +202,66 @@ def joins_for_results(basetables, external_info):
         res = tables[0]
         
     # Force all column types to ensure appropriate formatting
-    res1 = res.astype(ScanTablesTypes.results).reset_index(drop=True)
+    res1 = normalize_dataframe_types(res, ScanTablesTypes.results)    
     return res1
 
-#id as primary key
+def _lookup_rule_value(basetable, rule_id, column_name, join_tags=False):
+    """
+    Look up a value in basetable.rules by id == rule_id.
+    If join_tags=True, concatenate all tag_text values with '_'.
+    """
+    df = basetable.rules
+
+    # Defensive check: avoid duplicate 'id' rows or missing entries
+    match = df.loc[df["id"] == rule_id, column_name]
+
+    if match.empty:
+        return None
+
+    if join_tags:
+        return match.str.cat(sep="_")
+
+    # For scalar columns, pick first entry safely
+    return match.head(1).item()
+
+# id as primary key
 def _populate_from_rule_table_code_flow_tag_text(basetable, flowtable):
-    val = flowtable.rule_id.values[0]
-    return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+    return _lookup_rule_value(basetable, flowtable.rule_id.values[0], "tag_text", join_tags=True)
 
-#id as primary key
+# id as primary key
 def _populate_from_rule_table_tag_text(basetable, i):
-    val = basetable.kind_problem.rule_id[i]
-    return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+    return _lookup_rule_value(basetable, basetable.kind_problem.rule_id[i], "tag_text", join_tags=True)
 
-#id as primary key
+# id as primary key
 def _populate_from_rule_table(column_name, basetable, i):
-    val = basetable.kind_problem.rule_id[i]
-    return basetable.rules.query("id == @val")[column_name].head(1).item()
+    return _lookup_rule_value(basetable, basetable.kind_problem.rule_id[i], column_name)
 
-#id as primary key
+# id as primary key
 def _populate_from_rule_table_code_flow(column_name, basetable, flowtable):
-    val = flowtable.rule_id.values[0]
-    return basetable.rules.query("id == @val")[column_name].head(1).item()
+    return _lookup_rule_value(basetable, flowtable.rule_id.values[0], column_name)
+
+
+# #id as primary key
+# def _populate_from_rule_table_code_flow_tag_text(basetable, flowtable):
+#     val = flowtable.rule_id.values[0]
+#     return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+
+# #id as primary key
+# def _populate_from_rule_table_tag_text(basetable, i):
+#     val = basetable.kind_problem.rule_id[i]
+#     return basetable.rules.query("id == @val")["tag_text"].str.cat(sep='_')
+
+# #id as primary key
+# def _populate_from_rule_table(column_name, basetable, i):
+#     val = basetable.kind_problem.rule_id[i]
+#     # return basetable.rules.query("id == @val")[column_name].head(1).item()
+#     return basetable.rules.loc[basetable.rules["id"] == val, column_name].head(1).item()
+
+# #id as primary key
+# def _populate_from_rule_table_code_flow(column_name, basetable, flowtable):
+#     val = flowtable.rule_id.values[0]
+#     # return basetable.rules.query("id == @val")[column_name].head(1).item()
+#     return basetable.rules.loc[basetable.rules["id"] == val, column_name].head(1).item()
 
 def _results_from_kind_problem(basetables, external_info):
     b = basetables; e = external_info
