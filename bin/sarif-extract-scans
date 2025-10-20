@@ -2,7 +2,8 @@
 """ Extract scan data from multiple sarif files in table form.
 """
 from dataclasses import dataclass
-from sarif_cli import signature, signature_single, signature_single_CLI
+from sarif_cli import signature, signature_single, signature_single_CLI, \
+    signature_table_joins_CLI
 from sarif_cli import typegraph
 from sarif_cli import snowflake_id
 from sarif_cli import status_writer
@@ -128,9 +129,12 @@ if args.input_signature == "LGTM":
     signature_to_use = signature_single.struct_graph_LGTM
     start_node = signature_single.start_node_LGTM
 else:
-    #signature_to_use = signature_single.struct_graph_CLI
-    signature_to_use = signature_single_CLI.struct_graph_CLI
+    # #signature_to_use = signature_single.struct_graph_CLI
+    # signature_to_use = signature_single_CLI.struct_graph_CLI
+    # start_node = signature_single_CLI.start_node_CLI
+    signature_to_use = signature_table_joins_CLI.struct_graph_CLI
     start_node = signature_single_CLI.start_node_CLI
+
 #
 # Use reference type graph (signature) to traverse sarif and attach values to tables
 try:
