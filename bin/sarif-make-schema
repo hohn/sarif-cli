@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-"""
-Create SQLite schema for SARIF importer.
-"""
+"""Create SQLite schema for SARIF importer."""
 import sqlite3, sys
 
 schemas = {
-"runs": """CREATE TABLE IF NOT EXISTS runs (
+"runs": """CREATE TABLE IF NOT EXISTS runs(
   run_id TEXT PRIMARY KEY,
   timestamp TIMESTAMP,
   tool TEXT,
   version TEXT,
-  exit_code INTEGER
-);""",
-"results": """CREATE TABLE IF NOT EXISTS results (
+  exit_code INTEGER);""",
+"results": """CREATE TABLE IF NOT EXISTS results(
   run_id TEXT,
   rule_id TEXT,
   severity TEXT,
@@ -22,18 +19,16 @@ schemas = {
   line_end INTEGER,
   column_start INTEGER,
   column_end INTEGER,
-  PRIMARY KEY (run_id, rule_id, file_path, line_start)
-);""",
-"alerts": """CREATE TABLE IF NOT EXISTS alerts (
+  PRIMARY KEY(run_id,rule_id,file_path,line_start));""",
+"alerts": """CREATE TABLE IF NOT EXISTS alerts(
   alert_id TEXT PRIMARY KEY,
   run_id TEXT,
   rule_id TEXT,
   kind TEXT,
   file_path TEXT,
   message TEXT,
-  severity TEXT
-);""",
-"referenced_source_regions": """CREATE TABLE IF NOT EXISTS referenced_source_regions (
+  severity TEXT);""",
+"referenced_source_regions": """CREATE TABLE IF NOT EXISTS referenced_source_regions(
   region_id TEXT PRIMARY KEY,
   result_id TEXT,
   file_path TEXT,
@@ -42,22 +37,18 @@ schemas = {
   start_column INTEGER,
   end_column INTEGER,
   snippet TEXT,
-  source_hash TEXT
-);"""
+  source_hash TEXT);"""
 }
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv)<2:
         print("Usage: sarif-make-schema dbfile")
         sys.exit(1)
-    db = sys.argv[1]
-    con = sqlite3.connect(db)
-    cur = con.cursor()
-    for name, sql in schemas.items():
-        cur.executescript(sql)
-    con.commit()
-    con.close()
-    print(f"Created/verified schema in {db}")
+    db=sys.argv[1]
+    con=sqlite3.connect(db)
+    cur=con.cursor()
+    for sql in schemas.values(): cur.executescript(sql)
+    con.commit(); con.close()
+    print(f"Schema ready in {db}")
 
-if __name__ == "__main__":
-    main()
+if __name__=="__main__": main()
