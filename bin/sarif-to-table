@@ -5,7 +5,6 @@ import sarif_cli.traverse as S
 import sys
 import sqlite3
 import hashlib
-import json as pyjson
 
 # --------------------------------------------------------------------
 # Argument parsing
@@ -39,21 +38,16 @@ if not S.is_sarif_struct(sarif_struct):
 # Compute unique id (tool version, git commit, date)
 # --------------------------------------------------------------------
 def compute_unique_id(sarif_struct, runi, sarif_file):
-    try:
-        tool_version = S.get(sarif_struct, 'runs', runi, 'tool', 'driver', 'version')
-    except Exception:
-        tool_version = None
-    try:
-        revision_id = S.get(sarif_struct, 'runs', runi, 'versionControlProvenance', 0, 'revisionId')
-    except Exception:
-        revision_id = None
-    try:
-        start_time = S.get(sarif_struct, 'runs', runi, 'invocations', 0, 'startTimeUtc')
-    except Exception:
-        start_time = None
+    def _safeget(*path):
+        try:
+            return S.get(*path)
+        except Exception:
+            return None
+    tool_version = _safeget(sarif_struct, 'runs', runi, 'tool', 'driver', 'version')
+    revision_id  = _safeget(sarif_struct, 'runs', runi, 'versionControlProvenance', 0, 'revisionId')
+    start_time   = _safeget(sarif_struct, 'runs', runi, 'invocations', 0, 'startTimeUtc')
     seed = f"{tool_version or ''}|{revision_id or ''}|{start_time or ''}|{sarif_file}"
-    h = hashlib.sha1(seed.encode('utf-8')).hexdigest()
-    return h
+    return hashlib.sha1(seed.encode('utf-8')).hexdigest()
 
 # --------------------------------------------------------------------
 # Define keep_with_context inside S
@@ -79,13 +73,15 @@ def _init_db(dbfile):
         line_num INTEGER,
         msg_type TEXT,
         message TEXT,
-        source_line TEXT
+        source_line TEXT,
+        rule_id TEXT
     );
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_artifact_uri ON sarif_results(artifact_uri);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_runi_resi ON sarif_results(runi, resi);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_msg_type ON sarif_results(msg_type);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_unique_id ON sarif_results(unique_id);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_rule_id ON sarif_results(rule_id);")
     conn.commit()
     return conn
 
@@ -101,10 +97,10 @@ def _flush_buffer():
     cur.executemany("""
         INSERT INTO sarif_results (
             sarif_file, unique_id, runi, resi, codefi, threadi, loci, related_index,
-            artifact_uri, l1, c1, l2, c2, line_num, msg_type, message, source_line
+            artifact_uri, l1, c1, l2, c2, line_num, msg_type, message, source_line, rule_id
         ) VALUES (
             :sarif_file, :unique_id, :runi, :resi, :codefi, :threadi, :loci, :related_index,
-            :artifact_uri, :l1, :c1, :l2, :c2, :line_num, :msg_type, :message, :source_line
+            :artifact_uri, :l1, :c1, :l2, :c2, :line_num, :msg_type, :message, :source_line, :rule_id
         )
     """, _buffer)
     _conn.commit()
@@ -131,6 +127,13 @@ for runi in S.indices(sarif_struct, 'runs'):
         continue
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
         result = S.get(sarif_struct, 'runs', runi, 'results', resi)
+        rule_id = result.get("ruleId")
+        if not rule_id:
+            try:
+                rule_id = S.get(result, "rule", "id")
+            except Exception:
+                rule_id = None
+
         # ---------------- Locations (non-path problems)
         if 'locations' in result:
             message, artifact, region = S.get_location_message_info(result)
@@ -147,7 +150,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                 "artifact_uri": artifact.get('uri', ''),
                 "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                 "line_num": None, "msg_type": "RESULT",
-                "message": message, "source_line": ""
+                "message": message, "source_line": "", "rule_id": rule_id
             })
 
             if region != S.WholeFile and args.list_source:
@@ -161,7 +164,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                         "artifact_uri": artifact.get('uri', ''),
                         "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                         "line_num": line_num, "msg_type": "SOURCE",
-                        "message": message, "source_line": line
+                        "message": message, "source_line": line, "rule_id": rule_id
                     })
 
             if args.related_locations:
@@ -178,7 +181,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 "loci": None, "related_index": relo_index,
                                 "artifact_uri": "", "l1": -1, "c1": -1, "l2": -1, "c2": -1,
                                 "line_num": None, "msg_type": "REFERENCE",
-                                "message": message, "source_line": ""
+                                "message": message, "source_line": "", "rule_id": rule_id
                             })
                         else:
                             if region == S.WholeFile:
@@ -195,7 +198,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 "artifact_uri": artifact.get('uri', ''),
                                 "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                                 "line_num": None, "msg_type": "REFERENCE",
-                                "message": message, "source_line": ""
+                                "message": message, "source_line": "", "rule_id": rule_id
                             })
                             if args.list_source:
                                 lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
@@ -209,7 +212,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                         "artifact_uri": artifact.get('uri', ''),
                                         "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                                         "line_num": line_num, "msg_type": "SOURCE",
-                                        "message": message, "source_line": line
+                                        "message": message, "source_line": line, "rule_id": rule_id
                                     })
 
         # ---------------- CodeFlows (path problems)
@@ -224,7 +227,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                     "threadi": None, "loci": None, "related_index": None,
                     "artifact_uri": "", "l1": -1, "c1": -1, "l2": -1, "c2": -1,
                     "line_num": None, "msg_type": "PATH",
-                    "message": "", "source_line": ""
+                    "message": "", "source_line": "", "rule_id": rule_id
                 })
 
                 for threadi in S.indices(codeFlow, 'threadFlows'):
@@ -253,7 +256,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 "loci": loci, "related_index": None,
                                 "artifact_uri": "", "l1": -1, "c1": -1, "l2": -1, "c2": -1,
                                 "line_num": None, "msg_type": "FLOW_STEP",
-                                "message": message, "source_line": ""
+                                "message": message, "source_line": "", "rule_id": rule_id
                             })
                         else:
                             if region == S.WholeFile:
@@ -270,7 +273,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                 "artifact_uri": artifact.get('uri', ''),
                                 "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                                 "line_num": None, "msg_type": "FLOW_STEP",
-                                "message": message, "source_line": ""
+                                "message": message, "source_line": "", "rule_id": rule_id
                             })
                             if args.list_source:
                                 lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
@@ -284,7 +287,7 @@ for runi in S.indices(sarif_struct, 'runs'):
                                         "artifact_uri": artifact.get('uri', ''),
                                         "l1": l1, "c1": c1, "l2": l2, "c2": c2,
                                         "line_num": line_num, "msg_type": "SOURCE",
-                                        "message": message, "source_line": line
+                                        "message": message, "source_line": line, "rule_id": rule_id
                                     })
                 last_codeFlow = codeFlow
         S.msg("\n")
@@ -294,5 +297,5 @@ for runi in S.indices(sarif_struct, 'runs'):
             "codefi": None, "threadi": None, "loci": None, "related_index": None,
             "artifact_uri": "", "l1": -1, "c1": -1, "l2": -1, "c2": -1,
             "line_num": None, "msg_type": "NEWLINE",
-            "message": "", "source_line": ""
+            "message": "", "source_line": "", "rule_id": rule_id
         })
