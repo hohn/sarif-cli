@@ -122,9 +122,13 @@ atexit.register(_flush_buffer)
 # --------------------------------------------------------------------
 for runi in S.indices(sarif_struct, 'runs'):
     unique_id = compute_unique_id(sarif_struct, runi, args.file)
-    num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
-    if num_results == 0:
+    run_obj = S.get(sarif_struct, 'runs', runi)
+    results = run_obj.get('results', [])
+    if not results:
+        S.dbg(f"Skipping {args.file} run {runi}: no results key\n")
         continue
+    num_results = len(results)
+
     for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
         result = S.get(sarif_struct, 'runs', runi, 'results', resi)
         rule_id = result.get("ruleId")
