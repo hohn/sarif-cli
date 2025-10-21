@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+import argparse
+import json
+import sarif_cli.traverse as S
+import sys
+
+parser = argparse.ArgumentParser(description='summary of results')
+parser.add_argument('file', metavar='sarif-file', type=str, help='input file, - for stdin')
+parser.add_argument('-s', '--list-source', metavar='srcroot', type=str,
+                    help='list source snippets using srcroot as sarif SRCROOT')
+parser.add_argument('-r', '--related-locations', action="store_true",
+                    help='list related locations like "hides  "')
+parser.add_argument('-e', '--endpoints-only', action="store_true",
+                    help='only list source and sink, dropping the path.  Identical, successive source/sink pairs are combined')
+
+args = parser.parse_args()
+with open(args.file, 'r') if args.file != '-' else sys.stdin as fp:
+    sarif_struct = json.load(fp)
+
+if not S.is_sarif_struct(sarif_struct):
+    S.msg("ERROR: invalid json contents in %s\n" % (args.file))
+    S.dbg("invalid json contents in %s\n" % (args.file))
+    sys.exit(0)                 # No failure, just a warning
+
+for runi in S.indices(sarif_struct, 'runs'):
+    num_results = len(S.get(sarif_struct, 'runs', runi, 'results'))
+    if num_results == 0:
+        continue
+    for resi in S.indices(sarif_struct, 'runs', runi, 'results'):
+        result = S.get(sarif_struct, 'runs', runi, 'results', resi)
+        if 'locations' in result:
+            message, artifact, region = S.get_location_message_info(result)
+            if region == S.WholeFile:
+                l1, c1, l2, c2 = -1, -1, -1, -1
+            else:
+                l1, c1, l2, c2 = S.lineinfo(region)
+            filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+            S.msg("RESULT: %s: %s\n" % (filepath, message))
+
+            if region != S.WholeFile and args.list_source:
+                lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                for line, line_num in zip(lines, range(l1, l2 + 1)):
+                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+
+            if args.related_locations:
+                relatedLocations = result.get('relatedLocations', None)
+                if type(relatedLocations) == list:
+                    for relo in relatedLocations:
+                        message, artifact, region = S.get_relatedlocation_message_info(relo)
+                        if artifact == S.NoFile:
+                            S.msg("REFERENCE: %s: %s\n" % ("<NoFile>", message))
+                        else:
+                            if region == S.WholeFile:
+                                l1, c1, l2, c2 = -1, -1, -1, -1
+                            else:
+                                l1, c1, l2, c2 = S.lineinfo(region)
+                            filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+                            S.msg("REFERENCE: %s: %s\n" % (filepath, message))
+                            if args.list_source:
+                                lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                                for line, line_num in zip(lines, range(l1, l2 + 1)):
+                                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+
+        if 'codeFlows' in result:
+            last_codeFlow = None
+            for codefi in S.indices(result, 'codeFlows'):
+                codeFlow = S.get(result, 'codeFlows', codefi)
+                S.msg("PATH %d\n" % codefi)
+
+                for threadi in S.indices(codeFlow, 'threadFlows'):
+                    threadFlow = S.get(codeFlow, 'threadFlows', threadi)
+
+                    if args.endpoints_only:
+                        t1 = S.indices(threadFlow, 'locations')
+                        location_range = [t1[0], t1[-1]]
+                        if (last_codeFlow and
+                            (S.get(last_codeFlow, 'threadFlows', threadi, 'locations', 0) ==
+                             S.get(codeFlow, 'threadFlows', threadi, 'locations', 0)) and
+                            (S.get(last_codeFlow, 'threadFlows', threadi, 'locations', -1) ==
+                             S.get(codeFlow, 'threadFlows', threadi, 'locations', -1))):
+                            continue
+                    else:
+                        location_range = S.indices(threadFlow, 'locations')
+
+                    for loci in location_range:
+                        location = S.get(threadFlow, 'locations', loci, 'location')
+                        message, artifact, region = S.get_relatedlocation_message_info(location)
+                        if artifact == S.NoFile:
+                            S.msg("FLOW STEP %d: %s: %s\n" % (loci, "<NoFile>", message))
+                        else:
+                            if region == S.WholeFile:
+                                l1, c1, l2, c2 = -1, -1, -1, -1
+                            else:
+                                l1, c1, l2, c2 = S.lineinfo(region)
+                            filepath = "%s:%d:%d:%d:%d" % (artifact['uri'], l1, c1, l2, c2)
+                            S.msg("FLOW STEP %d: %s: %s\n" % (loci, filepath, message))
+                            if args.list_source:
+                                lines = S.load_lines(args.list_source, artifact['uri'], l1, l2)
+                                for line, line_num in zip(lines, range(l1, l2 + 1)):
+                                    S.display_underlined(l1, c1, l2, c2, line, line_num)
+                last_codeFlow = codeFlow
+        S.msg("\n")
