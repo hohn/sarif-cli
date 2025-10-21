@@ -16,7 +16,7 @@
        135:    (   'Struct3739',
        147:    ('Array6785', ('array', (0, 'Struct3739')))]
      #+END_SRC
-     1. First update the signature.  The file [[./sarif_cli/signature_multi.py]] has
+     1. First update the signature.  The file [[../sarif_cli/signature_multi.py]] has
         instructions for updating (or creating) a typegraph.
 
         The update from commit 0f070a6ae to 0f070a6ae+1 introduces the changes

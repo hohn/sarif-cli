@@ -14,8 +14,9 @@
     pip install -e .
 
     # force symlinks for development
-    rm -f "$VIRTUAL_ENV/bin/sarif-"*
-    ln -sf "$PWD/bin/sarif-"* "$VIRTUAL_ENV/bin/"
+    [ x"$VIRTUAL_ENV" != x ] &&\
+        rm -f "$VIRTUAL_ENV/bin/sarif-"* && \
+        ( cd ~/work-gh/sarif-cli/ && ln -sf "$PWD/bin/sarif-"* "$VIRTUAL_ENV/bin/")
 
   #+END_SRC
 
