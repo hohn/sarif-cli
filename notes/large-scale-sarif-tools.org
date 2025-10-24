@@ -27,7 +27,8 @@
         ~/work-gh/sarif-cli/.venv-gh/bin/
    #+END_SRC
 
-** WIP: faster json reader
+** Faster json reader, python
+   This uses yyjson for faster reading, but processing is still slow.
    #+BEGIN_SRC sh 
      pip install yyjson
 
