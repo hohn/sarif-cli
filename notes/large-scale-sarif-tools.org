@@ -11,7 +11,7 @@
     elements. Requires building, but is very fast.
 
 
-** building
+** building cpp
    #+BEGIN_SRC sh 
      brew install simdjson
 
@@ -27,3 +27,22 @@
         ~/work-gh/sarif-cli/.venv-gh/bin/
    #+END_SRC
 
+** WIP: faster json reader
+   #+BEGIN_SRC sh 
+     pip install yyjson
+
+     ln -s ~/work-gh/sarif-cli/bin/sarif-size-yy \
+        ~/work-gh/sarif-cli/.venv-gh/bin/
+
+     0:$ sarif-size-yy torvalds_linux__2021-10-21_10_07_00__export.sarif |head
+         547428  root
+         547311  root.runs
+         435433  root.runs[1]
+         398880  root.runs[1].results
+         111563  root.runs[0]
+         100691  root.runs[0].results
+          29496  root.runs[1].artifacts
+           7461  root.runs[0].tool
+           7455  root.runs[0].tool.driver
+           7398  root.runs[0].tool.driver.rules
+   #+END_SRC
