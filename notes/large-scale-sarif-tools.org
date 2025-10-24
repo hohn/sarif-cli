@@ -136,3 +136,23 @@
      user	0m8.619s
      sys	0m1.240s
    #+END_SRC
+** Faster json reader and processor, C, speed improvements
+   #+BEGIN_SRC text
+     0:$ time sarif-size-c firefox-db-cpp-scan-bm-none.formatted.sarif |head
+     2717304111  root
+             45  root.$schema
+              5  root.version
+     2717304043  root.runs
+     2717304043  root.runs[0]
+          41074  root.runs[0].tool
+          40030  root.runs[0].tool.driver
+           1028  root.runs[0].tool.extensions
+     2713767731  root.runs[0].invocations
+     2713767731  root.runs[0].invocations[0]
+
+     real	0m2.652s
+     user	0m1.714s
+     sys	0m0.933s
+   #+END_SRC
+
+   

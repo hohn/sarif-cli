@@ -21,3 +21,5 @@ data/codeql-dataflow-sql-injection/sqlidb-*
 
 # MacOS index files
 .DS_Store
+sarif-size-c
+sarif-size-cpp
