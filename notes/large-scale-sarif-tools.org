@@ -155,7 +155,26 @@
      sys	0m0.933s
    #+END_SRC
 
-** TODO Faster json reader and processor, rust
+** Faster json reader and processor, rust
+   setup
+   #+BEGIN_SRC sh 
+     # 
+     brew install rust
+
+     # prepare project
+     cargo new sarif-size
+     cd sarif-size
+
+     # edit, 
+     # track files
+     git add src/main.rs
+     git add Cargo.*
+
+     # build
+     cargo build --release
+
+   #+END_SRC
+
    #+BEGIN_SRC text
      0:$ time ./target/release/sarif-size ~/work-gh/sarif-cli/data/firefox-db-cpp-scan-bm-none.formatted.sarif 3
      2717304111  root
