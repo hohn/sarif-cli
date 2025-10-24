@@ -47,3 +47,92 @@
            7455  root.runs[0].tool.driver
            7398  root.runs[0].tool.driver.rules
    #+END_SRC
+
+** Faster json reader and processor, C
+   install library, compile, quick check
+   #+BEGIN_SRC sh 
+     # install library
+     brew install yyjson
+
+     # compile
+     cd ~/work-gh/sarif-cli/src/c
+     gcc -I/opt/homebrew/include -L/opt/homebrew/lib -lyyjson -O3 \
+         sarif-size.c -o sarif-size-c
+
+     # link into venv for development
+     ln -s ~/work-gh/sarif-cli/src/c/sarif-size-c \
+        ~/work-gh/sarif-cli/.venv-gh/bin/
+
+     # quick check
+     cd ~/work-gh/sarif-cli/data
+     sarif-size-c torvalds_linux__2021-10-21_10_07_00__export.sarif |head
+     # 547428  root
+     # 547311  root.runs
+     # 435433  root.runs[1]
+     # 398880  root.runs[1].results
+     # 111563  root.runs[0]
+     # 100691  root.runs[0].results
+     #  29496  root.runs[1].artifacts
+     #   7461  root.runs[0].tool
+     #   7455  root.runs[0].tool.driver
+     #   7398  root.runs[0].tool.driver.rules
+   #+END_SRC
+
+   large file test
+   #+BEGIN_SRC text
+     0:$ time sarif-size-c firefox-db-cpp-scan-bm-none.formatted.sarif
+     2717304111  root
+     2717304043  root.runs
+     2717304043  root.runs[0]
+     2713767731  root.runs[0].invocations[0]
+     2713767731  root.runs[0].invocations
+     2713767678  root.runs[0].invocations[0].toolExecutionNotifications
+        3219283  root.runs[0].artifacts
+         248867  root.runs[0].results
+          87135  root.runs[0].invocations[0].toolExecutionNotifications[1414687]
+          83243  root.runs[0].invocations[0].toolExecutionNotifications[1414674]
+          80703  root.runs[0].invocations[0].toolExecutionNotifications[1411663]
+          78901  root.runs[0].invocations[0].toolExecutionNotifications[1414634]
+          77779  root.runs[0].invocations[0].toolExecutionNotifications[1414672]
+          77583  root.runs[0].invocations[0].toolExecutionNotifications[1411648]
+          77409  root.runs[0].invocations[0].toolExecutionNotifications[1414703]
+          77065  root.runs[0].invocations[0].toolExecutionNotifications[1414717]
+          76713  root.runs[0].invocations[0].toolExecutionNotifications[1414776]
+          76369  root.runs[0].invocations[0].toolExecutionNotifications[1414788]
+          76105  root.runs[0].invocations[0].toolExecutionNotifications[1414800]
+          75742  root.runs[0].invocations[0].toolExecutionNotifications[1414890]
+          75400  root.runs[0].invocations[0].toolExecutionNotifications[1414905]
+          75186  root.runs[0].invocations[0].toolExecutionNotifications[657895]
+          74937  root.runs[0].invocations[0].toolExecutionNotifications[1414920]
+          74661  root.runs[0].invocations[0].toolExecutionNotifications[1415132]
+          74397  root.runs[0].invocations[0].toolExecutionNotifications[1415152]
+          74041  root.runs[0].invocations[0].toolExecutionNotifications[1415170]
+          74019  root.runs[0].invocations[0].toolExecutionNotifications[1414623]
+          74019  root.runs[0].invocations[0].toolExecutionNotifications[1411627]
+          73819  root.runs[0].invocations[0].toolExecutionNotifications[1414633]
+          73707  root.runs[0].invocations[0].toolExecutionNotifications[1414688]
+          73677  root.runs[0].invocations[0].toolExecutionNotifications[1415453]
+          73609  root.runs[0].invocations[0].toolExecutionNotifications[1414704]
+          73419  root.runs[0].invocations[0].toolExecutionNotifications[1414765]
+          73321  root.runs[0].invocations[0].toolExecutionNotifications[1415486]
+          73233  root.runs[0].invocations[0].toolExecutionNotifications[1414777]
+          73051  root.runs[0].invocations[0].toolExecutionNotifications[1414789]
+          73045  root.runs[0].invocations[0].toolExecutionNotifications[1415504]
+          72963  root.runs[0].invocations[0].toolExecutionNotifications[1414801]
+          72774  root.runs[0].invocations[0].toolExecutionNotifications[1414891]
+          72664  root.runs[0].invocations[0].toolExecutionNotifications[1415744]
+          72662  root.runs[0].invocations[0].toolExecutionNotifications[657884]
+          72610  root.runs[0].invocations[0].toolExecutionNotifications[1414906]
+          72310  root.runs[0].invocations[0].toolExecutionNotifications[1415764]
+          72291  root.runs[0].invocations[0].toolExecutionNotifications[1414921]
+          72223  root.runs[0].invocations[0].toolExecutionNotifications[1415133]
+          72135  root.runs[0].invocations[0].toolExecutionNotifications[1411647]
+          72119  root.runs[0].invocations[0].toolExecutionNotifications[1415153]
+          71923  root.runs[0].invocations[0].toolExecutionNotifications[1415172]
+          71785  root.runs[0].invocations[0].toolExecutionNotifications[1415784]
+          71757  root.runs[0].invocations[0].toolExecutionNotifications[1411678]
+
+     real	0m9.869s
+     user	0m8.619s
+     sys	0m1.240s
+   #+END_SRC
