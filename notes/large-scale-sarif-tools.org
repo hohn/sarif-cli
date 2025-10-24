@@ -155,4 +155,20 @@
      sys	0m0.933s
    #+END_SRC
 
-   
+** TODO Faster json reader and processor, rust
+   #+BEGIN_SRC text
+     0:$ time ./target/release/sarif-size ~/work-gh/sarif-cli/data/firefox-db-cpp-scan-bm-none.formatted.sarif 3
+     2717304111  root
+             45  root.$schema
+     2717304043  root.runs
+     2717304043  root.runs[0]
+        3219283  root.runs[0].artifacts
+             14  root.runs[0].columnKind
+     2713767731  root.runs[0].invocations
+          27023  root.runs[0].properties
+         248867  root.runs[0].results
+          41074  root.runs[0].tool
+              5  root.version
+
+     real	0m16.133s
+   #+END_SRC
