@@ -1,0 +1,29 @@
+* Large-scale sarif tools
+  These are scripts and programs that re-use the setup and information from the
+  original sarif-to-csv conversion tools, applied to working with large sarif
+  files and collections thereof.
+
+  Overview of the scripts:
+  - [[../bin/sarif-to-table]]: create a sqlite db from a sarif file
+  - [[../bin/sarif-size]]: output a =du=-style size list of JSON elements.  Slow for
+    sarif files => 1GB=
+  - [[../bin/sarif-size-cpp]]: output a =du=-style size list of JSON
+    elements. Requires building, but is very fast.
+
+
+** building
+   #+BEGIN_SRC sh 
+     brew install simdjson
+
+     cd ~/work-gh/sarif-cli/src/cpp/
+     g++ -std=c++20 -O3 \
+         -I/opt/homebrew/include \
+         -L/opt/homebrew/lib \
+         -lsimdjson \
+         sarif-size.cpp -o sarif-size-cpp
+
+     # development
+     ln -s ~/work-gh/sarif-cli/src/cpp/sarif-size-cpp \
+        ~/work-gh/sarif-cli/.venv-gh/bin/
+   #+END_SRC
+
