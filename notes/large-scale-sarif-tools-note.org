@@ -1,0 +1,61 @@
+* Guiding Thoughts
+  Demand
+  - Is there an active customer request for this initiative, particularly as a prerequisite for GHAS adoption?
+  - How many customers will benefit from this initiative?
+  - Is this initiative aligned with current customer feedback or product roadmap priorities?
+  Fit
+  - How does this project align with our broader strategic direction?
+  - Is this initiative time-sensitive due to customer commitments, or upcoming launches?
+  Resourcing
+  - Are there higher-priority projects or customer engagements that require our immediate attention?
+  - Do we have the necessary people to execute this project effectively?
+  - Has this project been discussed with relevant stakeholders (myself, Ravi, the broader CodeQL) for resource planning and alignment?
+  - Are there any risks or dependencies associated with this initiative?
+  Success
+  - What does success look like for this project, and how will we measure it?
+  - Are there clear deliverables, timelines, and ownership defined for this initiative?
+
+* As applied to large-scale sarif tools
+  Demand
+  - Is there an active customer request for this initiative, particularly as a
+    prerequisite for GHAS adoption?
+    - Yes.  Any customer with > 100 repositories will face the issue of reviewing
+      findings. 
+  - How many customers will benefit from this initiative?
+    - In our case -- the codeql team's customers -- all of them.  We have had
+      repeated inquiries from Bloomberg, AMD, Cisco, etc.  NetApp certainly *will*
+      need it.  SAP are already doing something similar, but in a very ad-hoc way.
+      This simplifies their process.
+  - Is this initiative aligned with current customer feedback or product roadmap
+    priorities?
+    - Yes.  Also, this is a critical -- but missing -- part of MRVA.  Existing
+      tools *stop* at 5000 results; MRVA *starts* around 100,000*10, or about
+      1,000,000 results.
+
+  Fit
+  - How does this project align with our broader strategic direction?
+    - If our strategic direction has not changed from "make customers successful
+      using codeql", yes.
+  - Is this initiative time-sensitive due to customer commitments, or upcoming launches?
+    - See above
+  Resourcing
+  - Are there higher-priority projects or customer engagements that require our
+    immediate attention?
+    - This fits in very well with all of our customer engagements;  I billed it
+      under internal > tooling as most general category.  It could just as well go
+      under internal > mrva, as most specific category.
+  - Do we have the necessary people to execute this project effectively?
+    - Yes.
+  - Has this project been discussed with relevant stakeholders (myself, Ravi, the
+    broader CodeQL) for resource planning and alignment?
+    - Yes. We (team) have discussed the need for this tool for a long time.  Customers
+      have discussed this with me many times.
+  - Are there any risks or dependencies associated with this initiative?
+    No.
+  Success
+  - What does success look like for this project, and how will we measure it?
+    - We can test it directly, both internally and with customers.  Success here
+      means users can work through and handle million-result+ result sets.
+
+  - Are there clear deliverables, timelines, and ownership defined for this initiative?
+    yes.
