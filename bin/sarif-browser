@@ -1,0 +1,414 @@
+#!/usr/bin/env python3
+"""
+SARIF Browser - A simple Tkinter GUI to browse and view SARIF files
+"""
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import json
+import os
+import glob
+from pathlib import Path
+
+
+class SarifBrowser:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("SARIF Browser")
+        self.root.geometry("1200x800")
+
+        # Create main container with paned window
+        self.paned = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
+        self.paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Left panel - file list
+        self.create_file_panel()
+
+        # Right panel - results viewer
+        self.create_results_panel()
+
+        # Load SARIF files from current directory
+        self.load_sarif_files()
+
+    def create_file_panel(self):
+        """Create left panel with list of SARIF files"""
+        left_frame = ttk.Frame(self.paned, width=250)
+        self.paned.add(left_frame, weight=0)
+
+        # Title
+        title = ttk.Label(left_frame, text="SARIF Files", font=('Arial', 12, 'bold'))
+        title.pack(pady=5)
+
+        # Scrollable frame for buttons
+        canvas = tk.Canvas(left_frame, width=230)
+        scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
+        self.file_button_frame = ttk.Frame(canvas)
+
+        self.file_button_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=self.file_button_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.canvas = canvas
+
+    def create_results_panel(self):
+        """Create right panel with text viewer for results"""
+        right_frame = ttk.Frame(self.paned)
+        self.paned.add(right_frame, weight=1)
+
+        # Header frame with file label and search
+        header_frame = ttk.Frame(right_frame)
+        header_frame.pack(fill=tk.X, pady=5, padx=5)
+
+        # Title showing current file
+        self.current_file_label = ttk.Label(
+            header_frame,
+            text="Select a SARIF file to view results",
+            font=('Arial', 10, 'bold')
+        )
+        self.current_file_label.pack(side=tk.LEFT)
+
+        # Search controls
+        search_frame = ttk.Frame(header_frame)
+        search_frame.pack(side=tk.RIGHT)
+
+        ttk.Label(search_frame, text="Search (regex):").pack(side=tk.LEFT, padx=2)
+
+        self.search_entry = ttk.Entry(search_frame, width=30)
+        self.search_entry.pack(side=tk.LEFT, padx=2)
+        self.search_entry.bind('<Return>', lambda e: self.search_text())
+
+        # Case-insensitive checkbox
+        self.case_insensitive_var = tk.BooleanVar(value=False)
+        case_check = ttk.Checkbutton(search_frame, text="Ignore case",
+                                     variable=self.case_insensitive_var)
+        case_check.pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(search_frame, text="Find", command=self.search_text, width=6).pack(side=tk.LEFT, padx=2)
+        ttk.Button(search_frame, text="Next", command=self.find_next, width=6).pack(side=tk.LEFT, padx=2)
+        ttk.Button(search_frame, text="Clear", command=self.clear_search, width=6).pack(side=tk.LEFT, padx=2)
+
+        # Text widget with scrollbar
+        self.results_text = scrolledtext.ScrolledText(
+            right_frame,
+            wrap=tk.WORD,
+            width=80,
+            height=40,
+            font=('Courier', 12)
+        )
+        self.results_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Search state
+        self.search_pattern = None
+        self.search_matches = []
+        self.current_match_index = -1
+
+    def load_sarif_files(self):
+        """Find and list all SARIF files in current directory"""
+        # Get all .sarif files in current directory
+        sarif_files = sorted(glob.glob("*.sarif") + glob.glob("data/*.sarif"))
+
+        if not sarif_files:
+            label = ttk.Label(
+                self.file_button_frame,
+                text="No SARIF files found",
+                foreground="gray"
+            )
+            label.pack(pady=10)
+            return
+
+        # Create a button for each SARIF file
+        for filepath in sarif_files:
+            filename = os.path.basename(filepath)
+            btn = ttk.Button(
+                self.file_button_frame,
+                text=filename,
+                command=lambda f=filepath: self.display_sarif(f),
+                width=30
+            )
+            btn.pack(pady=2, padx=5, fill=tk.X)
+
+    def display_sarif(self, filepath):
+        """Parse and display SARIF file results"""
+        self.current_file_label.config(text=f"File: {filepath}")
+        self.results_text.delete(1.0, tk.END)
+
+        # Configure text tag for highlighting (color-blind friendly: cyan/blue)
+        self.results_text.tag_configure("highlight", background="#4FC3F7", foreground="black")
+
+        try:
+            with open(filepath, 'r') as f:
+                sarif_data = json.load(f)
+
+            # Format and display results with highlighting
+            self.format_and_insert_sarif_results(sarif_data, filepath)
+
+        except json.JSONDecodeError as e:
+            self.results_text.insert(1.0, f"Error: Invalid JSON in {filepath}\n{str(e)}")
+        except Exception as e:
+            self.results_text.insert(1.0, f"Error reading {filepath}\n{str(e)}")
+
+    def format_and_insert_sarif_results(self, sarif_data, filepath):
+        """Format SARIF data and insert with highlighting into text widget"""
+        def insert_text(text):
+            """Helper to insert plain text"""
+            self.results_text.insert(tk.END, text)
+
+        def insert_snippet_with_highlight(snippet_text, snippet_start_line, region):
+            """Insert snippet with highlighted region"""
+            snippet_lines = snippet_text.splitlines()
+            region_start_line = region.get('startLine', 0)
+            region_start_col = region.get('startColumn', 1)
+            region_end_line = region.get('endLine', region_start_line)
+            region_end_col = region.get('endColumn', region_start_col)
+
+            for idx, snippet_line in enumerate(snippet_lines):
+                current_line = snippet_start_line + idx
+                insert_text("    ")
+
+                if region_start_line <= current_line <= region_end_line:
+                    # This line contains highlighted region
+                    if region_start_line == region_end_line == current_line:
+                        # Single line highlight
+                        before = snippet_line[:region_start_col - 1]
+                        highlight = snippet_line[region_start_col - 1:region_end_col - 1]
+                        after = snippet_line[region_end_col - 1:]
+                        insert_text(before)
+                        self.results_text.insert(tk.END, highlight, "highlight")
+                        insert_text(after + "\n")
+                    elif current_line == region_start_line:
+                        # Start of multi-line highlight
+                        before = snippet_line[:region_start_col - 1]
+                        highlight = snippet_line[region_start_col - 1:]
+                        insert_text(before)
+                        self.results_text.insert(tk.END, highlight + "\n", "highlight")
+                    elif current_line == region_end_line:
+                        # End of multi-line highlight
+                        highlight = snippet_line[:region_end_col - 1]
+                        after = snippet_line[region_end_col - 1:]
+                        self.results_text.insert(tk.END, highlight, "highlight")
+                        insert_text(after + "\n")
+                    else:
+                        # Middle of multi-line highlight
+                        self.results_text.insert(tk.END, snippet_line + "\n", "highlight")
+                else:
+                    insert_text(snippet_line + "\n")
+
+        insert_text(f"{'=' * 80}\n")
+        insert_text(f"SARIF File: {filepath}\n")
+        insert_text(f"{'=' * 80}\n\n")
+
+        # Check if valid SARIF
+        if not isinstance(sarif_data, dict) or 'runs' not in sarif_data:
+            insert_text("Invalid SARIF structure: missing 'runs' key\n")
+            return
+
+        runs = sarif_data.get('runs', [])
+        insert_text(f"Number of runs: {len(runs)}\n\n")
+
+        # Process each run
+        for run_idx, run in enumerate(runs):
+            insert_text(f"\n{'=' * 80}\n")
+            insert_text(f"RUN {run_idx}\n")
+            insert_text(f"{'=' * 80}\n")
+
+            # Tool information
+            tool = run.get('tool', {})
+            driver = tool.get('driver', {})
+            tool_name = driver.get('name', 'Unknown')
+            tool_version = driver.get('version', 'Unknown')
+            insert_text(f"\nTool: {tool_name} v{tool_version}\n")
+
+            # Results
+            results = run.get('results', [])
+            insert_text(f"Number of results: {len(results)}\n\n")
+
+            if not results:
+                insert_text("No results in this run.\n\n")
+                continue
+
+            # Display each result
+            for res_idx, result in enumerate(results):
+                insert_text(f"\n{'-' * 80}\n")
+                insert_text(f"RESULT {res_idx + 1}/{len(results)}\n")
+                insert_text(f"{'-' * 80}\n")
+
+                # Rule ID
+                rule_id = result.get('ruleId', result.get('rule', {}).get('id', 'Unknown'))
+                insert_text(f"Rule ID: {rule_id}\n")
+
+                # Message
+                message_obj = result.get('message', {})
+                message_text = message_obj.get('text', message_obj.get('markdown', 'No message'))
+                insert_text(f"Message: {message_text}\n")
+
+                # Level
+                level = result.get('level', 'warning')
+                insert_text(f"Level: {level}\n")
+
+                # Locations
+                locations = result.get('locations', [])
+                if locations:
+                    insert_text(f"\nLocations:\n")
+                    for loc in locations:
+                        phys_loc = loc.get('physicalLocation', {})
+                        artifact = phys_loc.get('artifactLocation', {})
+                        uri = artifact.get('uri', 'Unknown')
+                        region = phys_loc.get('region', {})
+
+                        start_line = region.get('startLine', '?')
+                        start_col = region.get('startColumn', '?')
+                        end_line = region.get('endLine', start_line)
+                        end_col = region.get('endColumn', '?')
+
+                        insert_text(f"  {uri}:{start_line}:{start_col}:{end_line}:{end_col}\n")
+
+                        # Display snippet if available with highlighting
+                        context_region = phys_loc.get('contextRegion', {})
+                        snippet = context_region.get('snippet', {})
+                        snippet_text = snippet.get('text', '')
+                        if snippet_text:
+                            snippet_start = context_region.get('startLine', 1)
+                            snippet_end = context_region.get('endLine', '?')
+                            insert_text(f"  Snippet (lines {snippet_start}-{snippet_end}):\n")
+                            insert_snippet_with_highlight(snippet_text, snippet_start, region)
+
+                # Code Flows (for path-sensitive analysis)
+                code_flows = result.get('codeFlows', [])
+                if code_flows:
+                    insert_text(f"\nCode Flows: {len(code_flows)} path(s)\n")
+                    for cf_idx, code_flow in enumerate(code_flows):
+                        thread_flows = code_flow.get('threadFlows', [])
+                        for tf_idx, thread_flow in enumerate(thread_flows):
+                            flow_locations = thread_flow.get('locations', [])
+                            insert_text(f"  Path {cf_idx + 1}: {len(flow_locations)} steps\n")
+
+                            # Show all steps
+                            if flow_locations:
+                                for step_idx, step in enumerate(flow_locations):
+                                    loc = step.get('location', {})
+                                    msg = loc.get('message', {}).get('text', '')
+                                    phys_loc = loc.get('physicalLocation', {})
+                                    artifact = phys_loc.get('artifactLocation', {})
+                                    uri = artifact.get('uri', 'Unknown')
+                                    region = phys_loc.get('region', {})
+                                    line = region.get('startLine', '?')
+                                    col = region.get('startColumn', '?')
+
+                                    # Label first step as SOURCE, last as SINK
+                                    if step_idx == 0:
+                                        step_label = "SOURCE"
+                                    elif step_idx == len(flow_locations) - 1:
+                                        step_label = "SINK"
+                                    else:
+                                        step_label = "STEP"
+
+                                    insert_text(f"    {step_label} [{step_idx}]: {uri}:{line}:{col} - {msg}\n")
+
+                # Related Locations
+                related = result.get('relatedLocations', [])
+                if related:
+                    insert_text(f"\nRelated Locations: {len(related)}\n")
+                    for rel_loc in related[:3]:  # Show first 3
+                        msg = rel_loc.get('message', {}).get('text', '')
+                        phys_loc = rel_loc.get('physicalLocation', {})
+                        artifact = phys_loc.get('artifactLocation', {})
+                        uri = artifact.get('uri', 'Unknown')
+                        region = phys_loc.get('region', {})
+                        line = region.get('startLine', '?')
+                        insert_text(f"  {uri}:{line} - {msg}\n")
+
+                insert_text("\n")
+
+    def search_text(self):
+        """Search for pattern in text widget using regex"""
+        import re
+
+        pattern = self.search_entry.get()
+        if not pattern:
+            return
+
+        # Clear previous search highlights
+        self.results_text.tag_remove("search", "1.0", tk.END)
+        self.results_text.tag_remove("current_search", "1.0", tk.END)
+
+        # Configure search highlight tag (different from snippet highlight)
+        self.results_text.tag_configure("search", background="#FFD700", foreground="black")
+
+        # Get all text content
+        text_content = self.results_text.get("1.0", tk.END)
+
+        # Find all matches
+        self.search_matches = []
+        try:
+            # Apply case-insensitive flag if checkbox is checked
+            flags = re.IGNORECASE if self.case_insensitive_var.get() else 0
+            self.search_pattern = re.compile(pattern, flags)
+            for match in self.search_pattern.finditer(text_content):
+                start_idx = match.start()
+                end_idx = match.end()
+                # Convert character indices to Tkinter text indices
+                start_pos = f"1.0 + {start_idx} chars"
+                end_pos = f"1.0 + {end_idx} chars"
+                self.search_matches.append((start_pos, end_pos))
+                self.results_text.tag_add("search", start_pos, end_pos)
+
+            # Jump to first match
+            if self.search_matches:
+                self.current_match_index = 0
+                self.results_text.see(self.search_matches[0][0])
+                self.results_text.tag_configure("current_search", background="#FFA500", foreground="black")
+                self.results_text.tag_add("current_search",
+                                         self.search_matches[0][0],
+                                         self.search_matches[0][1])
+                self.search_entry.config(foreground="black")
+            else:
+                self.search_entry.config(foreground="red")
+                self.current_match_index = -1
+
+        except re.error as e:
+            # Invalid regex pattern
+            self.search_entry.config(foreground="red")
+            self.search_matches = []
+            self.current_match_index = -1
+
+    def find_next(self):
+        """Jump to next search match"""
+        if not self.search_matches:
+            return
+
+        # Remove current match highlight
+        self.results_text.tag_remove("current_search", "1.0", tk.END)
+
+        # Move to next match
+        self.current_match_index = (self.current_match_index + 1) % len(self.search_matches)
+
+        # Highlight and scroll to current match
+        start_pos, end_pos = self.search_matches[self.current_match_index]
+        self.results_text.see(start_pos)
+        self.results_text.tag_add("current_search", start_pos, end_pos)
+
+    def clear_search(self):
+        """Clear search highlights and reset search state"""
+        self.results_text.tag_remove("search", "1.0", tk.END)
+        self.results_text.tag_remove("current_search", "1.0", tk.END)
+        self.search_entry.delete(0, tk.END)
+        self.search_entry.config(foreground="black")
+        self.search_matches = []
+        self.current_match_index = -1
+        self.search_pattern = None
+
+
+def main():
+    root = tk.Tk()
+    app = SarifBrowser(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()

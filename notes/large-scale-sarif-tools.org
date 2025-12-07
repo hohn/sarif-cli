@@ -9,8 +9,9 @@
     sarif files => 1GB=
   - [[../bin/sarif-size-cpp]]: output a =du=-style size list of JSON
     elements. Requires building, but is very fast.
+  - [[file:~/work-gh/sarif-cli/src/c/sarif-size.c][sarif-size.c]]: best performance, very clean, simple code ([[*Faster json reader and processor, C, speed improvements][heading]])
 
-
+  Usage: [[file:~/work-gh/sarif-cli.org::*incremental development: sarif-to-table][incremental development: sarif-to-table]]
 ** building cpp
    #+BEGIN_SRC sh 
      brew install simdjson
